@@ -599,25 +599,8 @@ export default function UserDetailPage() {
           <CardContent className="p-6">
                           <div className="text-center">
               <div className="text-base font-bold text-blue-600 mb-2">Horas Totales del Mes</div>
-              <div className="flex items-center justify-center space-x-2">
-                <input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={user?.monthly_hours || 0}
-                  onChange={async (e) => {
-                    const newHours = Number(e.target.value)
-                    if (user) {
-                      await supabase
-                        .from('users')
-                        .update({ monthly_hours: newHours })
-                        .eq('id', user.id)
-                      
-                      setUser({ ...user, monthly_hours: newHours })
-                    }
-                  }}
-                  className="text-4xl font-bold text-blue-900 bg-transparent border-none text-center w-24 focus:outline-none focus:ring-2 focus:ring-blue-400 rounded"
-                />
+              <div className="text-4xl font-bold text-blue-900">
+                {user?.monthly_hours || 0}
                 <span className="text-2xl font-semibold text-blue-700">h</span>
               </div>
               <div className="text-sm font-medium text-blue-500 mt-1">Asignadas</div>
@@ -640,7 +623,7 @@ export default function UserDetailPage() {
                     }, 0)
                   return Math.round(totalUsedHours * 10) / 10
                 })()}
-                <span className="text-2xl font-semibold text-green-700 ml-1">h</span>
+                <span className="text-2xl font-semibold text-green-700">h</span>
               </div>
               <div className="text-sm font-medium text-green-500 mt-1">Hasta hoy</div>
             </div>
@@ -698,7 +681,7 @@ export default function UserDetailPage() {
                       isPositive ? 'text-amber-900' : 'text-red-900'
                     }`}>
                       {Math.abs(remainingHours)}
-                      <span className={`text-2xl font-semibold ml-1 ${
+                      <span className={`text-2xl font-semibold ${
                         isPositive ? 'text-amber-700' : 'text-red-700'
                       }`}>h</span>
                     </div>
@@ -835,8 +818,154 @@ export default function UserDetailPage() {
                         {/* Contenido expandido */}
                         {expandedSections[workerType] && (
                           <div className="space-y-4 border-t pt-4">
-                            {/* Resto del contenido igual que antes */}
-                            {/* ... */}
+                            {(() => {
+                              const serviceCard = getServiceCardWithChanges(config.serviceCard!)
+                              const today = new Date()
+                              
+                              if (workerType === 'regular') {
+                                const weeklySchedule = serviceCard.weekly_schedule as { [key: number]: number } || {}
+                                return (
+                                  <div className="space-y-4">
+                                    {/* Configuración de horario */}
+                                    <div className="bg-blue-50 p-4 rounded-lg">
+                                      <h5 className="font-medium text-blue-900 mb-3">Configurar Horario L-V</h5>
+                                      <div className="grid grid-cols-5 gap-3">
+                                        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie'].map((day, index) => {
+                                          const dayIndex = index + 1
+                                          const hours = weeklySchedule[dayIndex] || 0
+                                          return (
+                                            <div key={day} className="text-center">
+                                              <div className="text-blue-600 font-medium mb-1">{day}</div>
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max="12"
+                                                step="0.5"
+                                                value={hours}
+                                                onChange={(e) => {
+                                                  const newSchedule = { ...weeklySchedule, [dayIndex]: Number(e.target.value) }
+                                                  updateLocalChange(config.serviceCard!.id, { weekly_schedule: newSchedule })
+                                                }}
+                                                className="w-16 px-2 py-1 text-center text-sm border rounded focus:border-blue-500"
+                                              />
+                                              <div className="text-xs text-blue-600 mt-1">h</div>
+                                            </div>
+                                          )
+                                        })}
+                                      </div>
+                                      <div className="mt-3 text-sm text-blue-700 text-center">
+                                        Total semanal: {Object.values(weeklySchedule).reduce((sum, h) => sum + h, 0)}h
+                                      </div>
+                                    </div>
+
+                                    {/* Barra de progreso */}
+                                    <div className="space-y-2">
+                                      {(() => {
+                                        const calculatedUsedHours = calculateUsedHours(serviceCard)
+                                        const userTotalHours = user?.monthly_hours || 0
+                                        const progressPercentage = userTotalHours > 0 ? (calculatedUsedHours / userTotalHours) * 100 : 0
+                                        
+                                        return (
+                                          <>
+                                            <div className="flex items-center justify-between text-sm">
+                                              <span className="font-medium text-gray-700">Progreso del mes</span>
+                                              <span className="font-semibold text-gray-900">
+                                                {calculatedUsedHours}h / {userTotalHours}h
+                                              </span>
+                                            </div>
+                                            
+                                            <div className="w-full bg-gray-200 rounded-full h-3">
+                                              <div 
+                                                className="h-3 rounded-full transition-all duration-500 bg-blue-500"
+                                                style={{ 
+                                                  width: `${Math.min(progressPercentage, 100)}%` 
+                                                }}
+                                              ></div>
+                                            </div>
+                                            
+                                            <div className="flex justify-between text-xs text-gray-600">
+                                              <span>Utilizadas: {calculatedUsedHours}h</span>
+                                              <span>Total usuario: {userTotalHours}h</span>
+                                            </div>
+                                          </>
+                                        )
+                                      })()}
+                                    </div>
+
+                                    {/* Mini calendario del mes */}
+                                    <div className="bg-white border rounded-lg overflow-hidden">
+                                      <div className="bg-gray-50 p-2 border-b">
+                                        <h5 className="font-medium text-center text-gray-900">
+                                          {new Date(0, currentMonth - 1).toLocaleString('es-ES', { month: 'long' })} {currentYear}
+                                        </h5>
+                                      </div>
+                                      
+                                      {/* Días de la semana */}
+                                      <div className="grid grid-cols-7 bg-gray-50 border-b">
+                                        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
+                                          <div key={day} className="p-3 text-center text-sm font-semibold text-gray-700">
+                                            {day}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Días del mes */}
+                                      <div className="grid grid-cols-7">
+                                        {(() => {
+                                          const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+                                          const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay()
+                                          const days = []
+                                          
+                                          // Días vacíos al principio - Ajustar para que la semana empiece en lunes
+                                          const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1
+                                          for (let i = 0; i < adjustedFirstDay; i++) {
+                                            days.push(<div key={`empty-${i}`} className="h-16 border-r border-b"></div>)
+                                          }
+                                          
+                                          // Días del mes
+                                          for (let day = 1; day <= daysInMonth; day++) {
+                                            const date = new Date(Date.UTC(currentYear, currentMonth - 1, day, 12, 0, 0))
+                                            const dayOfWeek = date.getDay()
+                                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+                                            const dateStr = date.toISOString().split('T')[0]
+                                            
+                                            const holidaysThisMonth = getHolidaysForMonth(currentYear, currentMonth)
+                                            const holidayDates = holidaysThisMonth.map(h => h.date)
+                                            const isHoliday = holidayDates.includes(dateStr)
+                                            
+                                            const hours = weeklySchedule[dayOfWeek] || 0
+                                            const hasService = hours > 0 && !isWeekend && !isHoliday
+                                            
+                                            days.push(
+                                              <div key={day} className="h-16 border-r border-b p-2 text-sm">
+                                                <div className={`font-semibold mb-1 ${isWeekend ? 'text-gray-400' : 'text-gray-900'}`}>
+                                                  {day}
+                                                </div>
+                                                {hasService && (
+                                                  <div className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">
+                                                    {hours}h
+                                                  </div>
+                                                )}
+                                                {/* Indicador de festivo */}
+                                                {isHoliday && !isWeekend && hours > 0 && (
+                                                  <div className="bg-orange-100 text-orange-600 px-1 py-0.5 rounded text-xs">
+                                                    🎉
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )
+                                          }
+                                          
+                                          return days
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              
+                              return <div className="text-gray-500">Configuración para {workerType}</div>
+                            })()}
                           </div>
                         )}
                       </div>
@@ -890,11 +1019,327 @@ export default function UserDetailPage() {
                           </Button>
                         </div>
 
-                        {/* Contenido expandido igual que antes */}
+                        {/* Contenido expandido */}
                         {expandedSections[workerType] && (
                           <div className="space-y-4 border-t pt-4">
-                            {/* Resto del contenido igual que antes */}
-                            {/* ... */}
+                            {(() => {
+                              const serviceCard = getServiceCardWithChanges(config.serviceCard!)
+                              const today = new Date()
+                              
+                              if (workerType === 'holidays') {
+                                const holidays = getHolidaysForMonth(currentYear, currentMonth)
+                                const holidayHours = serviceCard.holiday_hours || 3.5
+                                return (
+                                  <div className="space-y-4">
+                                    {/* Configuración de horas en festivos */}
+                                    <div className="bg-orange-50 p-4 rounded-lg">
+                                      <h5 className="font-medium text-orange-900 mb-3">Configurar Horas en Festivos</h5>
+                                      <div className="flex items-center gap-3 mb-3">
+                                        <label className="text-orange-800 font-medium">Horas por festivo:</label>
+                                        <input
+                                          type="number"
+                                          min="0"
+                                          max="12"
+                                          step="0.5"
+                                          value={holidayHours}
+                                          onChange={(e) => updateLocalChange(config.serviceCard!.id, { holiday_hours: Number(e.target.value) })}
+                                          className="w-20 px-2 py-1 border rounded focus:border-orange-500"
+                                        />
+                                        <span className="text-orange-700">horas</span>
+                                      </div>
+                                      {holidays.length > 0 && (
+                                        <div>
+                                          <h6 className="font-medium text-orange-800 mb-2">Festivos este mes:</h6>
+                                          <div className="space-y-1">
+                                            {holidays.map((holiday) => (
+                                              <div key={holiday.date} className="flex items-center justify-between text-sm">
+                                                <span>{holiday.name}</span>
+                                                <span className="text-orange-600">{new Date(holiday.date + 'T12:00:00').getDate()}</span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {/* Resumen de uso */}
+                                    <div className="bg-white border border-orange-200 rounded-lg p-4">
+                                      <h6 className="font-medium text-orange-900 mb-3">Resumen del mes</h6>
+                                      {(() => {
+                                        const calculatedUsedHours = calculateUsedHours(serviceCard)
+                                        const pastHolidays = holidays.filter(h => {
+                                          const holidayDate = new Date(h.date + 'T12:00:00')
+                                          return holidayDate <= today
+                                        })
+                                        const futureHolidays = holidays.filter(h => {
+                                          const holidayDate = new Date(h.date + 'T12:00:00')
+                                          return holidayDate > today
+                                        })
+                                        
+                                        return (
+                                          <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                              <div>
+                                                <span className="text-gray-600">Festivos trabajados:</span>
+                                                <div className="font-semibold text-orange-800">{pastHolidays.length}</div>
+                                              </div>
+                                              <div>
+                                                <span className="text-gray-600">Horas utilizadas:</span>
+                                                <div className="font-semibold text-orange-800">{calculatedUsedHours}h</div>
+                                              </div>
+                                            </div>
+                                            
+                                            {futureHolidays.length > 0 && (
+                                              <div>
+                                                <span className="text-gray-600 text-sm">Próximos festivos:</span>
+                                                <div className="mt-1 space-y-1">
+                                                  {futureHolidays.map((holiday) => (
+                                                    <div key={holiday.date} className="text-sm text-orange-700">
+                                                      • {holiday.name} ({new Date(holiday.date + 'T12:00:00').getDate()})
+                                                    </div>
+                                                  ))}
+                                                </div>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )
+                                      })()}
+                                    </div>
+
+                                    {/* Mini calendario de festivos */}
+                                    <div className="bg-white border rounded-lg overflow-hidden">
+                                      <div className="bg-gray-50 p-2 border-b">
+                                        <h5 className="font-medium text-center text-gray-900">
+                                          Festivos - {new Date(0, currentMonth - 1).toLocaleString('es-ES', { month: 'long' })} {currentYear}
+                                        </h5>
+                                      </div>
+                                      
+                                      {/* Días de la semana */}
+                                      <div className="grid grid-cols-7 bg-gray-50 border-b">
+                                        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
+                                          <div key={day} className="p-3 text-center text-sm font-semibold text-gray-700">
+                                            {day}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Días del mes */}
+                                      <div className="grid grid-cols-7">
+                                        {(() => {
+                                          const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+                                          const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay()
+                                          const days = []
+                                          
+                                          // Días vacíos al principio - Ajustar para que la semana empiece en lunes
+                                          const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1
+                                          for (let i = 0; i < adjustedFirstDay; i++) {
+                                            days.push(<div key={`empty-${i}`} className="h-16 border-r border-b"></div>)
+                                          }
+                                          
+                                          // Días del mes
+                                          for (let day = 1; day <= daysInMonth; day++) {
+                                            const date = new Date(Date.UTC(currentYear, currentMonth - 1, day, 12, 0, 0))
+                                            const dateStr = date.toISOString().split('T')[0]
+                                            
+                                            const holiday = holidays.find(h => h.date === dateStr)
+                                            const isToday = date <= today
+                                            
+                                            days.push(
+                                              <div key={day} className={`h-16 border-r border-b p-2 text-sm ${holiday ? 'bg-orange-50' : ''}`}>
+                                                <div className="font-semibold mb-1 text-gray-900">
+                                                  {day}
+                                                </div>
+                                                {holiday && (
+                                                  <div className={`px-2 py-1 rounded text-xs font-medium ${isToday ? 'bg-orange-200 text-orange-800' : 'bg-orange-100 text-orange-600'}`}>
+                                                    🎉 {holidayHours}h
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )
+                                          }
+                                          
+                                          return days
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              } else if (workerType === 'weekends') {
+                                const weekendConfig = serviceCard.weekend_config || { saturday: false, sunday: false }
+                                const weekendHours = serviceCard.weekend_hours || { saturday: 3.5, sunday: 3.5 }
+                                return (
+                                  <div className="space-y-4">
+                                    {/* Configuración de fines de semana */}
+                                    <div className="bg-purple-50 p-4 rounded-lg">
+                                      <h5 className="font-medium text-purple-900 mb-3">Configurar Fines de Semana</h5>
+                                      <div className="space-y-3">
+                                        <label className="flex items-center space-x-3">
+                                          <input
+                                            type="checkbox"
+                                            checked={weekendConfig.saturday}
+                                            onChange={(e) => {
+                                              const newConfig = { ...weekendConfig, saturday: e.target.checked }
+                                              updateLocalChange(config.serviceCard!.id, { weekend_config: newConfig })
+                                            }}
+                                            className="rounded"
+                                          />
+                                          <span className="font-medium text-purple-800">Sábados</span>
+                                          {weekendConfig.saturday && (
+                                            <>
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max="12"
+                                                step="0.5"
+                                                value={weekendHours.saturday}
+                                                onChange={(e) => {
+                                                  const newHours = { ...weekendHours, saturday: Number(e.target.value) }
+                                                  updateLocalChange(config.serviceCard!.id, { weekend_hours: newHours })
+                                                }}
+                                                className="w-16 px-2 py-1 text-center text-sm border rounded"
+                                              />
+                                              <span className="text-purple-700">horas</span>
+                                            </>
+                                          )}
+                                        </label>
+                                        <label className="flex items-center space-x-3">
+                                          <input
+                                            type="checkbox"
+                                            checked={weekendConfig.sunday}
+                                            onChange={(e) => {
+                                              const newConfig = { ...weekendConfig, sunday: e.target.checked }
+                                              updateLocalChange(config.serviceCard!.id, { weekend_config: newConfig })
+                                            }}
+                                            className="rounded"
+                                          />
+                                          <span className="font-medium text-purple-800">Domingos</span>
+                                          {weekendConfig.sunday && (
+                                            <>
+                                              <input
+                                                type="number"
+                                                min="0"
+                                                max="12"
+                                                step="0.5"
+                                                value={weekendHours.sunday}
+                                                onChange={(e) => {
+                                                  const newHours = { ...weekendHours, sunday: Number(e.target.value) }
+                                                  updateLocalChange(config.serviceCard!.id, { weekend_hours: newHours })
+                                                }}
+                                                className="w-16 px-2 py-1 text-center text-sm border rounded"
+                                              />
+                                              <span className="text-purple-700">horas</span>
+                                            </>
+                                          )}
+                                        </label>
+                                      </div>
+                                    </div>
+
+                                    {/* Resumen de fines de semana */}
+                                    <div className="bg-white border border-purple-200 rounded-lg p-4">
+                                      <h6 className="font-medium text-purple-900 mb-3">Resumen del mes</h6>
+                                      {(() => {
+                                        const calculatedUsedHours = calculateUsedHours(serviceCard)
+                                        
+                                        return (
+                                          <div className="space-y-3">
+                                            <div className="grid grid-cols-2 gap-4 text-sm">
+                                              <div>
+                                                <span className="text-gray-600">Días trabajados:</span>
+                                                <div className="font-semibold text-purple-800">
+                                                  {(() => {
+                                                    let count = 0
+                                                    const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+                                                    const today = new Date()
+                                                    const isCurrentMonth = currentMonth === today.getMonth() + 1 && currentYear === today.getFullYear()
+                                                    const lastDayToCount = isCurrentMonth ? today.getDate() : daysInMonth
+
+                                                    for (let day = 1; day <= lastDayToCount; day++) {
+                                                      const date = new Date(Date.UTC(currentYear, currentMonth - 1, day, 12, 0, 0))
+                                                      const dayOfWeek = date.getDay()
+                                                      
+                                                      if (dayOfWeek === 6 && weekendConfig.saturday) count++
+                                                      if (dayOfWeek === 0 && weekendConfig.sunday) count++
+                                                    }
+                                                    
+                                                    return count
+                                                  })()}
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <span className="text-gray-600">Horas utilizadas:</span>
+                                                <div className="font-semibold text-purple-800">{calculatedUsedHours}h</div>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )
+                                      })()}
+                                    </div>
+
+                                    {/* Mini calendario de fines de semana */}
+                                    <div className="bg-white border rounded-lg overflow-hidden">
+                                      <div className="bg-gray-50 p-2 border-b">
+                                        <h5 className="font-medium text-center text-gray-900">
+                                          Fines de Semana - {new Date(0, currentMonth - 1).toLocaleString('es-ES', { month: 'long' })} {currentYear}
+                                        </h5>
+                                      </div>
+                                      
+                                      {/* Días de la semana */}
+                                      <div className="grid grid-cols-7 bg-gray-50 border-b">
+                                        {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map((day) => (
+                                          <div key={day} className="p-3 text-center text-sm font-semibold text-gray-700">
+                                            {day}
+                                          </div>
+                                        ))}
+                                      </div>
+                                      
+                                      {/* Días del mes */}
+                                      <div className="grid grid-cols-7">
+                                        {(() => {
+                                          const daysInMonth = new Date(currentYear, currentMonth, 0).getDate()
+                                          const firstDay = new Date(currentYear, currentMonth - 1, 1).getDay()
+                                          const days = []
+                                          
+                                          // Días vacíos al principio - Ajustar para que la semana empiece en lunes
+                                          const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1
+                                          for (let i = 0; i < adjustedFirstDay; i++) {
+                                            days.push(<div key={`empty-${i}`} className="h-16 border-r border-b"></div>)
+                                          }
+                                          
+                                          // Días del mes
+                                          for (let day = 1; day <= daysInMonth; day++) {
+                                            const date = new Date(Date.UTC(currentYear, currentMonth - 1, day, 12, 0, 0))
+                                            const dayOfWeek = date.getDay()
+                                            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+                                            const isToday = date <= today
+                                            
+                                            const isSaturday = dayOfWeek === 6 && weekendConfig.saturday
+                                            const isSunday = dayOfWeek === 0 && weekendConfig.sunday
+                                            const hasService = isSaturday || isSunday
+                                            
+                                            days.push(
+                                              <div key={day} className={`h-16 border-r border-b p-2 text-sm ${isWeekend ? 'bg-purple-50' : ''}`}>
+                                                <div className={`font-semibold mb-1 ${isWeekend ? 'text-purple-900' : 'text-gray-400'}`}>
+                                                  {day}
+                                                </div>
+                                                {hasService && (
+                                                  <div className={`px-2 py-1 rounded text-xs font-medium ${isToday ? 'bg-purple-200 text-purple-800' : 'bg-purple-100 text-purple-600'}`}>
+                                                    {isSaturday ? `${weekendHours.saturday}h` : `${weekendHours.sunday}h`}
+                                                  </div>
+                                                )}
+                                              </div>
+                                            )
+                                          }
+                                          
+                                          return days
+                                        })()}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )
+                              }
+                              
+                              return <div className="text-gray-500">Configuración para {workerType}</div>
+                            })()}
                           </div>
                         )}
                       </div>

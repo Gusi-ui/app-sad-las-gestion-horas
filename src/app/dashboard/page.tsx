@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useUsers } from '@/hooks/useUsers'
 import { supabase } from '@/lib/supabase'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { Plus, User, Phone, Clock, Settings, LogOut } from 'lucide-react'
+import { Plus, User, Phone, Clock, Calendar, Settings, LogOut, Edit, Trash2 } from 'lucide-react'
 
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -50,14 +50,46 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-              <p className="text-slate-600">Bienvenida, {user.user_metadata?.full_name || user.email}</p>
+              <h1 className="text-2xl font-bold text-slate-900">
+                🏢 Panel Administrativo - Gestión de Servicios
+              </h1>
+              <p className="text-slate-600">
+                Centro de control para planificación • Bienvenida, {user.user_metadata?.full_name || user.email}
+              </p>
+              <div className="flex items-center space-x-4 mt-2">
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                  👩‍💼 Administración
+                </span>
+                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+                  📊 Control Central
+                </span>
+              </div>
             </div>
             <div className="flex items-center space-x-3">
-              <Button variant="secondary" size="sm">
-                <Settings className="w-4 h-4 mr-2" />
-                Configuración
-              </Button>
+              <Link href="/dashboard/planning">
+                <Button variant="secondary" size="sm">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Planning
+                </Button>
+              </Link>
+              <Link href="/dashboard/workers">
+                <Button variant="secondary" size="sm">
+                  <User className="w-4 h-4 mr-2" />
+                  Trabajadoras
+                </Button>
+              </Link>
+              <Link href="/dashboard/assignments">
+                <Button variant="secondary" size="sm">
+                  <Clock className="w-4 h-4 mr-2" />
+                  Asignaciones
+                </Button>
+              </Link>
+              <Link href="/dashboard/settings">
+                <Button variant="secondary" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Configuración
+                </Button>
+              </Link>
               <Button variant="secondary" size="sm" onClick={handleLogout}>
                 <LogOut className="w-4 h-4 mr-2" />
                 Cerrar Sesión
@@ -81,6 +113,7 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold text-slate-900">
                     {isLoading ? '...' : users?.length || 0}
                   </p>
+                  <p className="text-xs text-slate-500">En base de datos</p>
                 </div>
               </div>
             </CardContent>
@@ -97,6 +130,7 @@ export default function DashboardPage() {
                   <p className="text-2xl font-bold text-slate-900">
                     {isLoading ? '...' : users?.filter(u => u.is_active)?.length || 0}
                   </p>
+                  <p className="text-xs text-slate-500">Listos para asignar</p>
                 </div>
               </div>
             </CardContent>
@@ -109,8 +143,11 @@ export default function DashboardPage() {
                   <Phone className="w-6 h-6 text-amber-600" />
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium text-slate-600">Servicios del Mes</p>
-                  <p className="text-2xl font-bold text-slate-900">0</p>
+                  <p className="text-sm font-medium text-slate-600">Horas Totales/Mes</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {isLoading ? '...' : users?.reduce((sum, u) => sum + (u.monthly_hours || 0), 0) || 0}h
+                  </p>
+                  <p className="text-xs text-slate-500">Para distribuir</p>
                 </div>
               </div>
             </CardContent>
@@ -119,11 +156,18 @@ export default function DashboardPage() {
 
         {/* Users Section */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold text-slate-900">Mis Usuarios</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-slate-900">
+              👥 Gestión de Usuarios - Base de Datos
+            </h2>
+            <p className="text-sm text-slate-600">
+              Administra usuarios para asignar a trabajadoras y generar plannings
+            </p>
+          </div>
           <Link href="/dashboard/users/new">
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              Nuevo Usuario
+              Registrar Nuevo Usuario
             </Button>
           </Link>
         </div>
@@ -161,18 +205,58 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center space-x-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        user.is_active 
-                          ? 'bg-emerald-100 text-emerald-800' 
-                          : 'bg-slate-100 text-slate-800'
-                      }`}>
-                        {user.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
-                      <Link href={`/dashboard/users/${user.id}`}>
-                        <Button variant="secondary" size="sm">
-                          Ver detalles
+                      <div className="flex flex-col text-right text-sm">
+                        <span className="font-medium text-slate-900">
+                          {user.monthly_hours || 0}h/mes
+                        </span>
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.is_active 
+                            ? 'bg-emerald-100 text-emerald-800' 
+                            : 'bg-slate-100 text-slate-800'
+                        }`}>
+                          {user.is_active ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+                      <div className="flex space-x-2">
+                        <Link href={`/dashboard/users/${user.id}/edit`}>
+                          <Button variant="secondary" size="sm">
+                            <Edit className="w-4 h-4 mr-1" />
+                            Editar
+                          </Button>
+                        </Link>
+                        <Link href={`/dashboard/users/${user.id}`}>
+                          <Button variant="secondary" size="sm">
+                            Ver detalles
+                          </Button>
+                        </Link>
+                        <Button 
+                          variant="secondary" 
+                          size="sm"
+                          onClick={async (e) => {
+                            e.preventDefault()
+                            if (confirm(`¿Estás segura de que quieres eliminar a ${user.name} ${user.surname}?`)) {
+                              try {
+                                const { error } = await supabase
+                                  .from('users')
+                                  .delete()
+                                  .eq('id', user.id)
+                                
+                                if (error) throw error
+                                
+                                // Recargar la página para actualizar la lista
+                                window.location.reload()
+                              } catch (error) {
+                                console.error('Error al eliminar usuario:', error)
+                                alert('Error al eliminar el usuario')
+                              }
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Eliminar
                         </Button>
-                      </Link>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
