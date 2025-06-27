@@ -3,18 +3,9 @@
 import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  getMonthName, 
-  getDayName,
-  calculateMonthlyHours,
-  getHolidaysForMonth,
-  formatDateToISO,
-  isHoliday,
-  isWeekend,
-  type Holiday 
-} from '@/lib/calendar'
 import { Calendar, ChevronLeft, ChevronRight, Clock, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
-import type { ServiceCard, ServiceDay } from '@/lib/types'
+import { ServiceCard, ServiceDay } from '@/lib/types'
+import { calculateMonthlyHours, getHolidaysForMonth, formatDateToISO, isWeekend, getMonthName } from '@/lib/calendar'
 
 interface MonthlyCalendarProps {
   serviceCard: ServiceCard & { service_days: ServiceDay[] }
@@ -38,8 +29,8 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       viewingMonth.year,
       viewingMonth.month,
       weeklySchedule,
-      serviceCard.includes_holidays,
-      serviceCard.includes_weekends
+      serviceCard.worker_type === 'holidays',
+      serviceCard.worker_type === 'weekends'
     )
 
     const holidays = getHolidaysForMonth(viewingMonth.year, viewingMonth.month)
@@ -77,11 +68,11 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
         shouldWork = true
         
         // Verificar si se trabaja según configuración
-        if (isWeekendDay && !serviceCard.includes_weekends) {
+        if (isWeekendDay && serviceCard.worker_type !== 'weekends') {
           shouldWork = false
           serviceHours = 0
         }
-        if (isHolidayDay && !serviceCard.includes_holidays) {
+        if (isHolidayDay && serviceCard.worker_type !== 'holidays') {
           shouldWork = false
           serviceHours = 0
         }

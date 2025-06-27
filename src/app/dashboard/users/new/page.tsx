@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useCreateUser } from '@/hooks/useUsers'
 import { ArrowLeft } from 'lucide-react'
@@ -85,39 +84,51 @@ export default function NewUserPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Input
-                  label="Nombre"
-                  name="name"
-                  type="text"
-                  placeholder="Nombre del usuario"
-                  value={userData.name}
-                  onChange={handleUserDataChange}
-                  required
-                  size="lg"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Nombre *
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    placeholder="Nombre del usuario"
+                    value={userData.name}
+                    onChange={handleUserDataChange}
+                    required
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
 
-                <Input
-                  label="Apellidos"
-                  name="surname"
-                  type="text"
-                  placeholder="Apellidos del usuario"
-                  value={userData.surname}
-                  onChange={handleUserDataChange}
-                  required
-                  size="lg"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Apellidos *
+                  </label>
+                  <input
+                    name="surname"
+                    type="text"
+                    placeholder="Apellidos del usuario"
+                    value={userData.surname}
+                    onChange={handleUserDataChange}
+                    required
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
 
-              <Input
-                label="Teléfono"
-                name="phone"
-                type="tel"
-                placeholder="+34 600 000 000"
-                value={userData.phone}
-                onChange={handleUserDataChange}
-                required
-                size="lg"
-              />
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-2">
+                  Teléfono *
+                </label>
+                <input
+                  name="phone"
+                  type="tel"
+                  placeholder="+34 600 000 000"
+                  value={userData.phone}
+                  onChange={handleUserDataChange}
+                  required
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
 
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">

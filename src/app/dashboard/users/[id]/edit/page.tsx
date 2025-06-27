@@ -5,10 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { ArrowLeft, Save, X, FileText } from 'lucide-react'
+import { useUsers } from '@/hooks/useUsers'
 
 interface User {
   id: string
@@ -391,11 +391,12 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Nombre *
                 </label>
-                <Input
+                <input
+                  type="text"
                   value={formData.name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Nombre del usuario"
-                  className={errors.name ? 'border-red-500 focus:border-red-500' : ''}
+                  className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : ''}`}
                   maxLength={50}
                 />
                 {errors.name && (
@@ -407,11 +408,12 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Apellidos *
                 </label>
-                <Input
+                <input
+                  type="text"
                   value={formData.surname}
                   onChange={(e) => handleSurnameChange(e.target.value)}
                   placeholder="Apellidos del usuario"
-                  className={errors.surname ? 'border-red-500 focus:border-red-500' : ''}
+                  className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.surname ? 'border-red-500' : ''}`}
                   maxLength={100}
                 />
                 {errors.surname && (
@@ -423,11 +425,12 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Teléfono *
                 </label>
-                <Input
+                <input
+                  type="tel"
                   value={formData.phone}
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="123 456 789"
-                  className={errors.phone ? 'border-red-500 focus:border-red-500' : ''}
+                  className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : ''}`}
                   maxLength={11} // Para permitir espacios en el formato
                 />
                 {errors.phone && (
@@ -442,11 +445,12 @@ export default function EditUserPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Dirección
                 </label>
-                <Input
+                <input
+                  type="text"
                   value={formData.address}
                   onChange={(e) => handleAddressChange(e.target.value)}
                   placeholder="Dirección completa (ej: Calle Mayor 123, 1º A, Madrid)"
-                  className={errors.address ? 'border-red-500 focus:border-red-500' : ''}
+                  className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.address ? 'border-red-500' : ''}`}
                   maxLength={200}
                 />
                 {errors.address && (
@@ -472,7 +476,7 @@ export default function EditUserPage() {
                 
                 {/* Input prominente */}
                 <div className="relative mb-4">
-                  <Input
+                  <input
                     type="number"
                     min="0.5"
                     max="200"
@@ -480,10 +484,10 @@ export default function EditUserPage() {
                     value={formData.monthly_hours}
                     onChange={(e) => handleMonthlyHoursChange(e.target.value)}
                     placeholder="0.5"
-                    className={`text-center text-3xl font-bold py-4 pr-12 ${
+                    className={`w-full text-center text-3xl font-bold py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                       errors.monthly_hours 
-                        ? 'border-red-500 focus:border-red-500 bg-red-50' 
-                        : 'border-blue-300 focus:border-blue-500 bg-white'
+                        ? 'border-red-500 bg-red-50' 
+                        : 'border-blue-300 bg-white'
                     }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 text-2xl font-bold">

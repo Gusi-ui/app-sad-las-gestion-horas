@@ -3,24 +3,23 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useToast } from '@/components/ui/toast'
 import { 
   ArrowLeft, 
   Plus, 
-  Users, 
+  Edit, 
+  Trash2, 
   Clock, 
-  CheckCircle,
-  Pause,
-  XCircle,
+  Calendar, 
+  Users, 
   AlertTriangle,
-  Edit,
-  Trash2,
-  Eye,
-  Calendar,
-  User,
-  Phone
+  CheckCircle,
+  XCircle,
+  Pause,
+  Phone,
+  Eye
 } from 'lucide-react'
 import { Assignment, AssignmentStatus } from '@/lib/types'
 
@@ -38,20 +37,7 @@ const statusColors: Record<AssignmentStatus, string> = {
   cancelled: 'bg-red-100 text-red-800'
 }
 
-const statusIcons: Record<AssignmentStatus, any> = {
-  active: CheckCircle,
-  paused: Pause,
-  completed: CheckCircle,
-  cancelled: XCircle
-}
-
-const priorityLabels = {
-  1: 'Alta',
-  2: 'Media',
-  3: 'Baja'
-}
-
-const priorityColors = {
+const priorityColors: Record<number, string> = {
   1: 'bg-red-100 text-red-800',
   2: 'bg-yellow-100 text-yellow-800',
   3: 'bg-green-100 text-green-800'
@@ -61,14 +47,12 @@ export default function AssignmentsPage() {
   const { assignments, isLoading, error, deleteAssignment, getAssignmentStats } = useAssignments()
   const { showToast, ToastComponent } = useToast()
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [filter, setFilter] = useState<AssignmentStatus | 'all'>('all')
+  const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'completed'>('all')
 
   const stats = getAssignmentStats()
 
   const handleDelete = async (assignment: Assignment) => {
-    if (!assignment.worker || !assignment.user) return
-    
-    if (!confirm(`¿Estás segura de que quieres eliminar la asignación de ${assignment.worker.name} ${assignment.worker.surname} para ${assignment.user.name} ${assignment.user.surname}?`)) {
+    if (!confirm(`¿Estás segura de que quieres eliminar la asignación de ${assignment.worker?.name} ${assignment.worker?.surname} para ${assignment.user?.name} ${assignment.user?.surname}?`)) {
       return
     }
 
@@ -80,35 +64,80 @@ export default function AssignmentsPage() {
       } else {
         showToast('Asignación eliminada correctamente', 'success')
       }
-    } catch (err) {
+    } catch {
       showToast('Error inesperado al eliminar', 'error')
     } finally {
       setDeletingId(null)
     }
   }
 
-  const filteredAssignments = filter === 'all' 
-    ? assignments 
-    : assignments.filter(a => a.status === filter)
+  const filteredAssignments = assignments.filter(assignment => {
+    if (filter === 'all') return true
+    return assignment.status === filter
+  })
 
-  const formatSchedule = (schedule?: Record<string, string[]>) => {
-    if (!schedule) return 'Sin horario específico'
-    
-    const dayLabels: Record<string, string> = {
-      monday: 'L',
-      tuesday: 'M',
-      wednesday: 'X',
-      thursday: 'J',
-      friday: 'V',
-      saturday: 'S',
-      sunday: 'D'
+  const getStatusIcon = (status: AssignmentStatus) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle className="w-4 h-4 text-green-600" />
+      case 'paused':
+        return <Pause className="w-4 h-4 text-amber-600" />
+      case 'completed':
+        return <CheckCircle className="w-4 h-4 text-blue-600" />
+      case 'cancelled':
+        return <XCircle className="w-4 h-4 text-red-600" />
+      default:
+        return null
     }
+  }
+
+  const getStatusText = (status: AssignmentStatus) => {
+    switch (status) {
+      case 'active':
+        return 'Activa'
+      case 'paused':
+        return 'Pausada'
+      case 'completed':
+        return 'Completada'
+      case 'cancelled':
+        return 'Cancelada'
+      default:
+        return 'Desconocido'
+    }
+  }
+
+  const getPriorityText = (priority: number) => {
+    switch (priority) {
+      case 1:
+        return 'Alta'
+      case 2:
+        return 'Media'
+      case 3:
+        return 'Baja'
+      default:
+        return 'No especificada'
+    }
+  }
+
+  const formatSchedule = (schedule: Record<string, string[]> | undefined) => {
+    if (!schedule) return 'No configurado'
     
-    const activeDays = Object.entries(schedule)
-      .filter(([_, times]) => times && times.length >= 2)
-      .map(([day, times]) => `${dayLabels[day]} ${times[0]}-${times[1]}`)
+    const days = Object.entries(schedule)
+      .filter(([, times]) => times && times.length >= 2)
+      .map(([day, times]) => {
+        const dayNames: Record<string, string> = {
+          monday: 'Lun',
+          tuesday: 'Mar',
+          wednesday: 'Mié',
+          thursday: 'Jue',
+          friday: 'Vie',
+          saturday: 'Sáb',
+          sunday: 'Dom'
+        }
+        return `${dayNames[day]}: ${times[0]}-${times[1]}`
+      })
     
-    return activeDays.length > 0 ? activeDays.join(', ') : 'Sin horario específico'
+    return days.length > 0 ? days.join(', ') : 'No configurado'
   }
 
   if (isLoading) {
@@ -147,7 +176,13 @@ export default function AssignmentsPage() {
             <Link href="/dashboard">
               <Button variant="secondary" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
+                Dashboard
+              </Button>
+            </Link>
+            <Link href="/dashboard/planning">
+              <Button variant="secondary" size="sm">
+                <Calendar className="w-4 h-4 mr-2" />
+                Planning
               </Button>
             </Link>
             <div>
@@ -311,7 +346,7 @@ export default function AssignmentsPage() {
         ) : (
           <div className="grid gap-6">
             {filteredAssignments.map((assignment) => {
-              const StatusIcon = statusIcons[assignment.status]
+              const statusIcon = getStatusIcon(assignment.status)
               
               return (
                 <Card key={assignment.id} className="hover:shadow-md transition-shadow">
@@ -329,11 +364,11 @@ export default function AssignmentsPage() {
                               {assignment.worker?.name} {assignment.worker?.surname} → {assignment.user?.name} {assignment.user?.surname}
                             </h3>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[assignment.status]}`}>
-                              <StatusIcon className="w-3 h-3 mr-1" />
-                              {statusLabels[assignment.status]}
+                              {statusIcon}
+                              {getStatusText(assignment.status)}
                             </span>
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[assignment.priority]}`}>
-                              Prioridad {priorityLabels[assignment.priority]}
+                              Prioridad {getPriorityText(assignment.priority)}
                             </span>
                           </div>
 

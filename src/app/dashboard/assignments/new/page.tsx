@@ -5,13 +5,12 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X, AlertTriangle, Clock, Calendar, User, Users } from 'lucide-react'
-import { WeekDay, AssignmentPriority } from '@/lib/types'
+import { WeekDay, AssignmentPriority, AssignmentStatus, Assignment } from '@/lib/types'
 
 const weekDayOptions: { value: WeekDay; label: string }[] = [
   { value: 'monday', label: 'Lunes' },
@@ -26,34 +25,58 @@ const weekDayOptions: { value: WeekDay; label: string }[] = [
 export default function NewAssignmentPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const preselectedWorker = searchParams.get('worker')
-  const preselectedUser = searchParams.get('user')
   
-  const { createAssignment } = useAssignments()
+  const { createAssignment, checkDuplicateAssignment, suggestNewStartDate } = useAssignments()
   const { workers, getAvailableWorkers } = useWorkers()
   const { data: users } = useUsers()
   const { showToast, ToastComponent } = useToast()
 
   const [formData, setFormData] = useState({
-    worker_id: preselectedWorker || '',
-    user_id: preselectedUser || '',
-    assigned_hours_per_week: 0,
-    start_date: new Date().toISOString().split('T')[0],
+    worker_id: '',
+    user_id: '',
+    assigned_hours_per_week: 4,
+    start_date: '',
     end_date: '',
-    priority: 1 as AssignmentPriority,
-    status: 'active' as const,
+    priority: 2 as AssignmentPriority,
+    status: 'active' as AssignmentStatus,
     notes: '',
-    specific_schedule: {} as Record<WeekDay, string[]>
+    specific_schedule: {
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: []
+    } as Record<WeekDay, string[]>
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [conflicts, setConflicts] = useState<any[]>([])
+  const [conflicts, setConflicts] = useState<Assignment[]>([])
 
   const availableWorkers = getAvailableWorkers()
   const activeUsers = users?.filter(u => u.is_active) || []
 
-  const handleInputChange = (field: string, value: any) => {
+  // Parse URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const workerId = urlParams.get('worker_id')
+    const userId = urlParams.get('user_id')
+    const assignedHours = urlParams.get('assigned_hours_per_week')
+    const priority = urlParams.get('priority')
+    const notes = urlParams.get('notes')
+    const startDate = urlParams.get('start_date')
+
+    if (workerId) setFormData(prev => ({ ...prev, worker_id: workerId }))
+    if (userId) setFormData(prev => ({ ...prev, user_id: userId }))
+    if (assignedHours) setFormData(prev => ({ ...prev, assigned_hours_per_week: parseInt(assignedHours) }))
+    if (priority) setFormData(prev => ({ ...prev, priority: parseInt(priority) as AssignmentPriority }))
+    if (notes) setFormData(prev => ({ ...prev, notes: notes }))
+    if (startDate) setFormData(prev => ({ ...prev, start_date: startDate }))
+  }, [])
+
+  const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // Clear error when user starts typing
@@ -87,24 +110,23 @@ export default function NewAssignmentPage() {
   }
 
   const calculateTotalHours = () => {
-    let totalHours = 0
-    Object.entries(formData.specific_schedule).forEach(([day, times]) => {
+    return Object.values(formData.specific_schedule).reduce((total, times) => {
       if (times && times.length >= 2 && times[0] && times[1]) {
         const start = new Date(`2000-01-01T${times[0]}:00`)
         const end = new Date(`2000-01-01T${times[1]}:00`)
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-        if (hours > 0) totalHours += hours
+        const diffHours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+        return total + diffHours
       }
-    })
-    return totalHours
+      return total
+    }, 0)
   }
 
   useEffect(() => {
-    const calculatedHours = calculateTotalHours()
-    if (calculatedHours !== formData.assigned_hours_per_week) {
-      setFormData(prev => ({ ...prev, assigned_hours_per_week: calculatedHours }))
+    const totalHours = calculateTotalHours()
+    if (totalHours > 0 && totalHours !== formData.assigned_hours_per_week) {
+      setFormData(prev => ({ ...prev, assigned_hours_per_week: totalHours }))
     }
-  }, [formData.specific_schedule])
+  }, [formData.specific_schedule, formData.assigned_hours_per_week])
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
@@ -156,7 +178,24 @@ export default function NewAssignmentPage() {
 
     setIsSubmitting(true)
     try {
-      const { data, error, conflicts: detectedConflicts } = await createAssignment({
+      // Check for duplicate assignment first
+      const duplicate = await checkDuplicateAssignment({
+        worker_id: formData.worker_id,
+        user_id: formData.user_id,
+        start_date: formData.start_date
+      })
+
+      if (duplicate) {
+        const suggestedDate = suggestNewStartDate(formData.start_date)
+        showToast(
+          `Ya existe una asignación para esta trabajadora, usuario y fecha de inicio. Sugerencia: Cambia la fecha de inicio a ${suggestedDate}`,
+          'warning'
+        )
+        setIsSubmitting(false)
+        return
+      }
+
+      const { error, conflicts } = await createAssignment({
         worker_id: formData.worker_id,
         user_id: formData.user_id,
         assigned_hours_per_week: formData.assigned_hours_per_week,
@@ -168,21 +207,27 @@ export default function NewAssignmentPage() {
         specific_schedule: formData.specific_schedule
       })
 
-      if (detectedConflicts && detectedConflicts.length > 0) {
-        setConflicts(detectedConflicts)
-        showToast('Se detectaron conflictos de horario. Revisa las asignaciones existentes.', 'warning')
+      if (conflicts && conflicts.length > 0) {
+        setConflicts(conflicts)
+        const conflictDetails = conflicts.map(conflict => {
+          const user = activeUsers.find(u => u.id === conflict.user_id)
+          return `• ${user?.name} ${user?.surname} (${formatSchedule(conflict.specific_schedule)})`
+        }).join('\n')
+        
+        showToast(
+          `Se detectaron ${conflicts.length} conflicto(s) de horario:\n${conflictDetails}`, 
+          'warning'
+        )
         return
       }
 
       if (error) {
         showToast(`Error al crear asignación: ${error}`, 'error')
       } else {
-        const worker = workers.find(w => w.id === formData.worker_id)
-        const user = activeUsers.find(u => u.id === formData.user_id)
-        showToast(`Asignación creada: ${worker?.name} → ${user?.name}`, 'success')
-        router.push('/dashboard/assignments')
+        showToast('Asignación creada correctamente', 'success')
+        router.push('/dashboard/planning')
       }
-    } catch (err) {
+    } catch {
       showToast('Error inesperado al crear asignación', 'error')
     } finally {
       setIsSubmitting(false)
@@ -227,7 +272,12 @@ export default function NewAssignmentPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <label htmlFor="worker_id" className="block text-sm font-medium text-slate-700 mb-2">
+                  Trabajadora *
+                </label>
                 <select
+                  id="worker_id"
+                  name="worker_id"
                   value={formData.worker_id}
                   onChange={(e) => handleInputChange('worker_id', e.target.value)}
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -273,7 +323,12 @@ export default function NewAssignmentPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                <label htmlFor="user_id" className="block text-sm font-medium text-slate-700 mb-2">
+                  Usuario *
+                </label>
                 <select
+                  id="user_id"
+                  name="user_id"
                   value={formData.user_id}
                   onChange={(e) => handleInputChange('user_id', e.target.value)}
                   className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
@@ -318,17 +373,21 @@ export default function NewAssignmentPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="assigned_hours_per_week" className="block text-sm font-medium text-slate-700 mb-2">
                     Horas por Semana *
                   </label>
-                  <Input
+                  <input
+                    id="assigned_hours_per_week"
+                    name="assigned_hours_per_week"
                     type="number"
                     step="0.5"
                     min="0.5"
                     max="40"
-                    value={formData.assigned_hours_per_week}
+                    value={formData.assigned_hours_per_week || 0}
                     onChange={(e) => handleInputChange('assigned_hours_per_week', parseFloat(e.target.value) || 0)}
-                    className={errors.assigned_hours_per_week ? 'border-red-500' : ''}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.assigned_hours_per_week ? 'border-red-500' : 'border-slate-300'
+                    }`}
                     readOnly
                   />
                   <p className="text-xs text-slate-500 mt-1">Se calcula automáticamente según el horario</p>
@@ -338,14 +397,18 @@ export default function NewAssignmentPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="start_date" className="block text-sm font-medium text-slate-700 mb-2">
                     Fecha de Inicio *
                   </label>
-                  <Input
+                  <input
+                    id="start_date"
+                    name="start_date"
                     type="date"
-                    value={formData.start_date}
+                    value={formData.start_date || ''}
                     onChange={(e) => handleInputChange('start_date', e.target.value)}
-                    className={errors.start_date ? 'border-red-500' : ''}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.start_date ? 'border-red-500' : 'border-slate-300'
+                    }`}
                   />
                   {errors.start_date && (
                     <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
@@ -353,14 +416,18 @@ export default function NewAssignmentPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label htmlFor="end_date" className="block text-sm font-medium text-slate-700 mb-2">
                     Fecha de Fin (opcional)
                   </label>
-                  <Input
+                  <input
+                    id="end_date"
+                    name="end_date"
                     type="date"
-                    value={formData.end_date}
+                    value={formData.end_date || ''}
                     onChange={(e) => handleInputChange('end_date', e.target.value)}
-                    className={errors.end_date ? 'border-red-500' : ''}
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      errors.end_date ? 'border-red-500' : 'border-slate-300'
+                    }`}
                   />
                   {errors.end_date && (
                     <p className="text-red-500 text-xs mt-1">{errors.end_date}</p>
@@ -369,10 +436,12 @@ export default function NewAssignmentPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label htmlFor="priority" className="block text-sm font-medium text-slate-700 mb-2">
                   Prioridad
                 </label>
                 <select
+                  id="priority"
+                  name="priority"
                   value={formData.priority}
                   onChange={(e) => handleInputChange('priority', parseInt(e.target.value) as AssignmentPriority)}
                   className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -413,18 +482,18 @@ export default function NewAssignmentPage() {
                       
                       {isActive && (
                         <div className="flex items-center space-x-2">
-                          <Input
+                          <input
                             type="time"
                             value={times[0] || ''}
                             onChange={(e) => handleScheduleChange(day.value, 0, e.target.value)}
-                            className="w-32"
+                            className="w-32 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                           <span>a</span>
-                          <Input
+                          <input
                             type="time"
                             value={times[1] || ''}
                             onChange={(e) => handleScheduleChange(day.value, 1, e.target.value)}
-                            className="w-32"
+                            className="w-32 px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                           />
                           {times[0] && times[1] && (
                             <span className="text-sm text-slate-600 ml-2">
@@ -482,7 +551,7 @@ export default function NewAssignmentPage() {
             </CardHeader>
             <CardContent>
               <textarea
-                value={formData.notes}
+                value={formData.notes || ''}
                 onChange={(e) => handleInputChange('notes', e.target.value)}
                 placeholder="Instrucciones especiales, preferencias del usuario, observaciones importantes..."
                 className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

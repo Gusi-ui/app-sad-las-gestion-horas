@@ -7,8 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
-import DragDropPlanningCalendar from '@/components/DragDropPlanningCalendar'
-import DragDropInstructions from '@/components/DragDropInstructions'
+import PlanningCalendar from '@/components/PlanningCalendar'
 import { 
   ArrowLeft, 
   Plus, 
@@ -21,7 +20,8 @@ import {
   RefreshCw,
   BarChart3,
   TrendingUp,
-  CheckCircle
+  CheckCircle,
+  Menu
 } from 'lucide-react'
 
 export default function PlanningDashboardPage() {
@@ -33,6 +33,7 @@ export default function PlanningDashboardPage() {
   const [filterWorker, setFilterWorker] = useState<string>('')
   const [filterStatus, setFilterStatus] = useState<string>('active')
   const [showFilters, setShowFilters] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const stats = getAssignmentStats()
   const activeWorkers = workers.filter(w => w.is_active)
@@ -57,16 +58,70 @@ export default function PlanningDashboardPage() {
       if (!acc[assignment.worker_id]) acc[assignment.worker_id] = []
       acc[assignment.worker_id].push(assignment)
       return acc
-    }, {} as Record<string, any[]>)
+    }, {} as Record<string, typeof assignments>)
     
-    // Check for time conflicts within each worker
-    Object.entries(workerAssignments).forEach(([workerId, assignments]) => {
-      if (assignments.length > 1) {
-        conflicts.push(`Trabajadora con ${assignments.length} asignaciones activas`)
+    // Check for actual schedule conflicts within each worker
+    Object.entries(workerAssignments).forEach(([workerId, workerAssignments]) => {
+      if (workerAssignments.length > 1) {
+        // Check for schedule overlaps between assignments
+        for (let i = 0; i < workerAssignments.length; i++) {
+          for (let j = i + 1; j < workerAssignments.length; j++) {
+            const assignment1 = workerAssignments[i]
+            const assignment2 = workerAssignments[j]
+            
+            // Only check for conflicts if both assignments have specific schedules
+            if (assignment1.specific_schedule && assignment2.specific_schedule) {
+              const hasConflict = checkScheduleOverlap(
+                assignment1.specific_schedule,
+                assignment2.specific_schedule
+              )
+              
+              if (hasConflict) {
+                const worker = activeWorkers.find(w => w.id === workerId)
+                const user1 = activeUsers.find(u => u.id === assignment1.user_id)
+                const user2 = activeUsers.find(u => u.id === assignment2.user_id)
+                
+                conflicts.push(
+                  `${worker?.name} ${worker?.surname}: Conflicto entre ${user1?.name} y ${user2?.name}`
+                )
+              }
+            }
+          }
+        }
       }
     })
     
     return conflicts
+  }
+
+  // Helper function to check schedule overlap
+  const checkScheduleOverlap = (schedule1: any, schedule2: any): boolean => {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    
+    for (const day of days) {
+      if (schedule1[day] && schedule2[day]) {
+        const times1 = schedule1[day] as string[]
+        const times2 = schedule2[day] as string[]
+        
+        // Only check for overlap if both schedules have valid times for this day
+        if (times1.length >= 2 && times2.length >= 2 && 
+            times1[0] && times1[1] && times2[0] && times2[1] &&
+            times1[0] !== '' && times1[1] !== '' && times2[0] !== '' && times2[1] !== '') {
+          
+          const start1 = times1[0]
+          const end1 = times1[1]
+          const start2 = times2[0]
+          const end2 = times2[1]
+          
+          // Check for time overlap
+          if (start1 < end2 && start2 < end1) {
+            return true
+          }
+        }
+      }
+    }
+    
+    return false
   }
 
   const conflicts = detectConflicts()
@@ -102,43 +157,44 @@ export default function PlanningDashboardPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="flex items-center space-x-4 mb-4 sm:mb-0">
             <Link href="/dashboard">
               <Button variant="secondary" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Volver
               </Button>
             </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                🖱️ Dashboard de Planning Interactivo
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
+                🖱️ Dashboard de Planning
               </h1>
-              <p className="text-slate-600">
-                Planning semanal con drag & drop - Arrastra asignaciones para reorganizar horarios
+              <p className="text-sm text-slate-600 truncate">
+                Planning semanal con gestión de asignaciones
               </p>
-              <div className="flex items-center space-x-4 mt-2">
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+              <div className="flex items-center space-x-2 mt-2 overflow-x-auto">
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                   🎯 Control Central
                 </span>
-                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
-                  🖱️ Drag & Drop
+                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
+                  📅 Vista Semanal
                 </span>
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                   💾 Guardado Automático
                 </span>
                 {conflicts.length > 0 && (
-                  <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
+                  <span className="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                     ⚠️ {conflicts.length} Conflictos
                   </span>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-3">
-            <DragDropInstructions />
+          
+          {/* Desktop Actions */}
+          <div className="hidden sm:flex items-center space-x-2">
             <Button variant="secondary" size="sm" onClick={() => setShowFilters(!showFilters)}>
               <Filter className="w-4 h-4 mr-2" />
               Filtros
@@ -154,7 +210,40 @@ export default function PlanningDashboardPage() {
               </Button>
             </Link>
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="sm:hidden">
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              <Menu className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
+
+        {/* Mobile Actions Menu */}
+        {showMobileMenu && (
+          <div className="sm:hidden mb-6">
+            <div className="flex flex-col space-y-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowFilters(!showFilters)} className="w-full justify-start">
+                <Filter className="w-4 h-4 mr-2" />
+                Filtros
+              </Button>
+              <Button variant="secondary" size="sm" onClick={generateReport} className="w-full justify-start">
+                <Download className="w-4 h-4 mr-2" />
+                Reporte
+              </Button>
+              <Link href="/dashboard/assignments/new">
+                <Button className="w-full justify-start">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nueva Asignación
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Filters Panel */}
         {showFilters && (
@@ -166,7 +255,7 @@ export default function PlanningDashboardPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Trabajadora
@@ -214,16 +303,16 @@ export default function PlanningDashboardPage() {
         )}
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Users className="w-6 h-6 text-blue-600" />
+                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Trabajadoras</p>
-                  <p className="text-2xl font-bold text-slate-900">{weeklyStats.totalWorkers}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{weeklyStats.totalWorkers}</p>
                   <p className="text-xs text-slate-500">Activas</p>
                 </div>
               </div>
@@ -231,14 +320,14 @@ export default function PlanningDashboardPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                  <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Asignaciones</p>
-                  <p className="text-2xl font-bold text-slate-900">{weeklyStats.activeAssignments}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{weeklyStats.activeAssignments}</p>
                   <p className="text-xs text-slate-500">Activas</p>
                 </div>
               </div>
@@ -246,14 +335,14 @@ export default function PlanningDashboardPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Clock className="w-6 h-6 text-purple-600" />
+                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Horas/Semana</p>
-                  <p className="text-2xl font-bold text-slate-900">{weeklyStats.totalWeeklyHours}</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{weeklyStats.totalWeeklyHours}</p>
                   <p className="text-xs text-slate-500">Total asignadas</p>
                 </div>
               </div>
@@ -261,14 +350,14 @@ export default function PlanningDashboardPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-amber-100 rounded-lg">
-                  <BarChart3 className="w-6 h-6 text-amber-600" />
+                <div className="p-2 bg-amber-100 rounded-lg flex-shrink-0">
+                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-amber-600" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Promedio</p>
-                  <p className="text-2xl font-bold text-slate-900">{weeklyStats.averageHoursPerWorker}h</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{weeklyStats.averageHoursPerWorker}h</p>
                   <p className="text-xs text-slate-500">Por trabajadora</p>
                 </div>
               </div>
@@ -276,14 +365,14 @@ export default function PlanningDashboardPage() {
           </Card>
 
           <Card>
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-center">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <TrendingUp className="w-6 h-6 text-emerald-600" />
+                <div className="p-2 bg-emerald-100 rounded-lg flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-600" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-3 sm:ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Utilización</p>
-                  <p className="text-2xl font-bold text-slate-900">{weeklyStats.utilizationRate}%</p>
+                  <p className="text-xl sm:text-2xl font-bold text-slate-900">{weeklyStats.utilizationRate}%</p>
                   <p className="text-xs text-slate-500">Capacidad usada</p>
                 </div>
               </div>
@@ -291,20 +380,15 @@ export default function PlanningDashboardPage() {
           </Card>
         </div>
 
-        {/* Drag & Drop Instructions */}
-        <div className="mb-6">
-          <DragDropInstructions />
-        </div>
-
         {/* Conflicts Alert */}
         {conflicts.length > 0 && (
           <Card className="mb-6 border-red-200 bg-red-50">
-            <CardContent className="p-6">
+            <CardContent className="p-4 sm:p-6">
               <div className="flex items-start space-x-3">
-                <AlertTriangle className="w-6 h-6 text-red-500 mt-1" />
-                <div>
-                  <h3 className="text-lg font-semibold text-red-900">Conflictos Detectados</h3>
-                  <p className="text-red-700 mb-3">
+                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 mt-1 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base sm:text-lg font-semibold text-red-900">Conflictos Detectados</h3>
+                  <p className="text-red-700 mb-3 text-sm">
                     Se han detectado {conflicts.length} posibles conflictos en el planning:
                   </p>
                   <ul className="space-y-1">
@@ -328,7 +412,7 @@ export default function PlanningDashboardPage() {
         )}
 
         {/* Planning Calendar */}
-        <DragDropPlanningCalendar
+        <PlanningCalendar
           selectedDate={selectedDate}
           onDateChange={setSelectedDate}
           filterWorker={filterWorker}
@@ -336,7 +420,7 @@ export default function PlanningDashboardPage() {
         />
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
@@ -400,11 +484,11 @@ export default function PlanningDashboardPage() {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-slate-600">Fecha seleccionada:</span>
-                  <span className="font-medium">
+                  <span className="font-medium text-right">
                     {selectedDate.toLocaleDateString('es-ES', { 
-                      weekday: 'long', 
+                      weekday: 'short', 
                       year: 'numeric', 
-                      month: 'long', 
+                      month: 'short', 
                       day: 'numeric' 
                     })}
                   </span>

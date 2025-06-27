@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X, AlertTriangle } from 'lucide-react'
@@ -345,11 +344,12 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombre *
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="María"
-                    className={errors.name ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : ''}`}
                   />
                   {errors.name && (
                     <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -359,11 +359,12 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Apellidos *
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     value={formData.surname}
                     onChange={(e) => handleInputChange('surname', e.target.value)}
                     placeholder="García López"
-                    className={errors.surname ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.surname ? 'border-red-500' : ''}`}
                   />
                   {errors.surname && (
                     <p className="text-red-500 text-xs mt-1">{errors.surname}</p>
@@ -376,11 +377,12 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Teléfono *
                   </label>
-                  <Input
+                  <input
+                    type="tel"
                     value={formData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="654 321 987"
-                    className={errors.phone ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : ''}`}
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
@@ -390,12 +392,12 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Email
                   </label>
-                  <Input
+                  <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="maria.garcia@email.com"
-                    className={errors.email ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.email ? 'border-red-500' : ''}`}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -407,10 +409,12 @@ export default function EditWorkerPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Dirección
                 </label>
-                <Input
+                <input
+                  type="text"
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="Calle Principal 123, 28001 Madrid"
+                  className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -419,11 +423,12 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     DNI
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     value={formData.dni}
                     onChange={(e) => handleInputChange('dni', e.target.value.toUpperCase())}
                     placeholder="12345678A"
-                    className={errors.dni ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.dni ? 'border-red-500' : ''}`}
                   />
                   {errors.dni && (
                     <p className="text-red-500 text-xs mt-1">{errors.dni}</p>
@@ -433,10 +438,11 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Fecha de Contratación *
                   </label>
-                  <Input
+                  <input
                     type="date"
                     value={formData.hire_date}
                     onChange={(e) => handleInputChange('hire_date', e.target.value)}
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>
@@ -454,14 +460,14 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Tarifa por Hora (€) *
                   </label>
-                  <Input
+                  <input
                     type="number"
                     step="0.25"
                     min="10"
                     max="50"
                     value={formData.hourly_rate}
                     onChange={(e) => handleInputChange('hourly_rate', parseFloat(e.target.value) || 0)}
-                    className={errors.hourly_rate ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.hourly_rate ? 'border-red-500' : ''}`}
                   />
                   {errors.hourly_rate && (
                     <p className="text-red-500 text-xs mt-1">{errors.hourly_rate}</p>
@@ -471,13 +477,13 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Máximo Horas/Semana *
                   </label>
-                  <Input
+                  <input
                     type="number"
                     min="1"
                     max="40"
                     value={formData.max_weekly_hours}
                     onChange={(e) => handleInputChange('max_weekly_hours', parseInt(e.target.value) || 0)}
-                    className={errors.max_weekly_hours ? 'border-red-500' : ''}
+                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.max_weekly_hours ? 'border-red-500' : ''}`}
                   />
                   {errors.max_weekly_hours && (
                     <p className="text-red-500 text-xs mt-1">{errors.max_weekly_hours}</p>
@@ -558,20 +564,24 @@ export default function EditWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombre Contacto de Emergencia
                   </label>
-                  <Input
+                  <input
+                    type="text"
                     value={formData.emergency_contact_name}
                     onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
                     placeholder="Juan García"
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Teléfono de Emergencia
                   </label>
-                  <Input
+                  <input
+                    type="tel"
                     value={formData.emergency_contact_phone}
                     onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
                     placeholder="612 345 678"
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
               </div>

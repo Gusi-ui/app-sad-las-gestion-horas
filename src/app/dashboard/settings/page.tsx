@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { User as SupabaseUser } from '@supabase/supabase-js'
@@ -142,7 +141,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Nombre de la Empresa
                 </label>
-                <Input
+                <input
                   value={settings.company_name}
                   onChange={(e) => setSettings({...settings, company_name: e.target.value})}
                   placeholder="Ej: Servicios de Atención Domiciliaria Las Flores"
@@ -152,7 +151,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Dirección
                 </label>
-                <Input
+                <input
                   value={settings.company_address}
                   onChange={(e) => setSettings({...settings, company_address: e.target.value})}
                   placeholder="Dirección completa de la empresa"
@@ -162,7 +161,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Teléfono
                 </label>
-                <Input
+                <input
                   value={settings.company_phone}
                   onChange={(e) => setSettings({...settings, company_phone: e.target.value})}
                   placeholder="123 456 789"
@@ -172,7 +171,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Email de Contacto
                 </label>
-                <Input
+                <input
                   type="email"
                   value={settings.company_email}
                   onChange={(e) => setSettings({...settings, company_email: e.target.value})}
@@ -196,7 +195,7 @@ export default function SettingsPage() {
                   Tarifa por Hora (€)
                 </label>
                 <div className="relative">
-                  <Input
+                  <input
                     type="number"
                     min="5"
                     max="50"
@@ -214,7 +213,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Máximo Horas Mensuales
                 </label>
-                <Input
+                <input
                   type="number"
                   min="50"
                   max="300"
@@ -226,7 +225,7 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-1">
                   Mínimo Horas Mensuales
                 </label>
-                <Input
+                <input
                   type="number"
                   min="0.5"
                   max="10"

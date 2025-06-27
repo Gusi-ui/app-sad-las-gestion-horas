@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Clock, Plus } from 'lucide-react'
 
 const DAYS_OF_WEEK = [
@@ -212,7 +211,7 @@ export function WeeklyScheduleForm({
             <label className="text-sm font-medium text-slate-700">
               Horas totales del mes (se calcula automáticamente)
             </label>
-            <Input
+            <input
               type="number"
               min="0"
               value={totalHours}

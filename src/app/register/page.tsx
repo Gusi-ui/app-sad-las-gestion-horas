@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 
@@ -81,50 +80,62 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Nombre completo"
-              name="fullName"
-              type="text"
-              placeholder="Tu nombre completo"
-              value={formData.fullName}
-              onChange={handleChange}
-              required
-              size="lg"
-            />
+            <div>
+              <label htmlFor="fullName" className="block text-sm font-medium text-slate-700 mb-1">Nombre completo</label>
+              <input
+                id="fullName"
+                name="fullName"
+                type="text"
+                placeholder="Tu nombre completo"
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+            </div>
 
-            <Input
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="tu@email.com"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              size="lg"
-            />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+            </div>
             
-            <Input
-              label="Contraseña"
-              name="password"
-              type="password"
-              placeholder="Mínimo 6 caracteres"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              size="lg"
-              helpText="Debe tener al menos 6 caracteres"
-            />
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+              <p className="text-sm text-slate-500 mt-1">Debe tener al menos 6 caracteres</p>
+            </div>
 
-            <Input
-              label="Confirmar contraseña"
-              name="confirmPassword"
-              type="password"
-              placeholder="Repite tu contraseña"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-              size="lg"
-            />
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 mb-1">Confirmar contraseña</label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Repite tu contraseña"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+            </div>
 
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
@@ -145,7 +156,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-slate-600">
               ¿Ya tienes cuenta?{' '}
-                             <Link href="/login" className="text-sky-600 hover:text-sky-700 font-medium">
+              <Link href="/login" className="text-sky-600 hover:text-sky-700 font-medium">
                 Inicia sesión aquí
               </Link>
             </p>

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 
@@ -47,32 +46,35 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="tu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              size="lg"
-            />
-            
-            <Input
-              label="Contraseña"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              size="lg"
-            />
-
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <input
+                id="email"
+                type="email"
+                placeholder="tu@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+              />
+            </div>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
-
             <Button
               type="submit"
               className="w-full"
@@ -82,16 +84,14 @@ export default function LoginPage() {
               {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
           </form>
-
           <div className="mt-6 text-center">
             <p className="text-slate-600">
               ¿No tienes cuenta?{' '}
-                             <Link href="/register" className="text-sky-600 hover:text-sky-700 font-medium">
+              <Link href="/register" className="text-sky-600 hover:text-sky-700 font-medium">
                 Regístrate aquí
               </Link>
             </p>
           </div>
-
           <div className="mt-4 text-center">
             <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
               ← Volver al inicio

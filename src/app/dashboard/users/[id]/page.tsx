@@ -261,7 +261,7 @@ export default function UserDetailPage() {
       
       try {
         // Intentar primero con todos los campos
-        let insertData: any = {
+        const insertData: any = {
           user_id: userId,
           month: currentMonth,
           year: currentYear,

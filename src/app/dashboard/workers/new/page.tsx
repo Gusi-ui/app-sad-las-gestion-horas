@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X, Plus } from 'lucide-react'
@@ -242,7 +241,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombre *
                   </label>
-                  <Input
+                  <input
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="María"
@@ -256,7 +255,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Apellidos *
                   </label>
-                  <Input
+                  <input
                     value={formData.surname}
                     onChange={(e) => handleInputChange('surname', e.target.value)}
                     placeholder="García López"
@@ -273,7 +272,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Teléfono *
                   </label>
-                  <Input
+                  <input
                     value={formData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="654 321 987"
@@ -287,7 +286,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Email
                   </label>
-                  <Input
+                  <input
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
@@ -304,7 +303,7 @@ export default function NewWorkerPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Dirección
                 </label>
-                <Input
+                <input
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="Calle Principal 123, 28001 Madrid"
@@ -316,7 +315,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     DNI
                   </label>
-                  <Input
+                  <input
                     value={formData.dni}
                     onChange={(e) => handleInputChange('dni', e.target.value.toUpperCase())}
                     placeholder="12345678A"
@@ -330,7 +329,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Fecha de Contratación *
                   </label>
-                  <Input
+                  <input
                     type="date"
                     value={formData.hire_date}
                     onChange={(e) => handleInputChange('hire_date', e.target.value)}
@@ -351,7 +350,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Tarifa por Hora (€) *
                   </label>
-                  <Input
+                  <input
                     type="number"
                     step="0.25"
                     min="10"
@@ -368,7 +367,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Máximo Horas/Semana *
                   </label>
-                  <Input
+                  <input
                     type="number"
                     min="1"
                     max="40"
@@ -455,7 +454,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Nombre Contacto de Emergencia
                   </label>
-                  <Input
+                  <input
                     value={formData.emergency_contact_name}
                     onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
                     placeholder="Juan García"
@@ -465,7 +464,7 @@ export default function NewWorkerPage() {
                   <label className="block text-sm font-medium text-slate-700 mb-2">
                     Teléfono de Emergencia
                   </label>
-                  <Input
+                  <input
                     value={formData.emergency_contact_phone}
                     onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
                     placeholder="612 345 678"
