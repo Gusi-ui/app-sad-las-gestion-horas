@@ -9,6 +9,21 @@ export function useUsers() {
       const { data, error } = await supabase
         .from('users')
         .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) throw error
+      return data as User[]
+    }
+  })
+}
+
+export function useActiveUsers() {
+  return useQuery({
+    queryKey: ['users', 'active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
 
@@ -39,16 +54,10 @@ export function useCreateUser() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (userData: Omit<User, 'id' | 'created_at' | 'updated_at' | 'worker_id'>) => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('No authenticated user')
-
+    mutationFn: async (userData: Omit<User, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('users')
-        .insert({
-          ...userData,
-          worker_id: user.id
-        })
+        .insert(userData)
         .select()
         .single()
 
@@ -99,4 +108,4 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ['users'] })
     }
   })
-} 
+}

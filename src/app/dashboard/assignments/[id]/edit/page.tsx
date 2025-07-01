@@ -1,270 +1,138 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useRouter } from 'next/navigation'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useToast } from '@/components/ui/toast'
-import { 
-  ArrowLeft, 
-  Save, 
-  Clock, 
-  AlertTriangle
-} from 'lucide-react'
-import { Assignment, WeekDay } from '@/lib/types'
+import { AssignmentForm, AssignmentFormData } from '@/components/AssignmentForm'
+import { Assignment } from '@/lib/types'
+import { ArrowLeft, User, Users, Clock, Calendar, FileText } from 'lucide-react'
+import Link from 'next/link'
 
-const weekDays: { key: WeekDay; label: string }[] = [
-  { key: 'monday', label: 'Lunes' },
-  { key: 'tuesday', label: 'Martes' },
-  { key: 'wednesday', label: 'Miércoles' },
-  { key: 'thursday', label: 'Jueves' },
-  { key: 'friday', label: 'Viernes' },
-  { key: 'saturday', label: 'Sábado' },
-  { key: 'sunday', label: 'Domingo' }
-]
-
-export default function EditAssignmentPage() {
-  const params = useParams()
+export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter()
-  const assignmentId = params.id as string
-  
   const { getAssignmentById, updateAssignment } = useAssignments()
   const { showToast, ToastComponent } = useToast()
-  
   const [assignment, setAssignment] = useState<Assignment | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  
-  const [formData, setFormData] = useState({
-    selectedDay: 'monday' as WeekDay,
-    startTime: '08:00',
-    endTime: '09:00'
-  })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!assignmentId) {
-      setError('ID de asignación inválido')
-      setIsLoading(false)
-      return
-    }
-    
     const fetchAssignment = async () => {
       try {
-        setIsLoading(true)
-        setError(null)
-        const { data, error } = await getAssignmentById(assignmentId)
-        
-        if (error) {
-          setError(error)
-        } else if (data) {
-          setAssignment(data)
-          // Extract current schedule
-          if (data.specific_schedule && Object.keys(data.specific_schedule).length > 0) {
-            const firstDay = Object.keys(data.specific_schedule)[0] as WeekDay
-            const times = data.specific_schedule[firstDay]
-            if (times && times.length >= 2) {
-              setFormData({
-                selectedDay: firstDay,
-                startTime: times[0] || '08:00',
-                endTime: times[1] || '09:00'
-              })
-            }
-          }
+        const resolvedParams = await params
+        const result = await getAssignmentById(resolvedParams.id)
+        if (result.data) {
+          setAssignment(result.data)
         } else {
-          setError('Asignación no encontrada')
+          console.error('No se encontró la asignación')
+          router.push('/dashboard/assignments')
         }
-      } catch {
-        setError('Error al cargar la asignación')
+      } catch (error) {
+        console.error('Error al cargar la asignación:', error)
+        router.push('/dashboard/assignments')
       } finally {
-        setIsLoading(false)
+        setLoading(false)
       }
     }
-    
+
     fetchAssignment()
-  }, [assignmentId, getAssignmentById])
+  }, [params, getAssignmentById, router])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!assignment) return
-
-    if (formData.startTime >= formData.endTime) {
-      showToast('La hora de inicio debe ser anterior a la hora de fin', 'error')
-      return
-    }
-
-    setIsSaving(true)
+  const handleSubmit = async (formData: AssignmentFormData) => {
     try {
-      const newSchedule: Record<WeekDay, string[]> = {
-        monday: [],
-        tuesday: [],
-        wednesday: [],
-        thursday: [],
-        friday: [],
-        saturday: [],
-        sunday: [],
-        [formData.selectedDay]: [formData.startTime, formData.endTime]
-      }
-
-      const { error } = await updateAssignment(assignmentId, {
-        specific_schedule: newSchedule
+      const resolvedParams = await params
+      const result = await updateAssignment(resolvedParams.id, {
+        specific_schedule: formData.specific_schedule,
+        priority: formData.priority,
+        status: formData.status,
+        notes: formData.notes?.trim() || undefined,
+        end_date: formData.end_date || undefined
       })
-
-      if (error) {
-        showToast(`Error al actualizar: ${error}`, 'error')
+      
+      if (result && !result.error) {
+        showToast('Asignación actualizada correctamente', 'success')
+        router.push('/dashboard/assignments')
       } else {
-        showToast('Horario actualizado correctamente', 'success')
-        router.push('/dashboard/planning')
+        showToast('Error al actualizar la asignación', 'error')
       }
-    } catch {
-      showToast('Error inesperado al actualizar', 'error')
-    } finally {
-      setIsSaving(false)
+    } catch (error) {
+      console.error('Error al guardar:', error)
+      showToast('Error al guardar los cambios', 'error')
     }
   }
 
-  if (isLoading) {
+  const handleCancel = () => {
+    router.push('/dashboard/assignments')
+  }
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando asignación...</p>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Cargando...</div>
         </div>
       </div>
     )
   }
 
-  if (error || !assignment) {
+  if (!assignment) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">{error || 'Asignación no encontrada'}</p>
-            <Link href="/dashboard/planning">
-              <Button>Volver al Calendario</Button>
-            </Link>
-          </CardContent>
-        </Card>
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-lg">Asignación no encontrada</div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-2xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard/planning">
-              <Button variant="secondary" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Planning
-              </Button>
-            </Link>
-            <Link href="/dashboard/assignments">
-              <Button variant="secondary" size="sm">
-                Lista
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">✏️ Cambiar Horario</h1>
-              <p className="text-slate-600">Modifica el día y horario de la asignación</p>
-            </div>
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Header sticky mobile-first */}
+      <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center py-4">
+            <button onClick={() => router.back()} className="mr-2 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-xl font-bold text-slate-900 truncate flex-1">Editar Asignación</h1>
           </div>
         </div>
-
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-2">Trabajadora</h3>
-                <p className="text-slate-600">{assignment.worker?.name} {assignment.worker?.surname}</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-slate-900 mb-2">Usuario</h3>
-                <p className="text-slate-600">{assignment.user?.name} {assignment.user?.surname}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <form onSubmit={handleSubmit}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                Nuevo Horario
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div>
-                <label htmlFor="selectedDay" className="block text-sm font-medium text-slate-700 mb-2">
-                  Día de la semana *
-                </label>
-                <select
-                  id="selectedDay"
-                  value={formData.selectedDay}
-                  onChange={(e) => setFormData(prev => ({ ...prev, selectedDay: e.target.value as WeekDay }))}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                >
-                  {weekDays.map((day) => (
-                    <option key={day.key} value={day.key}>{day.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="startTime" className="block text-sm font-medium text-slate-700 mb-2">
-                    Hora de inicio *
-                  </label>
-                  <input
-                    type="time"
-                    id="startTime"
-                    value={formData.startTime || '08:00'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="endTime" className="block text-sm font-medium text-slate-700 mb-2">
-                    Hora de fin *
-                  </label>
-                  <input
-                    type="time"
-                    id="endTime"
-                    value={formData.endTime || '09:00'}
-                    onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end space-x-4 mt-6">
-            <Link href="/dashboard/planning">
-              <Button variant="secondary" type="button">Cancelar</Button>
-            </Link>
-            <Button type="submit" disabled={isSaving}>
-              {isSaving ? 'Guardando...' : (
-                <>
-                  <Save className="w-4 h-4 mr-2" />
-                  Guardar Cambios
-                </>
-              )}
-            </Button>
-          </div>
-        </form>
+      </header>
+      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <AssignmentForm
+          assignment={assignment}
+          isEditing={true}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+        {ToastComponent}
       </div>
-      {ToastComponent}
+      {/* Footer de navegación fijo */}
+      <footer className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-lg">
+        <nav className="flex justify-around py-3">
+          <Link href="/dashboard/users" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Usuarios</span>
+          </Link>
+          <Link href="/dashboard/workers" className="flex flex-col items-center text-xs text-slate-600 hover:text-green-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Trabajadoras</span>
+          </Link>
+          <Link href="/dashboard/assignments" className="flex flex-col items-center text-xs text-blue-600 transition-colors">
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Asignaciones</span>
+          </Link>
+          <Link href="/dashboard/planning" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Planning</span>
+          </Link>
+          <Link href="/dashboard/settings" className="flex flex-col items-center text-xs text-slate-600 hover:text-slate-800 transition-colors">
+            <FileText className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Configuración</span>
+          </Link>
+        </nav>
+      </footer>
+      <div className="h-20"></div>
     </div>
   )
 } 

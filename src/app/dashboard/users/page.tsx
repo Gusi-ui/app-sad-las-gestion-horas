@@ -1,34 +1,72 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
-import { useWorkers } from '@/hooks/useWorkers'
 import { supabase } from '@/lib/supabase'
-import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, AlertTriangle, Mail, Award } from 'lucide-react'
-import { Worker } from '@/lib/types'
+import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar } from 'lucide-react'
+
+interface User {
+  id: string
+  name: string
+  surname: string
+  phone: string
+  address: string | null
+  notes: string | null
+  is_active: boolean
+  monthly_hours: number
+  created_at: string
+  updated_at: string
+}
 
 interface ModalState {
   isOpen: boolean
   type: 'deactivate' | 'delete' | 'restore'
-  worker: Worker | null
+  user: User | null
 }
 
-export default function WorkersPage() {
+export default function UsersPage() {
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
-  const { workers, isLoading, error, deleteWorker } = useWorkers()
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [showInactiveWorkers, setShowInactiveWorkers] = useState(false)
+  const [showInactiveUsers, setShowInactiveUsers] = useState(false)
   const [modalState, setModalState] = useState<ModalState>({
     isOpen: false,
     type: 'deactivate',
-    worker: null
+    user: null
   })
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching users:', error)
+        showToast('Error al cargar usuarios', 'error')
+        return
+      }
+
+      setUsers(data || [])
+    } catch (error) {
+      console.error('Error fetching users:', error)
+      showToast('Error inesperado al cargar usuarios', 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [showToast])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   // Cerrar menú móvil cuando se hace click fuera
   useEffect(() => {
@@ -48,59 +86,80 @@ export default function WorkersPage() {
     }
   }, [showMobileMenu])
 
-  const openModal = (type: 'deactivate' | 'delete' | 'restore', worker: Worker) => {
-    setModalState({ isOpen: true, type, worker })
+  const openModal = (type: 'deactivate' | 'delete' | 'restore', user: User) => {
+    setModalState({ isOpen: true, type, user })
   }
 
   const closeModal = () => {
-    setModalState({ isOpen: false, type: 'deactivate', worker: null })
+    setModalState({ isOpen: false, type: 'deactivate', user: null })
   }
 
-  const handleDeactivateWorker = async () => {
-    if (!modalState.worker) return
+  const handleDeactivateUser = async () => {
+    if (!modalState.user) return
 
     try {
-      const { error } = await deleteWorker(modalState.worker.id)
+      const { error } = await supabase
+        .from('users')
+        .update({ is_active: false })
+        .eq('id', modalState.user.id)
 
       if (error) {
-        showToast('Error al desactivar trabajadora', 'error')
+        console.error('Error deactivating user:', error)
+        showToast('Error al desactivar usuario', 'error')
         return
       }
 
-      showToast('Trabajadora desactivada correctamente', 'success')
+      showToast('Usuario desactivado correctamente', 'success')
+      fetchUsers()
     } catch (error) {
-      console.error('Error deactivating worker:', error)
-      showToast('Error inesperado al desactivar trabajadora', 'error')
+      console.error('Error deactivating user:', error)
+      showToast('Error inesperado al desactivar usuario', 'error')
     }
   }
 
-  const handleDeleteWorker = async () => {
-    if (!modalState.worker) return
+  const handleDeleteUser = async () => {
+    if (!modalState.user) return
 
     try {
-      const { error } = await deleteWorker(modalState.worker.id)
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', modalState.user.id)
 
       if (error) {
-        showToast('Error al eliminar trabajadora', 'error')
+        console.error('Error deleting user:', error)
+        showToast('Error al eliminar usuario', 'error')
         return
       }
 
-      showToast('Trabajadora eliminada definitivamente', 'success')
+      showToast('Usuario eliminado definitivamente', 'success')
+      fetchUsers()
     } catch (error) {
-      console.error('Error deleting worker:', error)
-      showToast('Error inesperado al eliminar trabajadora', 'error')
+      console.error('Error deleting user:', error)
+      showToast('Error inesperado al eliminar usuario', 'error')
     }
   }
 
-  const handleRestoreWorker = async () => {
-    if (!modalState.worker) return
+  const handleRestoreUser = async () => {
+    if (!modalState.user) return
 
     try {
-      // Implementar reactivación de trabajadora
-      showToast('Trabajadora reactivada correctamente', 'success')
+      const { error } = await supabase
+        .from('users')
+        .update({ is_active: true })
+        .eq('id', modalState.user.id)
+
+      if (error) {
+        console.error('Error restoring user:', error)
+        showToast('Error al reactivar usuario', 'error')
+        return
+      }
+
+      showToast('Usuario reactivado correctamente', 'success')
+      fetchUsers()
     } catch (error) {
-      console.error('Error restoring worker:', error)
-      showToast('Error inesperado al reactivar trabajadora', 'error')
+      console.error('Error restoring user:', error)
+      showToast('Error inesperado al reactivar usuario', 'error')
     }
   }
 
@@ -125,49 +184,49 @@ export default function WorkersPage() {
     })
   }
 
-  // Filtrar trabajadoras según el estado del filtro
-  const filteredWorkers = showInactiveWorkers 
-    ? workers 
-    : workers.filter(worker => worker.is_active)
+  // Filtrar usuarios según el estado del filtro
+  const filteredUsers = showInactiveUsers 
+    ? users 
+    : users.filter(user => user.is_active)
 
-  const activeWorkers = workers.filter(worker => worker.is_active)
-  const inactiveWorkers = workers.filter(worker => !worker.is_active)
+  const activeUsers = users.filter(user => user.is_active)
+  const inactiveUsers = users.filter(user => !user.is_active)
 
   // Configuración del modal según el tipo
   const getModalConfig = () => {
-    if (!modalState.worker) return null
+    if (!modalState.user) return null
 
-    const workerName = `${modalState.worker.name} ${modalState.worker.surname}`
+    const userName = `${modalState.user.name} ${modalState.user.surname}`
 
     switch (modalState.type) {
       case 'deactivate':
         return {
-          title: 'Desactivar Trabajadora',
-          message: `¿Estás seguro de que quieres desactivar a ${workerName}? La trabajadora permanecerá en la base de datos pero no podrá recibir asignaciones.`,
+          title: 'Desactivar Usuario',
+          message: `¿Estás seguro de que quieres desactivar a ${userName}? El usuario permanecerá en la base de datos pero no podrá recibir asignaciones.`,
           type: 'warning' as const,
           confirmText: 'Desactivar',
           cancelText: 'Cancelar',
-          onConfirm: handleDeactivateWorker,
+          onConfirm: handleDeactivateUser,
           icon: <UserX className="w-6 h-6 text-amber-600" />
         }
       case 'delete':
         return {
-          title: 'Eliminar Trabajadora Definitivamente',
-          message: `¿Estás seguro de que quieres eliminar definitivamente a ${workerName}? Esta acción no se puede deshacer y se perderán todos los datos de la trabajadora.`,
+          title: 'Eliminar Usuario Definitivamente',
+          message: `¿Estás seguro de que quieres eliminar definitivamente a ${userName}? Esta acción no se puede deshacer y se perderán todos los datos del usuario.`,
           type: 'danger' as const,
           confirmText: 'Eliminar Definitivamente',
           cancelText: 'Cancelar',
-          onConfirm: handleDeleteWorker,
+          onConfirm: handleDeleteUser,
           icon: <Trash2 className="w-6 h-6 text-red-600" />
         }
       case 'restore':
         return {
-          title: 'Reactivar Trabajadora',
-          message: `¿Estás seguro de que quieres reactivar a ${workerName}? La trabajadora podrá volver a recibir asignaciones.`,
+          title: 'Reactivar Usuario',
+          message: `¿Estás seguro de que quieres reactivar a ${userName}? El usuario podrá volver a recibir asignaciones.`,
           type: 'info' as const,
           confirmText: 'Reactivar',
           cancelText: 'Cancelar',
-          onConfirm: handleRestoreWorker,
+          onConfirm: handleRestoreUser,
           icon: <UserCheck className="w-6 h-6 text-green-600" />
         }
       default:
@@ -177,29 +236,13 @@ export default function WorkersPage() {
 
   const modalConfig = getModalConfig()
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando trabajadoras...</p>
+          <p className="text-slate-600">Cargando usuarios...</p>
         </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">Error al cargar trabajadoras: {error}</p>
-            <Link href="/dashboard">
-              <Button>Volver al Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -212,10 +255,10 @@ export default function WorkersPage() {
           <div className="flex justify-between items-center py-4">
             <div className="flex-1 min-w-0">
               <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
-                Gestión de Trabajadoras
+                Gestión de Usuarios
               </h1>
               <p className="text-sm text-slate-600 truncate">
-                Administra el personal de atención domiciliaria
+                Administra los usuarios del servicio de atención domiciliaria
               </p>
             </div>
             
@@ -233,10 +276,10 @@ export default function WorkersPage() {
                   Planning
                 </Button>
               </Link>
-              <Link href="/dashboard/users">
+              <Link href="/dashboard/workers">
                 <Button variant="secondary" size="sm">
-                  <User className="w-4 h-4 mr-2" />
-                  Usuarios
+                  <Settings className="w-4 h-4 mr-2" />
+                  Trabajadoras
                 </Button>
               </Link>
               <Link href="/dashboard/assignments">
@@ -286,10 +329,10 @@ export default function WorkersPage() {
                     Planning
                   </Button>
                 </Link>
-                <Link href="/dashboard/users" onClick={() => setShowMobileMenu(false)}>
+                <Link href="/dashboard/workers" onClick={() => setShowMobileMenu(false)}>
                   <Button variant="secondary" size="sm" className="w-full justify-start">
-                    <User className="w-4 h-4 mr-2" />
-                    Usuarios
+                    <Settings className="w-4 h-4 mr-2" />
+                    Trabajadoras
                   </Button>
                 </Link>
                 <Link href="/dashboard/assignments" onClick={() => setShowMobileMenu(false)}>
@@ -320,14 +363,26 @@ export default function WorkersPage() {
         
         {/* ACCIONES RÁPIDAS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
-          <Link href="/dashboard/workers/new">
+          <Link href="/dashboard/users/new">
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 sm:p-6 text-center">
-                <div className="p-2 bg-green-100 rounded-lg w-fit mx-auto mb-3">
-                  <Plus className="w-6 h-6 text-green-600" />
+                <div className="p-2 bg-blue-100 rounded-lg w-fit mx-auto mb-3">
+                  <Plus className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className="font-semibold text-slate-900 mb-1">Nueva Trabajadora</h3>
-                <p className="text-sm text-slate-600">Agregar trabajadora</p>
+                <h3 className="font-semibold text-slate-900 mb-1">Nuevo Usuario</h3>
+                <p className="text-sm text-slate-600">Crear usuario del servicio</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/planning">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="p-2 bg-orange-100 rounded-lg w-fit mx-auto mb-3">
+                  <Clock className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-1">Planning</h3>
+                <p className="text-sm text-slate-600">Ver calendario</p>
               </CardContent>
             </Card>
           </Link>
@@ -343,31 +398,19 @@ export default function WorkersPage() {
               </CardContent>
             </Card>
           </Link>
-
-          <Link href="/dashboard/planning">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="p-2 bg-orange-100 rounded-lg w-fit mx-auto mb-3">
-                  <Calendar className="w-6 h-6 text-orange-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-1">Planning</h3>
-                <p className="text-sm text-slate-600">Ver calendario</p>
-              </CardContent>
-            </Card>
-          </Link>
         </div>
 
-        {/* LISTADO DE TRABAJADORAS */}
+        {/* LISTADO DE USUARIOS */}
         <Card className="mx-0 sm:mx-0">
           <CardContent className="p-3 sm:p-4 lg:p-6">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-lg font-semibold text-slate-900">Lista de Trabajadoras</h2>
+                <h2 className="text-lg font-semibold text-slate-900">Lista de Usuarios</h2>
                 <p className="text-sm text-slate-600 mt-1">
-                  {filteredWorkers.length} trabajadora{filteredWorkers.length !== 1 ? 's' : ''} mostrada{filteredWorkers.length !== 1 ? 's' : ''}
-                  {!showInactiveWorkers && inactiveWorkers.length > 0 && (
+                  {filteredUsers.length} usuario{filteredUsers.length !== 1 ? 's' : ''} mostrados
+                  {!showInactiveUsers && inactiveUsers.length > 0 && (
                     <span className="text-amber-600 ml-2">
-                      ({inactiveWorkers.length} inactivas ocultas)
+                      ({inactiveUsers.length} inactivos ocultos)
                     </span>
                   )}
                 </p>
@@ -376,34 +419,34 @@ export default function WorkersPage() {
                 <Button 
                   variant="secondary" 
                   size="sm"
-                  onClick={() => setShowInactiveWorkers(!showInactiveWorkers)}
+                  onClick={() => setShowInactiveUsers(!showInactiveUsers)}
                   className="flex items-center"
                 >
                   <Filter className="w-4 h-4 mr-2" />
-                  {showInactiveWorkers ? 'Ocultar Inactivas' : 'Mostrar Todas'}
+                  {showInactiveUsers ? 'Ocultar Inactivos' : 'Mostrar Todos'}
                 </Button>
               </div>
             </div>
 
-            {/* Workers Table */}
-            {filteredWorkers.length === 0 ? (
+            {/* Users Table */}
+            {filteredUsers.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-slate-400 mb-4">
                   <Users className="w-16 h-16 mx-auto" />
                 </div>
                 <h3 className="text-lg font-medium text-slate-900 mb-2">
-                  {showInactiveWorkers ? 'No hay trabajadoras' : 'No hay trabajadoras activas'}
+                  {showInactiveUsers ? 'No hay usuarios' : 'No hay usuarios activos'}
                 </h3>
                 <p className="text-slate-600 mb-4">
-                  {showInactiveWorkers 
-                    ? 'Comienza creando tu primera trabajadora'
-                    : 'Todas las trabajadoras están inactivas o no hay trabajadoras registradas'
+                  {showInactiveUsers 
+                    ? 'Comienza creando tu primer usuario del servicio'
+                    : 'Todos los usuarios están inactivos o no hay usuarios registrados'
                   }
                 </p>
-                <Link href="/dashboard/workers/new">
-                  <Button className="bg-green-600 hover:bg-green-700">
+                <Link href="/dashboard/users/new">
+                  <Button className="bg-blue-600 hover:bg-blue-700">
                     <Plus className="w-4 h-4 mr-2" />
-                    Crear Primera Trabajadora
+                    Crear Primer Usuario
                   </Button>
                 </Link>
               </div>
@@ -414,108 +457,79 @@ export default function WorkersPage() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b border-slate-200">
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Trabajadora</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-700">Usuario</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Contacto</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Especialización</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Tarifa</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-700">Horas/Mes</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Estado</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Contratada</th>
+                        <th className="text-left py-3 px-4 font-medium text-slate-700">Creado</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredWorkers.map((worker) => (
-                        <tr key={worker.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      {filteredUsers.map((user) => (
+                        <tr key={user.id} className="border-b border-slate-100 hover:bg-slate-50">
                           <td className="py-4 px-4">
                             <div>
                               <div className="font-medium text-slate-900">
-                                {worker.name} {worker.surname}
+                                {user.name} {user.surname}
                               </div>
-                              {worker.address && (
+                              {user.address && (
                                 <div className="text-sm text-slate-600 flex items-center mt-1">
                                   <MapPin className="w-3 h-3 mr-1" />
-                                  {worker.address.length > 50 
-                                    ? `${worker.address.substring(0, 50)}...` 
-                                    : worker.address
+                                  {user.address.length > 50 
+                                    ? `${user.address.substring(0, 50)}...` 
+                                    : user.address
                                   }
                                 </div>
                               )}
                             </div>
                           </td>
                           <td className="py-4 px-4">
-                            <div className="space-y-1">
-                              <div className="flex items-center text-sm text-slate-600">
-                                <Phone className="w-3 h-3 mr-1" />
-                                {formatPhone(worker.phone)}
-                              </div>
-                              {worker.email && (
-                                <div className="flex items-center text-sm text-slate-600">
-                                  <Mail className="w-3 h-3 mr-1" />
-                                  {worker.email.length > 30 
-                                    ? `${worker.email.substring(0, 30)}...` 
-                                    : worker.email
-                                  }
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex flex-wrap gap-1">
-                              {worker.specializations.slice(0, 2).map((spec, index) => (
-                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {spec}
-                                </span>
-                              ))}
-                              {worker.specializations.length > 2 && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                  +{worker.specializations.length - 2}
-                                </span>
-                              )}
+                            <div className="flex items-center text-sm text-slate-600">
+                              <Phone className="w-3 h-3 mr-1" />
+                              {formatPhone(user.phone)}
                             </div>
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex items-center">
-                              <Clock className="w-4 h-4 text-green-600 mr-1" />
+                              <Clock className="w-4 h-4 text-blue-600 mr-1" />
                               <span className="font-medium text-slate-900">
-                                {worker.hourly_rate}€/h
+                                {user.monthly_hours}h
                               </span>
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Máx {worker.max_weekly_hours}h/sem
                             </div>
                           </td>
                           <td className="py-4 px-4">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              worker.is_active 
+                              user.is_active 
                                 ? 'bg-green-100 text-green-800' 
                                 : 'bg-red-100 text-red-800'
                             }`}>
-                              {worker.is_active ? 'Activa' : 'Inactiva'}
+                              {user.is_active ? 'Activo' : 'Inactivo'}
                             </span>
                           </td>
                           <td className="py-4 px-4 text-sm text-slate-600">
-                            {formatDate(worker.hire_date)}
+                            {formatDate(user.created_at)}
                           </td>
                           <td className="py-4 px-4">
                             <div className="flex space-x-2">
-                              <Link href={`/dashboard/workers/${worker.id}`}>
+                              <Link href={`/dashboard/users/${user.id}`}>
                                 <Button variant="secondary" size="sm">
                                   <Eye className="w-3 h-3 mr-1" />
                                   Ver
                                 </Button>
                               </Link>
-                              <Link href={`/dashboard/workers/${worker.id}/edit`}>
+                              <Link href={`/dashboard/users/${user.id}/edit`}>
                                 <Button variant="secondary" size="sm">
                                   <Edit className="w-3 h-3 mr-1" />
                                   Editar
                                 </Button>
                               </Link>
-                              {worker.is_active ? (
+                              {user.is_active ? (
                                 <div className="flex space-x-1">
                                   <Button 
                                     variant="secondary" 
                                     size="sm"
-                                    onClick={() => openModal('deactivate', worker)}
+                                    onClick={() => openModal('deactivate', user)}
                                     className="text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                                   >
                                     <UserX className="w-3 h-3 mr-1" />
@@ -524,7 +538,7 @@ export default function WorkersPage() {
                                   <Button 
                                     variant="secondary" 
                                     size="sm"
-                                    onClick={() => openModal('delete', worker)}
+                                    onClick={() => openModal('delete', user)}
                                     className="text-red-600 hover:text-red-700 hover:bg-red-50"
                                   >
                                     <Trash2 className="w-3 h-3 mr-1" />
@@ -535,7 +549,7 @@ export default function WorkersPage() {
                                 <Button 
                                   variant="secondary" 
                                   size="sm"
-                                  onClick={() => openModal('restore', worker)}
+                                  onClick={() => openModal('restore', user)}
                                   className="text-green-600 hover:text-green-700 hover:bg-green-50"
                                 >
                                   <UserCheck className="w-3 h-3 mr-1" />
@@ -552,50 +566,39 @@ export default function WorkersPage() {
 
                 {/* Mobile Card View */}
                 <div className="lg:hidden space-y-3 sm:space-y-4">
-                  {filteredWorkers.map((worker) => (
-                    <div key={worker.id} className="bg-white border border-slate-200 rounded-lg p-3 sm:p-4 shadow-sm mx-0 sm:mx-0">
-                      {/* Worker Header */}
+                  {filteredUsers.map((user) => (
+                    <div key={user.id} className="bg-white border border-slate-200 rounded-lg p-3 sm:p-4 shadow-sm mx-0 sm:mx-0">
+                      {/* User Header */}
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1 min-w-0">
                           <h3 className="font-semibold text-slate-900 text-lg">
-                            {worker.name} {worker.surname}
+                            {user.name} {user.surname}
                           </h3>
                           <div className="flex items-center mt-1">
                             <Phone className="w-3 h-3 mr-1 text-slate-500" />
                             <span className="text-sm text-slate-600">
-                              {formatPhone(worker.phone)}
+                              {formatPhone(user.phone)}
                             </span>
                           </div>
                         </div>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          worker.is_active 
+                          user.is_active 
                             ? 'bg-green-100 text-green-800' 
                             : 'bg-red-100 text-red-800'
                         }`}>
-                          {worker.is_active ? 'Activa' : 'Inactiva'}
+                          {user.is_active ? 'Activo' : 'Inactivo'}
                         </span>
                       </div>
 
-                      {/* Worker Details */}
+                      {/* User Details */}
                       <div className="space-y-2 mb-4">
-                        {worker.address && (
+                        {user.address && (
                           <div className="flex items-start text-sm text-slate-600">
                             <MapPin className="w-3 h-3 mr-2 mt-0.5 text-slate-500" />
                             <span className="flex-1">
-                              {worker.address.length > 60 
-                                ? `${worker.address.substring(0, 60)}...` 
-                                : worker.address
-                              }
-                            </span>
-                          </div>
-                        )}
-                        {worker.email && (
-                          <div className="flex items-center text-sm text-slate-600">
-                            <Mail className="w-3 h-3 mr-2 text-slate-500" />
-                            <span className="truncate">
-                              {worker.email.length > 40 
-                                ? `${worker.email.substring(0, 40)}...` 
-                                : worker.email
+                              {user.address.length > 60 
+                                ? `${user.address.substring(0, 60)}...` 
+                                : user.address
                               }
                             </span>
                           </div>
@@ -603,50 +606,34 @@ export default function WorkersPage() {
                         <div className="flex items-center text-sm text-slate-600">
                           <Clock className="w-3 h-3 mr-2 text-slate-500" />
                           <span className="font-medium text-slate-900">
-                            {worker.hourly_rate}€/h
+                            {user.monthly_hours}h/mes
                           </span>
-                          <span className="mx-2">•</span>
-                          <span>Máx {worker.max_weekly_hours}h/sem</span>
                         </div>
                         <div className="text-sm text-slate-600">
-                          Contratada: {formatDate(worker.hire_date)}
+                          Creado: {formatDate(user.created_at)}
                         </div>
-                        {worker.specializations.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {worker.specializations.slice(0, 3).map((spec, index) => (
-                              <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {spec}
-                              </span>
-                            ))}
-                            {worker.specializations.length > 3 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                +{worker.specializations.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       {/* Actions */}
                       <div className="flex flex-wrap gap-2">
-                        <Link href={`/dashboard/workers/${worker.id}`}>
+                        <Link href={`/dashboard/users/${user.id}`}>
                           <Button variant="secondary" size="sm" className="flex-1 sm:flex-none">
                             <Eye className="w-3 h-3 mr-1" />
                             Ver
                           </Button>
                         </Link>
-                        <Link href={`/dashboard/workers/${worker.id}/edit`}>
+                        <Link href={`/dashboard/users/${user.id}/edit`}>
                           <Button variant="secondary" size="sm" className="flex-1 sm:flex-none">
                             <Edit className="w-3 h-3 mr-1" />
                             Editar
                           </Button>
                         </Link>
-                        {worker.is_active ? (
+                        {user.is_active ? (
                           <>
                             <Button 
                               variant="secondary" 
                               size="sm"
-                              onClick={() => openModal('deactivate', worker)}
+                              onClick={() => openModal('deactivate', user)}
                               className="flex-1 sm:flex-none text-amber-600 hover:text-amber-700 hover:bg-amber-50"
                             >
                               <UserX className="w-3 h-3 mr-1" />
@@ -655,7 +642,7 @@ export default function WorkersPage() {
                             <Button 
                               variant="secondary" 
                               size="sm"
-                              onClick={() => openModal('delete', worker)}
+                              onClick={() => openModal('delete', user)}
                               className="flex-1 sm:flex-none text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
                               <Trash2 className="w-3 h-3 mr-1" />
@@ -666,7 +653,7 @@ export default function WorkersPage() {
                           <Button 
                             variant="secondary" 
                             size="sm"
-                            onClick={() => openModal('restore', worker)}
+                            onClick={() => openModal('restore', user)}
                             className="flex-1 sm:flex-none text-green-600 hover:text-green-700 hover:bg-green-50"
                           >
                             <UserCheck className="w-3 h-3 mr-1" />
@@ -686,41 +673,29 @@ export default function WorkersPage() {
         <Card className="mt-6 sm:mt-8">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-slate-900">Resumen de Trabajadoras</h2>
+              <h2 className="text-lg font-semibold text-slate-900">Resumen de Usuarios</h2>
             </div>
             
             {/* Desktop: 4 columnas */}
             <div className="hidden lg:grid grid-cols-4 gap-6">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <Users className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="ml-4 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Total Trabajadoras</p>
-                  <p className="text-2xl font-bold text-slate-900">{workers.length}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
                 <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <UserCheck className="w-6 h-6 text-blue-600" />
+                  <Users className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Trabajadoras Activas</p>
-                  <p className="text-2xl font-bold text-slate-900">
-                    {activeWorkers.length}
-                  </p>
+                  <p className="text-sm font-medium text-slate-600">Total Usuarios</p>
+                  <p className="text-2xl font-bold text-slate-900">{users.length}</p>
                 </div>
               </div>
 
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <Award className="w-6 h-6 text-purple-600" />
+                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                  <Clock className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Especializaciones</p>
+                  <p className="text-sm font-medium text-slate-600">Usuarios Activos</p>
                   <p className="text-2xl font-bold text-slate-900">
-                    {workers.reduce((sum, worker) => sum + worker.specializations.length, 0)}
+                    {activeUsers.length}
                   </p>
                 </div>
               </div>
@@ -730,9 +705,21 @@ export default function WorkersPage() {
                   <Clock className="w-6 h-6 text-yellow-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Horas Disponibles</p>
+                  <p className="text-sm font-medium text-slate-600">Horas Totales</p>
                   <p className="text-2xl font-bold text-slate-900">
-                    {activeWorkers.reduce((sum, worker) => sum + worker.max_weekly_hours, 0)}h/sem
+                    {activeUsers.reduce((sum, user) => sum + user.monthly_hours, 0).toFixed(1)}h
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <MapPin className="w-6 h-6 text-purple-600" />
+                </div>
+                <div className="ml-4 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-600">Con Dirección</p>
+                  <p className="text-2xl font-bold text-slate-900">
+                    {activeUsers.filter(u => u.address).length}
                   </p>
                 </div>
               </div>
@@ -741,35 +728,23 @@ export default function WorkersPage() {
             {/* Mobile: 2x2 grid */}
             <div className="lg:hidden grid grid-cols-2 gap-4">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
-                  <Users className="w-5 h-5 text-green-600" />
+                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                  <Users className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Total</p>
-                  <p className="text-xl font-bold text-slate-900">{workers.length}</p>
+                  <p className="text-xl font-bold text-slate-900">{users.length}</p>
                 </div>
               </div>
 
               <div className="flex items-center">
-                <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                  <UserCheck className="w-5 h-5 text-blue-600" />
+                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                  <Clock className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Activas</p>
+                  <p className="text-sm font-medium text-slate-600">Activos</p>
                   <p className="text-xl font-bold text-slate-900">
-                    {activeWorkers.length}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
-                  <Award className="w-5 h-5 text-purple-600" />
-                </div>
-                <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Especializ.</p>
-                  <p className="text-xl font-bold text-slate-900">
-                    {workers.reduce((sum, worker) => sum + worker.specializations.length, 0)}
+                    {activeUsers.length}
                   </p>
                 </div>
               </div>
@@ -781,7 +756,19 @@ export default function WorkersPage() {
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Horas</p>
                   <p className="text-xl font-bold text-slate-900">
-                    {activeWorkers.reduce((sum, worker) => sum + worker.max_weekly_hours, 0)}h/sem
+                    {activeUsers.reduce((sum, user) => sum + user.monthly_hours, 0).toFixed(1)}h
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                  <MapPin className="w-5 h-5 text-purple-600" />
+                </div>
+                <div className="ml-3 min-w-0 flex-1">
+                  <p className="text-sm font-medium text-slate-600">Con Dir.</p>
+                  <p className="text-xl font-bold text-slate-900">
+                    {activeUsers.filter(u => u.address).length}
                   </p>
                 </div>
               </div>
@@ -837,4 +824,4 @@ export default function WorkersPage() {
       {ToastComponent}
     </div>
   )
-} 
+}

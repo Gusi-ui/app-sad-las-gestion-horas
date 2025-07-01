@@ -1,174 +1,215 @@
-# 🏥 Gestión de Servicios a Domicilio
+# App SAD Las - Gestión de Servicios a Domicilio
 
-Aplicación web moderna para trabajadoras de ayuda a domicilio. Permite gestionar usuarios, horarios y seguimiento de horas de manera eficiente y segura.
+Aplicación web para la gestión integral de servicios de atención domiciliaria, desarrollada con Next.js 15, TypeScript, Tailwind CSS y Supabase.
 
 ## 🚀 Características
 
-- ✅ **Gestión de usuarios**: Alta, edición y eliminación de usuarios/clientes
-- ⏰ **Control de horas**: Seguimiento de horas trabajadas y restantes
-- 📅 **Planificación flexible**: Horarios por días de la semana, festivos y fines de semana
-- 🔒 **Seguridad avanzada**: Autenticación y autorización con Row Level Security (RLS)
-- 📱 **Responsive**: Optimizada para dispositivos móviles
-- 🎨 **UI moderna**: Diseño elegante con Tailwind CSS
+### Gestión de Usuarios
+- ✅ Registro y gestión de usuarios del servicio
+- ✅ Información personal, contacto y notas
+- ✅ Control de horas mensuales asignadas
+- ✅ Estados activo/inactivo
 
-## 🛠️ Stack Tecnológico
+### Gestión de Trabajadoras
+- ✅ Registro completo de trabajadoras
+- ✅ Especializaciones (cuidado de ancianos, discapacidad, asistencia médica, compañía)
+- ✅ Configuración de disponibilidad y horarios
+- ✅ Tarifas por hora y límites semanales
+- ✅ Información de contacto de emergencia
 
-- **Frontend**: Next.js 14, React 18, TypeScript
-- **Estilos**: Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Auth + Storage)
-- **Estado**: TanStack Query (React Query)
-- **Validación**: Zod
-- **Iconos**: Lucide React
-- **Despliegue**: Vercel (frontend) + Supabase (backend)
+### Sistema de Asignaciones
+- ✅ Asignación de trabajadoras a usuarios
+- ✅ Configuración de horarios específicos por día
+- ✅ Prioridades y estados de asignación
+- ✅ Control de horas semanales
+- ✅ Detección de conflictos de horarios
+
+### Planning y Calendario
+- ✅ Vista semanal del planning
+- ✅ Visualización de asignaciones por trabajadora
+- ✅ Estadísticas de utilización
+- ✅ Detección automática de conflictos
+
+### Configuración del Sistema
+- ✅ Configuración de empresa
+- ✅ Parámetros del sistema
+- ✅ Exportación de datos
+- ✅ Gestión de usuarios administrativos
+
+## 🛠️ Tecnologías
+
+- **Frontend**: Next.js 15, React 19, TypeScript
+- **Styling**: Tailwind CSS 4
+- **Backend**: Supabase (PostgreSQL, Auth, Real-time)
+- **State Management**: TanStack Query (React Query)
+- **Forms**: React Hook Form + Zod
+- **UI Components**: Lucide React Icons
+- **Deployment**: Vercel (recomendado)
 
 ## 📋 Requisitos Previos
 
 - Node.js 18+ 
 - npm o yarn
-- Cuenta en Supabase (gratuita)
-- Cuenta en Vercel (opcional, para despliegue)
+- Cuenta de Supabase
 
-## 🔧 Configuración del Proyecto
+## 🔧 Instalación
 
-### 1. Clonar y configurar el proyecto
+1. **Clonar el repositorio**
+   ```bash
+   git clone <repository-url>
+   cd app-sad-las
+   ```
+
+2. **Instalar dependencias**
+   ```bash
+   npm install
+   ```
+
+3. **Configurar variables de entorno**
+   ```bash
+   cp env.example .env.local
+   ```
+   
+   Editar `.env.local` con tus credenciales de Supabase:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+4. **Configurar la base de datos**
+   
+   Ejecutar el script SQL en tu proyecto de Supabase:
+   ```bash
+   # Copiar el contenido de supabase/schema.sql
+   # y ejecutarlo en el SQL Editor de Supabase
+   ```
+
+5. **Ejecutar el proyecto**
+   ```bash
+   npm run dev
+   ```
+
+## 🗄️ Configuración de la Base de Datos
+
+### Tablas Principales
+
+1. **users** - Usuarios del servicio
+2. **workers** - Trabajadoras
+3. **assignments** - Asignaciones trabajadora-usuario
+4. **service_cards** - Tarjetas de servicio mensuales
+5. **service_days** - Días de servicio por semana
+6. **worker_profiles** - Perfiles de trabajadoras (auth)
+
+### Políticas de Seguridad (RLS)
+
+El sistema incluye políticas de Row Level Security configuradas para:
+- Usuarios autenticados pueden acceder a todas las tablas
+- Trabajadoras pueden ver solo su propio perfil
+- Triggers automáticos para crear perfiles al registrarse
+
+## 🚀 Scripts Disponibles
 
 ```bash
-# Clonar el repositorio
-git clone <tu-repo>
-cd app-sad-las
-
-# Instalar dependencias
-npm install
+# Desarrollo
+npm run dev          # Servidor de desarrollo con Turbopack
+npm run build        # Build de producción
+npm run start        # Servidor de producción
+npm run lint         # Linting con ESLint
 ```
-
-### 2. Configurar Supabase
-
-1. Ve a [supabase.com](https://supabase.com) y crea una cuenta
-2. Crea un nuevo proyecto
-3. Ve a Settings > API para obtener tus credenciales
-
-### 3. Configurar variables de entorno
-
-Crea un archivo `.env.local` en la raíz del proyecto:
-
-```bash
-# Supabase Configuration
-NEXT_PUBLIC_SUPABASE_URL=tu_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=tu_supabase_service_role_key
-```
-
-### 4. Configurar la base de datos
-
-1. En tu dashboard de Supabase, ve a SQL Editor
-2. Ejecuta el contenido del archivo `supabase/schema.sql` para crear las tablas y políticas de seguridad
-
-### 5. Ejecutar en desarrollo
-
-```bash
-npm run dev
-```
-
-La aplicación estará disponible en `http://localhost:3000`
 
 ## 📁 Estructura del Proyecto
 
 ```
 src/
 ├── app/                    # App Router de Next.js
-│   ├── dashboard/         # Dashboard principal
-│   ├── login/             # Página de login
-│   ├── register/          # Página de registro
-│   ├── globals.css        # Estilos globales
-│   ├── layout.tsx         # Layout principal
-│   ├── page.tsx           # Página de inicio
-│   └── providers.tsx      # Proveedores (React Query)
+│   ├── dashboard/         # Panel administrativo
+│   │   ├── users/         # Gestión de usuarios
+│   │   ├── workers/       # Gestión de trabajadoras
+│   │   ├── assignments/   # Gestión de asignaciones
+│   │   ├── planning/      # Planning semanal
+│   │   └── settings/      # Configuración
+│   ├── login/             # Autenticación
+│   └── register/          # Registro
 ├── components/            # Componentes reutilizables
-│   └── ui/               # Componentes UI base
-├── hooks/                # Hooks personalizados
-├── lib/                  # Utilidades y configuraciones
+│   ├── ui/               # Componentes base (Button, Card, etc.)
+│   └── ...               # Componentes específicos
+├── hooks/                # Custom hooks
+├── lib/                  # Utilidades y configuración
 └── middleware.ts         # Middleware de autenticación
 ```
 
-## 🗃️ Base de Datos
+## 🔐 Autenticación
 
-### Tablas principales:
+El sistema utiliza Supabase Auth con:
+- Registro de trabajadoras
+- Login/logout
+- Middleware de protección de rutas
+- Perfiles automáticos
 
-- **worker_profiles**: Perfiles de trabajadoras
-- **users**: Usuarios/clientes
-- **service_cards**: Tarjetas de servicio mensuales
-- **service_days**: Días de servicio por semana
+## 🎨 UI/UX
 
-### Características de seguridad:
+- **Diseño Responsive**: Optimizado para móvil y desktop
+- **Tema**: Slate color palette con Tailwind CSS
+- **Iconografía**: Lucide React
+- **Componentes**: Sistema de diseño consistente
 
-- **RLS (Row Level Security)**: Cada trabajadora solo ve sus propios datos
-- **Políticas automáticas**: Inserción, actualización y eliminación controladas
-- **Triggers**: Actualización automática de timestamps
+## 📊 Funcionalidades Avanzadas
 
-## 🎯 Funcionalidades Principales
+### Detección de Conflictos
+- Análisis automático de horarios superpuestos
+- Alertas en tiempo real
+- Sugerencias de resolución
 
-### Para Trabajadoras:
-- Registrarse e iniciar sesión
-- Gestionar usuarios (crear, editar, eliminar)
-- Configurar horarios semanales por usuario
-- Seguimiento de horas trabajadas/restantes
-- Añadir notas a usuarios
+### Estadísticas
+- Utilización de trabajadoras
+- Horas asignadas vs disponibles
+- Métricas de rendimiento
 
-### Para Administración (futuro):
-- Panel de administración de empresa
-- Asignación de usuarios a trabajadoras
-- Reportes y estadísticas
+### Exportación
+- Datos en formato JSON
+- Reportes de planning
+- Backup de configuración
 
-## 🚀 Despliegue
+## 🚀 Deployment
 
 ### Vercel (Recomendado)
+1. Conectar repositorio a Vercel
+2. Configurar variables de entorno
+3. Deploy automático
 
-1. Conecta tu repositorio a Vercel
-2. Configura las variables de entorno en Vercel
-3. Despliega automáticamente
-
-### Otras opciones gratuitas:
+### Otros
 - Netlify
 - Railway
-- Render
+- Docker
 
-## 🔒 Seguridad
-
-- Autenticación con Supabase Auth
-- Políticas RLS a nivel de base de datos
-- Validación de datos con Zod
-- Middleware de protección de rutas
-- HTTPS por defecto en despliegue
-
-## 🤝 Contribuir
+## 🤝 Contribución
 
 1. Fork el proyecto
-2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+2. Crear rama feature (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
 4. Push a la rama (`git push origin feature/AmazingFeature`)
-5. Abre un Pull Request
+5. Abrir Pull Request
 
-## 📄 Licencia
+## 📝 Licencia
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
 
 ## 🆘 Soporte
 
-Si tienes problemas o preguntas:
-
-1. Revisa la documentación de [Next.js](https://nextjs.org/docs)
-2. Consulta la documentación de [Supabase](https://supabase.com/docs)
-3. Abre un issue en el repositorio
+Para soporte técnico o preguntas:
+- Crear un issue en GitHub
+- Contactar al equipo de desarrollo
 
 ## 🔄 Roadmap
 
-- [ ] Panel de administración de empresa
 - [ ] Notificaciones push
-- [ ] Exportación de reportes
 - [ ] App móvil nativa
-- [ ] Integración con calendarios
-- [ ] Geolocalización de servicios
+- [ ] Integración con calendarios externos
+- [ ] Sistema de facturación
+- [ ] Reportes avanzados
+- [ ] API pública
+- [ ] Multi-tenant
 
 ---
 
-Desarrollado con ❤️ para trabajadoras de ayuda a domicilio
+**Desarrollado con ❤️ para mejorar la gestión de servicios de atención domiciliaria**

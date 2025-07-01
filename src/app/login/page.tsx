@@ -30,7 +30,7 @@ export default function LoginPage() {
       } else {
         router.push('/dashboard')
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
     } finally {
       setLoading(false)

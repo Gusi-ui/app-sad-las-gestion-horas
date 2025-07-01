@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar, ChevronLeft, ChevronRight, Clock, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
 import { ServiceCard, ServiceDay } from '@/lib/types'
-import { calculateMonthlyHours, getHolidaysForMonth, formatDateToISO, isWeekend, getMonthName } from '@/lib/calendar'
+import { calculateMonthlyHours, getHolidaysForMonth, formatDateToISO, isWeekend, getMonthName, getDayName } from '@/lib/calendar'
 
 interface MonthlyCalendarProps {
   serviceCard: ServiceCard & { service_days: ServiceDay[] }

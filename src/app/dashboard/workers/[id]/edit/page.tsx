@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
-import { ArrowLeft, Save, X, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Save, X, AlertTriangle, Users, User, Clock, Calendar, Settings, LogOut, Menu } from 'lucide-react'
 import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
 
 const specializationOptions: { value: WorkerSpecialization; label: string }[] = [
   { value: 'elderly_care', label: '👴 Cuidado Personas Mayores' },
@@ -59,51 +60,51 @@ export default function EditWorkerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
-  const fetchWorker = async () => {
-    try {
-      setIsLoading(true)
-      setLoadError(null)
-      
-      const { data, error } = await getWorkerById(workerId)
-      
-      if (error) {
-        throw new Error(error)
-      }
-      
-      if (data) {
-        setWorker(data)
-        setFormData({
-          name: data.name,
-          surname: data.surname,
-          phone: data.phone,
-          email: data.email || '',
-          address: data.address || '',
-          dni: data.dni || '',
-          social_security_number: data.social_security_number || '',
-          hire_date: data.hire_date,
-          hourly_rate: data.hourly_rate,
-          max_weekly_hours: data.max_weekly_hours,
-          specializations: [...data.specializations],
-          availability_days: [...data.availability_days],
-          notes: data.notes || '',
-          emergency_contact_name: data.emergency_contact_name || '',
-          emergency_contact_phone: data.emergency_contact_phone || '',
-          is_active: data.is_active
-        })
-      }
-    } catch (err) {
-      console.error('Error fetching worker:', err)
-      setLoadError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchWorker = async () => {
+      try {
+        setIsLoading(true)
+        setLoadError(null)
+        
+        const { data, error } = await getWorkerById(workerId)
+        
+        if (error) {
+          throw new Error(error)
+        }
+        
+        if (data) {
+          setWorker(data)
+          setFormData({
+            name: data.name,
+            surname: data.surname,
+            phone: data.phone,
+            email: data.email || '',
+            address: data.address || '',
+            dni: data.dni || '',
+            social_security_number: data.social_security_number || '',
+            hire_date: data.hire_date,
+            hourly_rate: data.hourly_rate,
+            max_weekly_hours: data.max_weekly_hours,
+            specializations: [...data.specializations],
+            availability_days: [...data.availability_days],
+            notes: data.notes || '',
+            emergency_contact_name: data.emergency_contact_name || '',
+            emergency_contact_phone: data.emergency_contact_phone || '',
+            is_active: data.is_active
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching worker:', err)
+        setLoadError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     if (workerId) {
       fetchWorker()
     }
-  }, [workerId])
+  }, [workerId, getWorkerById])
 
   const validatePhone = (phone: string): boolean => {
     const cleanPhone = phone.replace(/\s/g, '')
@@ -186,7 +187,7 @@ export default function EditWorkerPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // Clear error when user starts typing
@@ -230,7 +231,7 @@ export default function EditWorkerPage() {
 
     setIsSubmitting(true)
     try {
-      const { data, error } = await updateWorker(workerId, {
+      const { error } = await updateWorker(workerId, {
         ...formData,
         phone: formData.phone.replace(/\s/g, ''), // Remove spaces for storage
         name: formData.name.trim(),
@@ -250,11 +251,16 @@ export default function EditWorkerPage() {
         showToast(`${formData.name} ${formData.surname} actualizada correctamente`, 'success')
         router.push(`/dashboard/workers/${workerId}`)
       }
-    } catch (err) {
+    } catch {
       showToast('Error inesperado al actualizar trabajadora', 'error')
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   if (isLoading) {
@@ -287,28 +293,19 @@ export default function EditWorkerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link href={`/dashboard/workers/${workerId}`}>
-              <Button variant="secondary" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver a Detalles
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                ✏️ Editar Trabajadora
-              </h1>
-              <p className="text-slate-600">
-                Modificar información de {worker.name} {worker.surname}
-              </p>
-            </div>
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center py-4">
+            <Button variant="secondary" size="sm" onClick={() => router.back()} className="mr-2">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+            </Button>
+            <h1 className="text-xl font-bold text-slate-900 truncate flex-1">Editar Trabajadora</h1>
           </div>
         </div>
-
+      </header>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Status Toggle */}
           <Card>
@@ -621,6 +618,32 @@ export default function EditWorkerPage() {
         </form>
       </div>
       {ToastComponent}
+      {/* Footer de navegación fijo */}
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg">
+        <nav className="flex justify-around py-3">
+          <Link href="/dashboard/users" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <User className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Usuarios</span>
+          </Link>
+          <Link href="/dashboard/workers" className="flex flex-col items-center text-xs text-slate-600 hover:text-green-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Trabajadoras</span>
+          </Link>
+          <Link href="/dashboard/assignments" className="flex flex-col items-center text-xs text-slate-600 hover:text-purple-600 transition-colors">
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Asignaciones</span>
+          </Link>
+          <Link href="/dashboard/planning" className="flex flex-col items-center text-xs text-blue-600 transition-colors">
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Planning</span>
+          </Link>
+          <Link href="/dashboard/settings" className="flex flex-col items-center text-xs text-slate-600 hover:text-slate-800 transition-colors">
+            <Settings className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Configuración</span>
+          </Link>
+        </nav>
+      </footer>
+      <div className="h-20"></div>
     </div>
   )
 } 

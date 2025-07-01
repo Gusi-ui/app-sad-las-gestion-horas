@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
-import { ArrowLeft, Save, X, Plus } from 'lucide-react'
-import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
+import { ArrowLeft, Save, X } from 'lucide-react'
+import { WorkerSpecialization, WeekDay } from '@/lib/types'
 
 const specializationOptions: { value: WorkerSpecialization; label: string }[] = [
   { value: 'elderly_care', label: '👴 Cuidado Personas Mayores' },
@@ -135,7 +135,7 @@ export default function NewWorkerPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | number | boolean | WorkerSpecialization[] | WeekDay[]) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // Clear error when user starts typing
@@ -179,7 +179,7 @@ export default function NewWorkerPage() {
 
     setIsSubmitting(true)
     try {
-      const { data, error } = await createWorker({
+      const { error } = await createWorker({
         ...formData,
         phone: formData.phone.replace(/\s/g, ''), // Remove spaces for storage
         name: formData.name.trim(),
@@ -199,7 +199,7 @@ export default function NewWorkerPage() {
         showToast(`${formData.name} ${formData.surname} creada correctamente`, 'success')
         router.push('/dashboard/workers')
       }
-    } catch (err) {
+    } catch {
       showToast('Error inesperado al crear trabajadora', 'error')
     } finally {
       setIsSubmitting(false)

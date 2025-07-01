@@ -1,11 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { useAssignments } from '@/hooks/useAssignments'
+import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
+import { useAssignments } from '@/hooks/useAssignments'
+import { supabase } from '@/lib/supabase'
 import { 
   ArrowLeft, 
   Plus, 
@@ -19,7 +22,11 @@ import {
   XCircle,
   Pause,
   Phone,
-  Eye
+  Eye,
+  Settings,
+  LogOut,
+  Menu,
+  User
 } from 'lucide-react'
 import { Assignment, AssignmentStatus } from '@/lib/types'
 
@@ -44,21 +51,46 @@ const priorityColors: Record<number, string> = {
 }
 
 export default function AssignmentsPage() {
+  const router = useRouter()
   const { assignments, isLoading, error, deleteAssignment, getAssignmentStats } = useAssignments()
   const { showToast, ToastComponent } = useToast()
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [filter, setFilter] = useState<'all' | 'active' | 'paused' | 'completed'>('all')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [assignmentToDelete, setAssignmentToDelete] = useState<Assignment | null>(null)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const stats = getAssignmentStats()
 
-  const handleDelete = async (assignment: Assignment) => {
-    if (!confirm(`¿Estás segura de que quieres eliminar la asignación de ${assignment.worker?.name} ${assignment.worker?.surname} para ${assignment.user?.name} ${assignment.user?.surname}?`)) {
-      return
+  // Cerrar menú móvil cuando se hace click fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      if (showMobileMenu && !target.closest('.mobile-menu-container')) {
+        setShowMobileMenu(false)
+      }
     }
 
-    setDeletingId(assignment.id)
+    if (showMobileMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMobileMenu])
+
+  const handleDeleteClick = (assignment: Assignment) => {
+    setAssignmentToDelete(assignment)
+    setShowDeleteModal(true)
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!assignmentToDelete) return
+
+    setDeletingId(assignmentToDelete.id)
     try {
-      const { error } = await deleteAssignment(assignment.id)
+      const { error } = await deleteAssignment(assignmentToDelete.id)
       if (error) {
         showToast(`Error al eliminar: ${error}`, 'error')
       } else {
@@ -68,7 +100,19 @@ export default function AssignmentsPage() {
       showToast('Error inesperado al eliminar', 'error')
     } finally {
       setDeletingId(null)
+      setShowDeleteModal(false)
+      setAssignmentToDelete(null)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false)
+    setAssignmentToDelete(null)
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   const filteredAssignments = assignments.filter(assignment => {
@@ -169,49 +213,159 @@ export default function AssignmentsPage() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard">
-              <Button variant="secondary" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-            </Link>
-            <Link href="/dashboard/planning">
-              <Button variant="secondary" size="sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                Planning
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                🔄 Gestión de Asignaciones
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-slate-200 mobile-menu-container">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
+                Gestión de Asignaciones
               </h1>
-              <p className="text-slate-600">
+              <p className="text-sm text-slate-600 truncate">
                 Administra las asignaciones trabajadora-usuario y sus horarios
               </p>
-              <div className="flex items-center space-x-4 mt-2">
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                  🏢 Planning Administrativo
-                </span>
-                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
-                  📅 Sistema de Horarios
-                </span>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-2">
+              <Link href="/dashboard">
+                <Button variant="secondary" size="sm">
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Link href="/dashboard/planning">
+                <Button variant="secondary" size="sm">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Planning
+                </Button>
+              </Link>
+              <Link href="/dashboard/users">
+                <Button variant="secondary" size="sm">
+                  <User className="w-4 h-4 mr-2" />
+                  Usuarios
+                </Button>
+              </Link>
+              <Link href="/dashboard/workers">
+                <Button variant="secondary" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Trabajadoras
+                </Button>
+              </Link>
+              <Button variant="secondary" size="sm" onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Cerrar Sesión
+              </Button>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden relative">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                aria-label="Abrir menú de navegación"
+                aria-expanded={showMobileMenu}
+                className="relative z-10"
+              >
+                <Menu className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Mobile Navigation Menu */}
+          <div className={`md:hidden transition-all duration-300 ease-in-out ${
+            showMobileMenu 
+              ? 'max-h-96 opacity-100 visible' 
+              : 'max-h-0 opacity-0 invisible'
+          }`}>
+            <div className="py-4 border-t border-slate-200 bg-white shadow-lg">
+              <div className="flex flex-col space-y-2 px-4">
+                <Link href="/dashboard" onClick={() => setShowMobileMenu(false)}>
+                  <Button variant="secondary" size="sm" className="w-full justify-start">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link href="/dashboard/planning" onClick={() => setShowMobileMenu(false)}>
+                  <Button variant="secondary" size="sm" className="w-full justify-start">
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Planning
+                  </Button>
+                </Link>
+                <Link href="/dashboard/users" onClick={() => setShowMobileMenu(false)}>
+                  <Button variant="secondary" size="sm" className="w-full justify-start">
+                    <User className="w-4 h-4 mr-2" />
+                    Usuarios
+                  </Button>
+                </Link>
+                <Link href="/dashboard/workers" onClick={() => setShowMobileMenu(false)}>
+                  <Button variant="secondary" size="sm" className="w-full justify-start">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Trabajadoras
+                  </Button>
+                </Link>
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => {
+                    handleLogout()
+                    setShowMobileMenu(false)
+                  }} 
+                  className="w-full justify-start"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Cerrar Sesión
+                </Button>
               </div>
             </div>
           </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
+        
+        {/* ACCIONES RÁPIDAS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
           <Link href="/dashboard/assignments/new">
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nueva Asignación
-            </Button>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="p-2 bg-purple-100 rounded-lg w-fit mx-auto mb-3">
+                  <Plus className="w-6 h-6 text-purple-600" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-1">Nueva Asignación</h3>
+                <p className="text-sm text-slate-600">Crear asignación trabajadora-usuario</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/planning">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="p-2 bg-orange-100 rounded-lg w-fit mx-auto mb-3">
+                  <Calendar className="w-6 h-6 text-orange-600" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-1">Planning</h3>
+                <p className="text-sm text-slate-600">Ver calendario</p>
+              </CardContent>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/users">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="p-2 bg-blue-100 rounded-lg w-fit mx-auto mb-3">
+                  <User className="w-6 h-6 text-blue-600" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-1">Usuarios</h3>
+                <p className="text-sm text-slate-600">Gestionar usuarios</p>
+              </CardContent>
+            </Card>
           </Link>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+        {/* Stats Cards - Desktop */}
+        <div className="hidden lg:grid grid-cols-5 gap-6 mb-8">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center">
@@ -288,156 +442,329 @@ export default function AssignmentsPage() {
           </Card>
         </div>
 
-        {/* Filters */}
-        <div className="flex space-x-3 mb-6">
-          <Button
-            variant={filter === 'all' ? 'default' : 'secondary'}
-            size="sm"
-            onClick={() => setFilter('all')}
-          >
-            Todas ({stats.total})
-          </Button>
-          <Button
-            variant={filter === 'active' ? 'default' : 'secondary'}
-            size="sm"
-            onClick={() => setFilter('active')}
-          >
-            Activas ({stats.active})
-          </Button>
-          <Button
-            variant={filter === 'paused' ? 'default' : 'secondary'}
-            size="sm"
-            onClick={() => setFilter('paused')}
-          >
-            Pausadas ({stats.paused})
-          </Button>
-          <Button
-            variant={filter === 'completed' ? 'default' : 'secondary'}
-            size="sm"
-            onClick={() => setFilter('completed')}
-          >
-            Completadas ({stats.completed})
-          </Button>
-        </div>
-
-        {/* Assignments List */}
-        {filteredAssignments.length === 0 ? (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                No hay asignaciones
-                {filter !== 'all' && ` ${statusLabels[filter as AssignmentStatus].toLowerCase()}`}
-              </h3>
-              <p className="text-slate-600 mb-6">
-                {filter === 'all' 
-                  ? 'Comienza creando la primera asignación trabajadora-usuario'
-                  : `No hay asignaciones ${statusLabels[filter as AssignmentStatus].toLowerCase()} en este momento`
-                }
-              </p>
-              <Link href="/dashboard/assignments/new">
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Crear Primera Asignación
+        {/* LISTADO DE ASIGNACIONES */}
+        <Card className="mx-0 sm:mx-0">
+          <CardContent className="p-3 sm:p-4 lg:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">Lista de Asignaciones</h2>
+                <p className="text-sm text-slate-600 mt-1">
+                  {filteredAssignments.length} asignación{filteredAssignments.length !== 1 ? 'es' : ''} mostrada{filteredAssignments.length !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => setFilter('all')}
+                  className={filter === 'all' ? 'bg-blue-100 text-blue-800' : ''}
+                >
+                  Todas ({stats.total})
                 </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6">
-            {filteredAssignments.map((assignment) => {
-              const statusIcon = getStatusIcon(assignment.status)
-              
-              return (
-                <Card key={assignment.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-start justify-between">
-                      {/* Main Info */}
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="p-3 bg-slate-100 rounded-lg">
-                          <Users className="w-6 h-6 text-slate-600" />
-                        </div>
-                        
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-slate-900">
-                              {assignment.worker?.name} {assignment.worker?.surname} → {assignment.user?.name} {assignment.user?.surname}
-                            </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[assignment.status]}`}>
-                              {statusIcon}
-                              {getStatusText(assignment.status)}
-                            </span>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${priorityColors[assignment.priority]}`}>
-                              Prioridad {getPriorityText(assignment.priority)}
-                            </span>
-                          </div>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => setFilter('active')}
+                  className={filter === 'active' ? 'bg-green-100 text-green-800' : ''}
+                >
+                  Activas ({stats.active})
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => setFilter('paused')}
+                  className={filter === 'paused' ? 'bg-yellow-100 text-yellow-800' : ''}
+                >
+                  Pausadas ({stats.paused})
+                </Button>
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={() => setFilter('completed')}
+                  className={filter === 'completed' ? 'bg-blue-100 text-blue-800' : ''}
+                >
+                  Completadas ({stats.completed})
+                </Button>
+              </div>
+            </div>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-                            <div className="flex items-center text-sm text-slate-600">
-                              <Clock className="w-4 h-4 mr-2" />
-                              {assignment.assigned_hours_per_week}h/semana
+            {/* Assignments List */}
+            {filteredAssignments.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="text-slate-400 mb-4">
+                  <Users className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  No hay asignaciones
+                  {filter !== 'all' && ` ${statusLabels[filter as AssignmentStatus].toLowerCase()}`}
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  {filter === 'all' 
+                    ? 'Comienza creando la primera asignación trabajadora-usuario'
+                    : `No hay asignaciones ${statusLabels[filter as AssignmentStatus].toLowerCase()} en este momento`
+                  }
+                </p>
+                <Link href="/dashboard/assignments/new">
+                  <Button>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Crear Primera Asignación
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:gap-4 lg:gap-6">
+                {filteredAssignments.map((assignment) => {
+                  const statusIcon = getStatusIcon(assignment.status)
+                  
+                  return (
+                    <Card key={assignment.id} className="hover:shadow-md transition-shadow mx-0 sm:mx-0">
+                      <CardContent className="p-3 sm:p-4 lg:p-6">
+                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                          {/* Main Info */}
+                          <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
+                            <div className="p-2 sm:p-3 bg-slate-100 rounded-lg flex-shrink-0">
+                              <Users className="w-5 h-5 sm:w-6 sm:h-6 text-slate-600" />
                             </div>
-                            <div className="flex items-center text-sm text-slate-600">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Desde {new Date(assignment.start_date).toLocaleDateString('es-ES')}
-                            </div>
-                            {assignment.worker?.phone && (
-                              <div className="flex items-center text-sm text-slate-600">
-                                <Phone className="w-4 h-4 mr-2" />
-                                {assignment.worker.phone}
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-3 mb-2 gap-2">
+                                <h3 className="text-base sm:text-lg font-semibold text-slate-900 break-words">
+                                  {assignment.worker?.name} {assignment.worker?.surname} → {assignment.user?.name} {assignment.user?.surname}
+                                </h3>
+                                <div className="flex flex-wrap gap-2">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[assignment.status]}`}>
+                                    {statusIcon}
+                                    {getStatusText(assignment.status)}
+                                  </span>
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priorityColors[assignment.priority]}`}>
+                                    Prioridad {getPriorityText(assignment.priority)}
+                                  </span>
+                                </div>
                               </div>
-                            )}
-                          </div>
 
-                          {/* Schedule */}
-                          <div className="bg-slate-50 rounded-lg p-3 mb-3">
-                            <p className="text-sm font-medium text-slate-700 mb-1">Horario:</p>
-                            <p className="text-sm text-slate-600">{formatSchedule(assignment.specific_schedule)}</p>
-                          </div>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3 mb-3">
+                                <div className="flex items-center text-sm text-slate-600">
+                                  <Clock className="w-4 h-4 mr-2 flex-shrink-0" />
+                                  <span className="truncate">{assignment.assigned_hours_per_week}h/semana</span>
+                                </div>
+                                <div className="flex items-center text-sm text-slate-600">
+                                  <Calendar className="w-4 h-4 mr-2 flex-shrink-0" />
+                                  <span className="truncate">Desde {new Date(assignment.start_date).toLocaleDateString('es-ES')}</span>
+                                </div>
+                                {assignment.worker?.phone && (
+                                  <div className="flex items-center text-sm text-slate-600">
+                                    <Phone className="w-4 h-4 mr-2 flex-shrink-0" />
+                                    <span className="truncate">{assignment.worker.phone}</span>
+                                  </div>
+                                )}
+                              </div>
 
-                          {/* Notes */}
-                          {assignment.notes && (
-                            <div className="bg-blue-50 rounded-lg p-3">
-                              <p className="text-sm font-medium text-blue-900 mb-1">Notas:</p>
-                              <p className="text-sm text-blue-700">{assignment.notes}</p>
+                              {/* Schedule */}
+                              <div className="bg-slate-50 rounded-lg p-3 mb-3">
+                                <p className="text-sm font-medium text-slate-700 mb-1">Horario:</p>
+                                <p className="text-sm text-slate-600 break-words">{formatSchedule(assignment.specific_schedule)}</p>
+                              </div>
+
+                              {/* Notes */}
+                              {assignment.notes && (
+                                <div className="bg-blue-50 rounded-lg p-3">
+                                  <p className="text-sm font-medium text-blue-900 mb-1">Notas:</p>
+                                  <p className="text-sm text-blue-700 break-words">{assignment.notes}</p>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      </div>
+                          </div>
 
-                      {/* Actions */}
-                      <div className="flex flex-col space-y-2 ml-4">
-                        <Link href={`/dashboard/assignments/${assignment.id}`}>
-                          <Button variant="secondary" size="sm">
-                            <Eye className="w-4 h-4 mr-1" />
-                            Ver
-                          </Button>
-                        </Link>
-                        <Link href={`/dashboard/assignments/${assignment.id}/edit`}>
-                          <Button variant="secondary" size="sm">
-                            <Edit className="w-4 h-4 mr-1" />
-                            Editar
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => handleDelete(assignment)}
-                          disabled={deletingId === assignment.id}
-                          className="text-red-600 hover:text-red-700"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          {deletingId === assignment.id ? 'Eliminando...' : 'Eliminar'}
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )
-            })}
+                          {/* Actions */}
+                          <div className="flex flex-col sm:flex-row lg:flex-col space-y-2 sm:space-y-0 sm:space-x-2 lg:space-x-0 lg:space-y-2">
+                            <Link href={`/dashboard/assignments/${assignment.id}`}>
+                              <Button variant="secondary" size="sm" className="w-full sm:w-auto lg:w-full">
+                                <Eye className="w-4 h-4 mr-1" />
+                                Ver
+                              </Button>
+                            </Link>
+                            <Link href={`/dashboard/assignments/${assignment.id}/edit`}>
+                              <Button variant="secondary" size="sm" className="w-full sm:w-auto lg:w-full">
+                                <Edit className="w-4 h-4 mr-1" />
+                                Editar
+                              </Button>
+                            </Link>
+                            <Button 
+                              variant="danger"
+                              size="sm"
+                              onClick={() => handleDeleteClick(assignment)}
+                              disabled={deletingId === assignment.id}
+                              className="w-full sm:w-auto lg:w-full"
+                            >
+                              <Trash2 className="w-4 h-4 mr-1" />
+                              {deletingId === assignment.id ? 'Eliminando...' : 'Eliminar'}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Stats Cards - Mobile Only (at the bottom) */}
+        <div className="lg:hidden mt-8">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumen de Asignaciones</h3>
+          <div className="grid grid-cols-1 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                    <Users className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-600">Total</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.total}</p>
+                    <p className="text-xs text-slate-500">Asignaciones</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-600">Activas</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.active}</p>
+                    <p className="text-xs text-slate-500">En curso</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-yellow-100 rounded-lg flex-shrink-0">
+                    <Pause className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-600">Pausadas</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.paused}</p>
+                    <p className="text-xs text-slate-500">Temporales</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                    <Clock className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-600">Horas/Semana</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.totalWeeklyHours}</p>
+                    <p className="text-xs text-slate-500">Asignadas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center">
+                  <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="ml-3 min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-600">Completadas</p>
+                    <p className="text-xl font-bold text-slate-900">{stats.completed}</p>
+                    <p className="text-xs text-slate-500">Finalizadas</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        )}
-      </div>
+        </div>
+      </main>
+
+      {/* Footer de navegación fijo */}
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-lg">
+        <nav className="flex justify-around py-3">
+          <Link href="/dashboard/users" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <User className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Usuarios</span>
+          </Link>
+          <Link href="/dashboard/workers" className="flex flex-col items-center text-xs text-slate-600 hover:text-green-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Trabajadoras</span>
+          </Link>
+          <Link href="/dashboard/assignments" className="flex flex-col items-center text-xs text-slate-600 hover:text-purple-600 transition-colors">
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Asignaciones</span>
+          </Link>
+          <Link href="/dashboard/planning" className="flex flex-col items-center text-xs text-slate-600 hover:text-orange-600 transition-colors">
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Planning</span>
+          </Link>
+          <Link href="/dashboard/settings" className="flex flex-col items-center text-xs text-slate-600 hover:text-slate-800 transition-colors">
+            <Settings className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Configuración</span>
+          </Link>
+        </nav>
+      </footer>
+
+      {/* Espacio para el footer fijo */}
+      <div className="h-20"></div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && assignmentToDelete && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <div className="flex items-center mb-4">
+              <div className="p-2 bg-red-100 rounded-lg mr-3">
+                <Trash2 className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-slate-900">
+                Confirmar Eliminación
+              </h3>
+            </div>
+            
+            <p className="text-slate-600 mb-6">
+              ¿Estás segura de que quieres eliminar la asignación de{' '}
+              <strong>{assignmentToDelete.worker?.name} {assignmentToDelete.worker?.surname}</strong>{' '}
+              para <strong>{assignmentToDelete.user?.name} {assignmentToDelete.user?.surname}</strong>?
+            </p>
+            
+            <p className="text-sm text-slate-500 mb-6 bg-yellow-50 p-3 rounded-lg">
+              ⚠️ Esta acción no se puede deshacer. Se eliminará toda la información de la asignación.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+              <Button
+                variant="secondary"
+                onClick={handleDeleteCancel}
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="danger"
+                onClick={handleDeleteConfirm}
+                disabled={deletingId === assignmentToDelete.id}
+                className="flex-1"
+              >
+                {deletingId === assignmentToDelete.id ? 'Eliminando...' : 'Eliminar'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {ToastComponent}
     </div>
   )

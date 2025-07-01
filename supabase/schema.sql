@@ -15,12 +15,57 @@ CREATE TABLE users (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  worker_id UUID REFERENCES worker_profiles(id) NOT NULL,
   name TEXT NOT NULL,
   surname TEXT NOT NULL,
   phone TEXT NOT NULL,
+  address TEXT,
   notes TEXT,
-  is_active BOOLEAN DEFAULT TRUE
+  is_active BOOLEAN DEFAULT TRUE,
+  monthly_hours DECIMAL(5,2) DEFAULT 0 CHECK (monthly_hours >= 0)
+);
+
+-- Tabla de trabajadoras
+CREATE TABLE workers (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name VARCHAR(50) NOT NULL,
+    surname VARCHAR(100) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(100),
+    address TEXT,
+    dni VARCHAR(20) UNIQUE,
+    social_security_number VARCHAR(50),
+    hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    is_active BOOLEAN DEFAULT true,
+    hourly_rate DECIMAL(5,2) DEFAULT 15.00,
+    max_weekly_hours INTEGER DEFAULT 40,
+    specializations TEXT[],
+    availability_days TEXT[] DEFAULT ARRAY['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+    notes TEXT,
+    emergency_contact_name VARCHAR(100),
+    emergency_contact_phone VARCHAR(20),
+    profile_photo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Tabla de asignaciones (relación trabajadora-usuario)
+CREATE TABLE assignments (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    worker_id UUID REFERENCES workers(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    assigned_hours_per_week DECIMAL(4,1) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE,
+    specific_schedule JSONB,
+    priority INTEGER DEFAULT 2,
+    status VARCHAR(20) DEFAULT 'active',
+    notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+    
+    UNIQUE(worker_id, user_id, start_date),
+    CHECK (assigned_hours_per_week > 0 AND assigned_hours_per_week <= 40),
+    CHECK (end_date IS NULL OR end_date >= start_date)
 );
 
 -- Tabla de tarjetas de servicio mensuales
@@ -35,8 +80,8 @@ CREATE TABLE service_cards (
   used_hours DECIMAL(5,2) DEFAULT 0 CHECK (used_hours >= 0),
   includes_holidays BOOLEAN DEFAULT FALSE,
   includes_weekends BOOLEAN DEFAULT FALSE,
-  holiday_hours JSONB, -- Horas específicas por fecha de festivo: {"2024-12-25": 3.5}
-  weekend_hours JSONB, -- Horas de fines de semana: {"saturday": 2, "sunday": 1.5}
+  holiday_hours JSONB,
+  weekend_hours JSONB,
   UNIQUE(user_id, month, year)
 );
 
@@ -67,6 +112,14 @@ CREATE TRIGGER update_users_updated_at
   BEFORE UPDATE ON users 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_workers_updated_at 
+  BEFORE UPDATE ON workers 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_assignments_updated_at 
+  BEFORE UPDATE ON assignments 
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 CREATE TRIGGER update_service_cards_updated_at 
   BEFORE UPDATE ON service_cards 
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
@@ -74,6 +127,8 @@ CREATE TRIGGER update_service_cards_updated_at
 -- Habilitar RLS (Row Level Security)
 ALTER TABLE worker_profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_cards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE service_days ENABLE ROW LEVEL SECURITY;
 
@@ -87,84 +142,25 @@ CREATE POLICY "Los trabajadores pueden actualizar su propio perfil" ON worker_pr
 CREATE POLICY "Permitir inserción de perfil en signup" ON worker_profiles
   FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Políticas RLS para users
-CREATE POLICY "Los trabajadores solo ven sus usuarios" ON users
-  FOR SELECT USING (auth.uid() = worker_id);
+-- Políticas RLS para users (sin worker_id)
+CREATE POLICY "Permitir acceso completo a usuarios" ON users
+  FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Los trabajadores solo pueden crear usuarios para sí mismos" ON users
-  FOR INSERT WITH CHECK (auth.uid() = worker_id);
+-- Políticas RLS para workers
+CREATE POLICY "Permitir acceso completo a trabajadoras" ON workers
+  FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY "Los trabajadores solo pueden actualizar sus usuarios" ON users
-  FOR UPDATE USING (auth.uid() = worker_id);
-
-CREATE POLICY "Los trabajadores solo pueden eliminar sus usuarios" ON users
-  FOR DELETE USING (auth.uid() = worker_id);
+-- Políticas RLS para assignments
+CREATE POLICY "Permitir acceso completo a asignaciones" ON assignments
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- Políticas RLS para service_cards
-CREATE POLICY "Los trabajadores ven tarjetas de sus usuarios" ON service_cards
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM users WHERE users.id = service_cards.user_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores crean tarjetas para sus usuarios" ON service_cards
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users WHERE users.id = service_cards.user_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores actualizan tarjetas de sus usuarios" ON service_cards
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM users WHERE users.id = service_cards.user_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores eliminan tarjetas de sus usuarios" ON service_cards
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM users WHERE users.id = service_cards.user_id AND users.worker_id = auth.uid()
-    )
-  );
+CREATE POLICY "Permitir acceso completo a tarjetas de servicio" ON service_cards
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- Políticas RLS para service_days
-CREATE POLICY "Los trabajadores ven días de servicio de sus tarjetas" ON service_days
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM service_cards 
-      JOIN users ON users.id = service_cards.user_id 
-      WHERE service_cards.id = service_days.card_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores crean días de servicio para sus tarjetas" ON service_days
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM service_cards 
-      JOIN users ON users.id = service_cards.user_id 
-      WHERE service_cards.id = service_days.card_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores actualizan días de servicio de sus tarjetas" ON service_days
-  FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM service_cards 
-      JOIN users ON users.id = service_cards.user_id 
-      WHERE service_cards.id = service_days.card_id AND users.worker_id = auth.uid()
-    )
-  );
-
-CREATE POLICY "Los trabajadores eliminan días de servicio de sus tarjetas" ON service_days
-  FOR DELETE USING (
-    EXISTS (
-      SELECT 1 FROM service_cards 
-      JOIN users ON users.id = service_cards.user_id 
-      WHERE service_cards.id = service_days.card_id AND users.worker_id = auth.uid()
-    )
-  );
+CREATE POLICY "Permitir acceso completo a días de servicio" ON service_days
+  FOR ALL USING (auth.role() = 'authenticated');
 
 -- Función para crear perfil automáticamente al registrarse
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -179,4 +175,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Trigger para crear perfil automáticamente
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); 
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

@@ -64,7 +64,7 @@ export default function RegisterPage() {
         // Redirigir al dashboard después del registro exitoso
         router.push('/dashboard')
       }
-    } catch (err) {
+    } catch {
       setError('Error de conexión. Inténtalo de nuevo.')
     } finally {
       setLoading(false)

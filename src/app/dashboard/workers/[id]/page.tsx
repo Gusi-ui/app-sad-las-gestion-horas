@@ -26,9 +26,14 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  Plus
+  Plus,
+  Settings,
+  LogOut,
+  Menu
 } from 'lucide-react'
 import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
 
 const specializationLabels: Record<WorkerSpecialization, string> = {
   elderly_care: '👴 Personas Mayores',
@@ -57,59 +62,60 @@ const dayLabels: Record<WeekDay, string> = {
 export default function WorkerDetailsPage() {
   const params = useParams()
   const workerId = params.id as string
-  const { workerStats, deleteWorker, getWorkerById } = useWorkers()
+  const { workerStats, getWorkerById } = useWorkers()
   const { showToast, ToastComponent } = useToast()
+  const router = useRouter()
   
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const fetchWorker = async () => {
-    try {
-      setIsLoading(true)
-      setError(null)
-      
-      const { data, error } = await getWorkerById(workerId)
-      
-      if (error) {
-        throw new Error(error)
-      }
-      
-      setWorker(data)
-    } catch (err) {
-      console.error('Error fetching worker:', err)
-      setError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
   useEffect(() => {
+    const fetchWorker = async () => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const { data, error } = await getWorkerById(workerId)
+        
+        if (error) {
+          throw new Error(error)
+        }
+        
+        setWorker(data)
+      } catch (err) {
+        console.error('Error fetching worker:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
     if (workerId) {
       fetchWorker()
     }
-  }, [workerId])
+  }, [workerId, getWorkerById])
 
   const handleDelete = async () => {
-    if (!worker) return
-    
-    if (!confirm(`¿Estás segura de que quieres eliminar a ${worker.name} ${worker.surname}?\n\nEsta acción no se puede deshacer y eliminará también todas sus asignaciones.`)) {
-      return
-    }
+    if (!workerId) return
 
     setIsDeleting(true)
     try {
-      const { error } = await deleteWorker(worker.id)
+      const { error } = await supabase
+        .from('workers')
+        .update({ is_active: false })
+        .eq('id', workerId)
+
       if (error) {
-        showToast(`Error al eliminar: ${error}`, 'error')
-      } else {
-        showToast(`${worker.name} ${worker.surname} eliminada correctamente`, 'success')
-        // Redirect after successful deletion
-        window.location.href = '/dashboard/workers'
+        showToast('Error al eliminar el trabajador', 'error')
+        return
       }
-    } catch (err) {
-      showToast('Error inesperado al eliminar', 'error')
+
+      showToast('Trabajador eliminado correctamente', 'success')
+      router.push('/dashboard/workers')
+    } catch {
+      showToast('Error al eliminar el trabajador', 'error')
     } finally {
       setIsDeleting(false)
     }
@@ -117,6 +123,11 @@ export default function WorkerDetailsPage() {
 
   const getWorkerStats = () => {
     return workerStats.find(stat => stat.id === workerId)
+  }
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/')
   }
 
   if (isLoading) {
@@ -150,18 +161,25 @@ export default function WorkerDetailsPage() {
 
   const stats = getWorkerStats()
 
+  console.log('Worker details page rendering:', { worker, isLoading, error })
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard/workers">
-              <Button variant="secondary" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver a Trabajadoras
-              </Button>
-            </Link>
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-red-100 shadow-sm border-b border-slate-200">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center py-4">
+            <Button variant="secondary" size="sm" onClick={() => router.back()} className="mr-2">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+            </Button>
+            <h1 className="text-xl font-bold text-slate-900 truncate flex-1">Detalle de Trabajadora</h1>
+          </div>
+        </div>
+      </header>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        {/* Worker Info Header */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-slate-900">
                 👩‍💼 {worker.name} {worker.surname}
@@ -178,37 +196,41 @@ export default function WorkerDetailsPage() {
                   {worker.is_active ? (
                     <>
                       <UserCheck className="w-3 h-3 mr-1" />
-                      Trabajadora Activa
+                      Activa
                     </>
                   ) : (
                     <>
                       <UserX className="w-3 h-3 mr-1" />
-                      Trabajadora Inactiva
+                      Inactiva
                     </>
                   )}
                 </span>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                  💼 ID: {worker.id.split('-')[0]}
+                <span className="text-xs text-slate-500">
+                  ID: {worker.id.slice(0, 8)}...
                 </span>
               </div>
             </div>
-          </div>
-          <div className="flex space-x-3">
-            <Link href={`/dashboard/workers/${worker.id}/edit`}>
-              <Button variant="secondary">
-                <Edit className="w-4 h-4 mr-2" />
-                Editar
-              </Button>
-            </Link>
-            <Button 
-              variant="secondary" 
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
+            
+            <div className="flex items-center space-x-2">
+              <Link href={`/dashboard/workers/${worker.id}/edit`}>
+                <Button variant="secondary" size="sm">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Editar
+                </Button>
+              </Link>
+              {worker.is_active && (
+                <Button 
+                  variant="secondary" 
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {isDeleting ? 'Eliminando...' : 'Eliminar'}
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -440,22 +462,22 @@ export default function WorkerDetailsPage() {
                 <CardTitle>🚀 Acciones Rápidas</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Link href={`/dashboard/workers/${worker.id}/assignments`}>
+                <Link href="/dashboard/assignments">
                   <Button variant="secondary" className="w-full">
                     <Users className="w-4 h-4 mr-2" />
-                    Ver Asignaciones
+                    Ver Todas las Asignaciones
                   </Button>
                 </Link>
-                <Link href={`/dashboard/assignments/new?worker=${worker.id}`}>
+                <Link href={`/dashboard/assignments/new?worker_id=${worker.id}`}>
                   <Button variant="secondary" className="w-full">
                     <Plus className="w-4 h-4 mr-2" />
                     Nueva Asignación
                   </Button>
                 </Link>
-                <Link href={`/dashboard/workers/${worker.id}/schedule`}>
+                <Link href="/dashboard/planning">
                   <Button variant="secondary" className="w-full">
                     <Calendar className="w-4 h-4 mr-2" />
-                    Ver Horario
+                    Ver Planning
                   </Button>
                 </Link>
               </CardContent>
@@ -489,6 +511,32 @@ export default function WorkerDetailsPage() {
         </div>
       </div>
       {ToastComponent}
+      {/* Footer de navegación fijo */}
+      <footer className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-lg">
+        <nav className="flex justify-around py-3">
+          <Link href="/dashboard/users" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <User className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Usuarios</span>
+          </Link>
+          <Link href="/dashboard/workers" className="flex flex-col items-center text-xs text-slate-600 hover:text-green-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Trabajadoras</span>
+          </Link>
+          <Link href="/dashboard/assignments" className="flex flex-col items-center text-xs text-slate-600 hover:text-purple-600 transition-colors">
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Asignaciones</span>
+          </Link>
+          <Link href="/dashboard/planning" className="flex flex-col items-center text-xs text-blue-600 transition-colors">
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Planning</span>
+          </Link>
+          <Link href="/dashboard/settings" className="flex flex-col items-center text-xs text-slate-600 hover:text-slate-800 transition-colors">
+            <Settings className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Configuración</span>
+          </Link>
+        </nav>
+      </footer>
+      <div className="h-20"></div>
     </div>
   )
 } 

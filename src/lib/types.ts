@@ -2,10 +2,10 @@ export interface User {
   id: string
   created_at: string
   updated_at: string
-  worker_id: string
   name: string
   surname: string
   phone: string
+  address?: string
   notes?: string
   is_active: boolean
   monthly_hours?: number // Horas totales asignadas al mes (ej: 86h)

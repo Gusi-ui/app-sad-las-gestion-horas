@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -13,15 +13,15 @@ import {
   Clock, 
   User, 
   Phone, 
-  AlertTriangle, 
   ChevronLeft,
   ChevronRight,
   Calendar,
   Edit,
-  Copy,
   Trash2,
+  X,
   Filter,
-  X
+  AlertTriangle,
+  Copy
 } from 'lucide-react'
 
 const weekDays: { key: WeekDay; label: string; short: string }[] = [
@@ -69,7 +69,7 @@ export default function PlanningCalendar({
   filterWorker,
   filterStatus 
 }: PlanningCalendarProps) {
-  const { assignments, isLoading, error, deleteAssignment, updateAssignment } = useAssignments()
+  const { assignments, isLoading, deleteAssignment, updateAssignment } = useAssignments()
   const { workers } = useWorkers()
   const { data: users } = useUsers()
   const { showToast, ToastComponent } = useToast()
@@ -270,7 +270,7 @@ export default function PlanningCalendar({
         worker_id: original.worker_id,
         user_id: original.user_id,
         assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
-        hourly_rate: (original as any).hourly_rate?.toString() || '0',
+        hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
         priority: original.priority?.toString() || '',
         notes: original.notes || '',
         start_date: fallbackBaseDate
@@ -307,7 +307,7 @@ export default function PlanningCalendar({
           worker_id: original.worker_id,
           user_id: original.user_id,
           assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
-          hourly_rate: (original as any).hourly_rate?.toString() || '0',
+          hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
           priority: original.priority?.toString() || '',
           notes: original.notes || '',
           start_date: newStartDate
@@ -331,7 +331,7 @@ export default function PlanningCalendar({
       worker_id: original.worker_id,
       user_id: original.user_id,
       assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
-      hourly_rate: (original as any).hourly_rate?.toString() || '0',
+      hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
       priority: original.priority?.toString() || '',
       notes: original.notes || '',
       start_date: fallbackDate
@@ -363,12 +363,8 @@ export default function PlanningCalendar({
       }
       // Si quedan días, actualizar la asignación
       try {
-        const { error } = await updateAssignment(id, { specific_schedule: newSchedule })
-        if (error) {
-          showToast(`Error al actualizar: ${error}`, 'error')
-        } else {
-          showToast('Bloque eliminado correctamente', 'success')
-        }
+        await updateAssignment(id, { specific_schedule: newSchedule })
+        showToast('Bloque eliminado correctamente', 'success')
       } catch (err) {
         showToast('Error inesperado al eliminar bloque', 'error')
       } finally {
@@ -380,12 +376,8 @@ export default function PlanningCalendar({
   const confirmDeleteAssignment = async () => {
     if (!deleteModalAssignment) return
     try {
-      const { error } = await deleteAssignment(deleteModalAssignment.id)
-      if (error) {
-        showToast(`Error al eliminar: ${error}`, 'error')
-      } else {
-        showToast('Asignación eliminada correctamente', 'success')
-      }
+      await deleteAssignment(deleteModalAssignment.id)
+      showToast('Asignación eliminada correctamente', 'success')
     } catch (err) {
       showToast('Error inesperado al eliminar', 'error')
     } finally {
@@ -482,7 +474,7 @@ export default function PlanningCalendar({
                     >
                       Todas las trabajadoras
                     </Button>
-                    {activeWorkers.map((worker, index) => (
+                    {activeWorkers.map((worker) => (
                       <Button
                         key={worker.id}
                         variant={selectedWorkerFilter === worker.id ? 'primary' : 'secondary'}
@@ -490,7 +482,7 @@ export default function PlanningCalendar({
                         className="w-full justify-start"
                         onClick={() => setSelectedWorkerFilter(worker.id)}
                       >
-                        <div className={`w-3 h-3 rounded-full mr-2 ${workerColors[index % workerColors.length].replace('bg-', 'bg-').replace(' border-', '')}`}></div>
+                        <div className={`w-3 h-3 rounded-full mr-2 ${workerColors[workers.indexOf(worker) % workerColors.length].replace('bg-', 'bg-').replace(' border-', '')}`}></div>
                         {worker.name} {worker.surname}
                       </Button>
                     ))}

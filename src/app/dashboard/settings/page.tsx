@@ -17,8 +17,7 @@ import {
   Shield,
   FileText,
   Download,
-  Upload,
-  Trash2
+  Upload
 } from 'lucide-react'
 
 export default function SettingsPage() {
@@ -60,8 +59,8 @@ export default function SettingsPage() {
       // await supabase.from('app_settings').upsert(settings)
       
       showToast('Configuración guardada correctamente', 'success')
-    } catch (error) {
-      console.error('Error saving settings:', error)
+    } catch {
+      console.error('Error saving settings')
       showToast('Error al guardar la configuración', 'error')
     } finally {
       setSaving(false)
@@ -84,7 +83,7 @@ export default function SettingsPage() {
       link.click()
       
       showToast('Datos exportados correctamente', 'success')
-    } catch (error) {
+    } catch {
       showToast('Error al exportar datos', 'error')
     }
   }

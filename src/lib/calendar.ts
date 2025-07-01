@@ -120,7 +120,6 @@ export function calculateMonthlyHours(
   includesWeekends: boolean = false
 ): WorkDayCalculation {
   const totalDaysInMonth = getDaysInMonth(year, month)
-  const holidays = getHolidaysForMonth(year, month)
   
   let workDays = 0
   let weekends = 0

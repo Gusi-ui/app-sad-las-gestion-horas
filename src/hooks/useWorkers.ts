@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Worker, WorkerStats } from '@/lib/types'
+import { Worker, WorkerStats, WorkerSpecialization } from '@/lib/types'
 
 export function useWorkers() {
   const [workers, setWorkers] = useState<Worker[]>([])
@@ -8,7 +8,7 @@ export function useWorkers() {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchWorkers = async () => {
+  const fetchWorkers = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -42,9 +42,9 @@ export function useWorkers() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
-  const createWorker = async (workerData: Omit<Worker, 'id' | 'created_at' | 'updated_at'>) => {
+  const createWorker = useCallback(async (workerData: Omit<Worker, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('workers')
@@ -61,9 +61,9 @@ export function useWorkers() {
       console.error('Error creating worker:', err)
       return { data: null, error: err instanceof Error ? err.message : 'Error al crear trabajadora' }
     }
-  }
+  }, [fetchWorkers])
 
-  const updateWorker = async (id: string, updates: Partial<Worker>) => {
+  const updateWorker = useCallback(async (id: string, updates: Partial<Worker>) => {
     try {
       const { data, error } = await supabase
         .from('workers')
@@ -81,9 +81,9 @@ export function useWorkers() {
       console.error('Error updating worker:', err)
       return { data: null, error: err instanceof Error ? err.message : 'Error al actualizar trabajadora' }
     }
-  }
+  }, [fetchWorkers])
 
-  const deleteWorker = async (id: string) => {
+  const deleteWorker = useCallback(async (id: string) => {
     try {
       const { error } = await supabase
         .from('workers')
@@ -99,9 +99,9 @@ export function useWorkers() {
       console.error('Error deleting worker:', err)
       return { error: err instanceof Error ? err.message : 'Error al eliminar trabajadora' }
     }
-  }
+  }, [fetchWorkers])
 
-  const getWorkerById = async (id: string) => {
+  const getWorkerById = useCallback(async (id: string) => {
     try {
       const { data, error } = await supabase
         .from('workers')
@@ -115,21 +115,21 @@ export function useWorkers() {
       console.error('Error fetching worker:', err)
       return { data: null, error: err instanceof Error ? err.message : 'Error al obtener trabajadora' }
     }
-  }
+  }, [])
 
-  const getAvailableWorkers = () => {
+  const getAvailableWorkers = useCallback(() => {
     return workers.filter(worker => worker.is_active)
-  }
+  }, [workers])
 
-  const getWorkersBySpecialization = (specialization: string) => {
+  const getWorkersBySpecialization = useCallback((specialization: string) => {
     return workers.filter(worker => 
-      worker.is_active && worker.specializations.includes(specialization as any)
+      worker.is_active && worker.specializations.includes(specialization as WorkerSpecialization)
     )
-  }
+  }, [workers])
 
   useEffect(() => {
     fetchWorkers()
-  }, [])
+  }, [fetchWorkers])
 
   return {
     workers,

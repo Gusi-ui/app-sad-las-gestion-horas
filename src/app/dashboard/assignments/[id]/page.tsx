@@ -15,24 +15,14 @@ import {
   Clock, 
   Calendar,
   Phone,
-  Mail,
-  MapPin,
   AlertTriangle,
   CheckCircle,
   Pause,
   XCircle,
   Euro,
-  FileText,
-  Play
+  FileText
 } from 'lucide-react'
 import { Assignment, AssignmentStatus } from '@/lib/types'
-
-const statusLabels: Record<AssignmentStatus, string> = {
-  active: 'Activa',
-  paused: 'Pausada',
-  completed: 'Completada',
-  cancelled: 'Cancelada'
-}
 
 const statusColors: Record<AssignmentStatus, string> = {
   active: 'bg-green-100 text-green-800',
@@ -41,17 +31,11 @@ const statusColors: Record<AssignmentStatus, string> = {
   cancelled: 'bg-red-100 text-red-800'
 }
 
-const statusIcons: Record<AssignmentStatus, any> = {
+const statusIcons: Record<AssignmentStatus, React.ComponentType<{ className?: string }>> = {
   active: CheckCircle,
   paused: Pause,
   completed: CheckCircle,
   cancelled: XCircle
-}
-
-const priorityLabels = {
-  1: 'Alta',
-  2: 'Media',
-  3: 'Baja'
 }
 
 const priorityColors: Record<number, string> = {
@@ -88,7 +72,7 @@ export default function AssignmentDetailPage() {
         } else {
           setError('Asignación no encontrada')
         }
-      } catch (err) {
+      } catch {
         setError('Error al cargar la asignación')
       } finally {
         setIsLoading(false)
@@ -120,21 +104,6 @@ export default function AssignmentDetailPage() {
       showToast('Error inesperado al eliminar', 'error')
     } finally {
       setIsDeleting(false)
-    }
-  }
-
-  const getStatusIcon = () => {
-    switch (assignment?.status) {
-      case 'active':
-        return <CheckCircle className="w-4 h-4 text-green-600" />
-      case 'paused':
-        return <Pause className="w-4 h-4 text-amber-600" />
-      case 'completed':
-        return <CheckCircle className="w-4 h-4 text-blue-600" />
-      case 'cancelled':
-        return <XCircle className="w-4 h-4 text-red-600" />
-      default:
-        return null
     }
   }
 
@@ -219,51 +188,26 @@ export default function AssignmentDetailPage() {
   const StatusIcon = statusIcons[assignment.status]
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Link href="/dashboard/assignments">
-              <Button variant="secondary" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Lista
-              </Button>
-            </Link>
-            <Link href="/dashboard/planning">
-              <Button variant="secondary" size="sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                Planning
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                📋 Detalle de Asignación
-              </h1>
-              <p className="text-slate-600">
-                Información completa de la asignación trabajadora-usuario
-              </p>
-            </div>
-          </div>
-          <div className="flex space-x-2">
+    <div className="min-h-screen bg-slate-50 pb-24">
+      {/* Header sticky mobile-first */}
+      <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="flex items-center py-4">
+            <Button variant="secondary" size="sm" onClick={() => router.back()} className="mr-2">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Volver
+            </Button>
+            <h1 className="text-xl font-bold text-slate-900 truncate flex-1">Detalle de Asignación</h1>
             <Link href={`/dashboard/assignments/${assignment.id}/edit`}>
-              <Button variant="secondary">
+              <Button variant="secondary" size="sm" className="ml-2">
                 <Edit className="w-4 h-4 mr-2" />
                 Editar
               </Button>
             </Link>
-            <Button 
-              variant="secondary" 
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {isDeleting ? 'Eliminando...' : 'Eliminar'}
-            </Button>
           </div>
         </div>
+      </header>
 
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid gap-6">
           {/* Status and Priority */}
           <Card>
@@ -450,6 +394,32 @@ export default function AssignmentDetailPage() {
         </div>
       </div>
       {ToastComponent}
+      {/* Footer de navegación fijo */}
+      <footer className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-slate-200 shadow-lg">
+        <nav className="flex justify-around py-3">
+          <Link href="/dashboard/users" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Usuarios</span>
+          </Link>
+          <Link href="/dashboard/workers" className="flex flex-col items-center text-xs text-slate-600 hover:text-green-600 transition-colors">
+            <Users className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Trabajadoras</span>
+          </Link>
+          <Link href="/dashboard/assignments" className="flex flex-col items-center text-xs text-blue-600 transition-colors">
+            <Clock className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Asignaciones</span>
+          </Link>
+          <Link href="/dashboard/planning" className="flex flex-col items-center text-xs text-slate-600 hover:text-blue-600 transition-colors">
+            <Calendar className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Planning</span>
+          </Link>
+          <Link href="/dashboard/settings" className="flex flex-col items-center text-xs text-slate-600 hover:text-slate-800 transition-colors">
+            <FileText className="w-5 h-5 mb-1" />
+            <span className="hidden sm:inline">Configuración</span>
+          </Link>
+        </nav>
+      </footer>
+      <div className="h-20"></div>
     </div>
   )
 } 

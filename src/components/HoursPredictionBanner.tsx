@@ -1,7 +1,6 @@
 'use client'
 
 import { ServiceCard, User } from '@/lib/types'
-import { calculateMonthlyHours } from '@/lib/calendar'
 
 interface HoursPredictionBannerProps {
   serviceCards: ServiceCard[]

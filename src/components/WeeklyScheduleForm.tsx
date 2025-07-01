@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Clock, Plus } from 'lucide-react'
+import { Clock } from 'lucide-react'
+import { TimeSelector } from '@/components/TimeSelector'
 
 const DAYS_OF_WEEK = [
   { value: 1, label: 'Lunes', short: 'L' },
@@ -83,13 +83,18 @@ export function WeeklyScheduleForm({
   }, [schedule])
 
   const toggleDay = (dayOfWeek: number) => {
-    setSchedule(prev => ({
-      ...prev,
-      [dayOfWeek]: {
-        ...prev[dayOfWeek],
-        enabled: !prev[dayOfWeek].enabled
+    
+    setSchedule(prev => {
+      const newState = {
+        ...prev,
+        [dayOfWeek]: {
+          ...prev[dayOfWeek],
+          enabled: !prev[dayOfWeek].enabled
+        }
       }
-    }))
+      
+      return newState
+    })
   }
 
   const updateHours = (dayOfWeek: number, hours: number) => {
@@ -141,7 +146,7 @@ export function WeeklyScheduleForm({
             Selecciona los días de trabajo
           </label>
           
-          <div className="grid grid-cols-1 gap-3">
+          <div className="grid grid-cols-1 gap-3 w-full">
             {DAYS_OF_WEEK.map((day) => {
               const config = schedule[day.value]
               const isEnabled = config.enabled
@@ -149,16 +154,16 @@ export function WeeklyScheduleForm({
               return (
                 <div 
                   key={day.value}
-                  className={`border rounded-lg transition-all ${
+                  className={`border rounded-lg transition-all w-full ${
                     isEnabled 
                       ? 'border-sky-300 bg-sky-50' 
                       : 'border-slate-200 bg-slate-50'
                   }`}
                 >
-                  <div className="p-4">
-                    <div className="flex items-center justify-between">
-                      {/* Toggle del día */}
-                      <label className="flex items-center space-x-3 cursor-pointer">
+                  <div className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-2">
+                      {/* Toggle del día - CORREGIDO */}
+                      <label className="flex items-center space-x-3 cursor-pointer min-w-0">
                         <div className="relative">
                           <input
                             type="checkbox"
@@ -174,7 +179,7 @@ export function WeeklyScheduleForm({
                             } mt-0.5`}></div>
                           </div>
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <div className="font-medium text-slate-900">{day.label}</div>
                           <div className="text-sm text-slate-600">
                             {isEnabled ? 'Activo' : 'Inactivo'}
@@ -184,17 +189,12 @@ export function WeeklyScheduleForm({
 
                       {/* Campo de horas (solo si está habilitado) */}
                       {isEnabled && (
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="number"
-                            min="0.5"
-                            max="24"
-                            step="0.5"
+                        <div className="flex items-center space-x-2 flex-wrap min-w-0">
+                          <TimeSelector
                             value={config.hours}
-                            onChange={(e) => updateHours(day.value, Number(e.target.value))}
-                            className="w-20 px-3 py-2 text-center rounded-lg border border-slate-300 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                            onChange={(hours) => updateHours(day.value, hours)}
                           />
-                          <span className="text-sm text-slate-600 font-medium">horas</span>
+                          <span className="text-sm text-slate-600 font-medium whitespace-nowrap">por día</span>
                         </div>
                       )}
                     </div>
@@ -247,4 +247,4 @@ export function WeeklyScheduleForm({
       </CardContent>
     </Card>
   )
-} 
+}
