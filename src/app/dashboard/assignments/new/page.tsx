@@ -7,8 +7,9 @@ import { AssignmentForm, AssignmentFormData } from '@/components/AssignmentForm'
 import type { Assignment } from '@/lib/types'
 import { Plus, Users, User, Clock, Calendar, FileText } from 'lucide-react'
 import Link from 'next/link'
+import { Suspense } from 'react'
 
-export default function NewAssignmentPage() {
+function NewAssignmentContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { createAssignment, checkDuplicateAssignment, suggestNewStartDate } = useAssignments()
@@ -125,5 +126,20 @@ export default function NewAssignmentPage() {
       </footer>
       <div className="h-20"></div>
     </div>
+  )
+}
+
+export default function NewAssignmentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Cargando...</p>
+        </div>
+      </div>
+    }>
+      <NewAssignmentContent />
+    </Suspense>
   )
 }

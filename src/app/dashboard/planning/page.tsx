@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -12,9 +12,10 @@ import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import type { Assignment, WeekDay, User, Worker } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
-import { addDays, startOfWeek, format, isSameDay, isBefore, isAfter, parseISO } from 'date-fns'
+import { addDays, startOfWeek, format, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Modal } from '@/components/ui/modal'
+import { getDaysInMonth } from '@/lib/calendar'
 
 function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day: string): string[] | undefined {
   if (!schedule) return undefined;
@@ -25,13 +26,13 @@ function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day:
 function BottomDrawer({ open, onClose, title, children }: { open: boolean, onClose: () => void, title: string, children: React.ReactNode }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-end">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-end" role="dialog" aria-modal="true" aria-label={title}>
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Cerrar modal" tabIndex={0} />
       <div className="relative w-full max-w-md mx-auto bg-white rounded-t-2xl shadow-lg animate-slide-up" style={{ minHeight: '40vh', maxHeight: '90vh', overflowY: 'auto' }}>
         <div className="flex items-center justify-between px-4 py-3 border-b">
           <span className="font-semibold text-lg">{title}</span>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100" aria-label="Cerrar">
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
         <div className="p-4">{children}</div>
@@ -56,14 +57,24 @@ export default function PlanningPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null)
   const [groupBy, setGroupBy] = useState<'none' | 'worker' | 'user'>('none')
+  const [monthlyViewType, setMonthlyViewType] = useState<'grid' | 'list'>('grid')
 
   const [weekStart, setWeekStart] = useState(startOfWeek(selectedDate, { weekStartsOn: 1 }))
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
-  const goToPrevWeek = () => setWeekStart(prev => addDays(prev, -7))
-  const goToNextWeek = () => setWeekStart(prev => addDays(prev, 7))
+  // const goToPrevWeek = () => setWeekStart(prev => addDays(prev, -7))
+  // const goToNextWeek = () => setWeekStart(prev => addDays(prev, 7))
+
+  // Filtros globales de planning
+  const [filterWorkerId, setFilterWorkerId] = useState<string>('');
+  const [filterUserId, setFilterUserId] = useState<string>('');
+  const [filterWorkerSearch, setFilterWorkerSearch] = useState('');
+  const [filterUserSearch, setFilterUserSearch] = useState('');
 
   const filteredAssignments = assignments.filter((a) => {
+    // Filtro por trabajadora y usuario
+    if (filterWorkerId && a.worker_id !== filterWorkerId) return false;
+    if (filterUserId && a.user_id !== filterUserId) return false;
     if (viewMode === 'day') {
       if (a.specific_schedule) {
         const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const
@@ -207,7 +218,7 @@ export default function PlanningPage() {
   const [assignLoading, setAssignLoading] = useState(false)
 
   // Estado para el modal de resolución de conflicto
-  const [resolveModal, setResolveModal] = useState<{ open: boolean; conflict: any | null }>({ open: false, conflict: null })
+  const [resolveModal, setResolveModal] = useState<{ open: boolean; conflict: { type: string; description: string; assignments: Assignment[] } | null }>({ open: false, conflict: null })
   const [deletingAssignmentId, setDeletingAssignmentId] = useState<string | null>(null)
 
   // Estado para el modal de confirmación de eliminación
@@ -270,12 +281,30 @@ export default function PlanningPage() {
                 aria-expanded={showMobileMenu}
                 className="relative z-10"
               >
-                <Menu className="w-4 h-4" />
+                <Menu className="w-4 h-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Barra de filtros activos */}
+      {(filterWorkerId || filterUserId) && (
+        <div className="flex flex-wrap gap-2 px-4 py-2 bg-slate-100 border-b items-center">
+          {filterWorkerId && (
+            <span className="inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-1 rounded-full">
+              Trabajadora: {workers?.find(w => w.id === filterWorkerId)?.name} {workers?.find(w => w.id === filterWorkerId)?.surname}
+              <button className="ml-2 text-blue-600 hover:text-blue-900" onClick={() => { setFilterWorkerId(''); setFilterWorkerSearch(''); }} aria-label="Quitar filtro trabajadora">×</button>
+            </span>
+          )}
+          {filterUserId && (
+            <span className="inline-flex items-center bg-green-100 text-green-800 text-xs font-medium px-2.5 py-1 rounded-full">
+              Usuario: {users?.find(u => u.id === filterUserId)?.name} {users?.find(u => u.id === filterUserId)?.surname}
+              <button className="ml-2 text-green-600 hover:text-green-900" onClick={() => { setFilterUserId(''); setFilterUserSearch(''); }} aria-label="Quitar filtro usuario">×</button>
+            </span>
+          )}
+        </div>
+      )}
 
       {/* Menú contextual móvil unificado */}
       <div className={`md:hidden transition-all duration-300 ease-in-out ${
@@ -331,17 +360,51 @@ export default function PlanningPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
-        <Button variant="secondary" size="sm" onClick={goToPrevDay}>
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
-        <span className="font-semibold text-lg">
-          {selectedDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
-        </span>
-        <Button variant="secondary" size="sm" onClick={goToNextDay}>
-          <ChevronRight className="w-5 h-5" />
-        </Button>
-      </div>
+      {viewMode === 'day' && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+          <Button variant="secondary" size="sm" onClick={goToPrevDay}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <span className="font-semibold text-lg">
+            {selectedDate.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+          </span>
+          <Button variant="secondary" size="sm" onClick={goToNextDay}>
+            <ChevronRight className="w-5 h-5" />
+          </Button>
+        </div>
+      )}
+      {/* Barra de navegación de meses en vista mensual */}
+      {viewMode === 'month' && (
+        <div className="flex items-center justify-between px-4 py-3 bg-white border-b">
+          <Button variant="secondary" size="sm" onClick={() => {
+            const prev = new Date(selectedDate)
+            prev.setMonth(prev.getMonth() - 1)
+            setSelectedDate(prev)
+          }}>
+            <ChevronLeft className="w-5 h-5" />
+          </Button>
+          <span className="font-semibold text-lg">
+            {selectedDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}
+          </span>
+          <div className="flex items-center gap-2">
+            <select
+              className="border rounded px-2 py-1 text-sm"
+              value={monthlyViewType}
+              onChange={e => setMonthlyViewType(e.target.value as 'grid' | 'list')}
+            >
+              <option value="grid">Cuadrícula</option>
+              <option value="list">Lista</option>
+            </select>
+            <Button variant="secondary" size="sm" onClick={() => {
+              const next = new Date(selectedDate)
+              next.setMonth(next.getMonth() + 1)
+              setSelectedDate(next)
+            }}>
+              <ChevronRight className="w-5 h-5" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="px-4 py-2">
         <Card>
@@ -618,29 +681,14 @@ export default function PlanningPage() {
                               {assignments[0].user?.name ? `${assignments[0].user?.name} ${assignments[0].user?.surname}` : 'Sin usuario'}
                             </div>
                             <div className="space-y-2">
-                              {assignments.map(a => (
-                                <div key={a.id} className="border rounded-lg p-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-semibold text-sm">
-                                      {a.specific_schedule ? (() => {
-                                        const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][day.getDay()]
-                                        const times = getScheduleForDay(a.specific_schedule, dayKey)
-                                        return times ? `${times[0]} - ${times[1]}` : 'Sin horario'
-                                      })() : 'Sin horario'}
-                                    </span>
-                                    <span className="text-xs text-slate-500 capitalize px-2 py-1 bg-slate-100 rounded">{a.status}</span>
-                                  </div>
-                                  <div className="text-sm text-slate-700 mb-1">
-                                    <span className="font-medium">Trabajadora:</span> {a.worker?.name} {a.worker?.surname}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Link href={`/dashboard/assignments/${a.id}`}>
-                                      <Button size="sm" variant="secondary">Ver</Button>
-                                    </Link>
-                                    <Link href={`/dashboard/assignments/${a.id}/edit`}>
-                                      <Button size="sm" variant="secondary">Editar</Button>
-                                    </Link>
-                                  </div>
+                              {assignments.map((a, idx) => (
+                                <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                                  {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
+                                    const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                    const dayKey = weekDays[day.getDay()] as WeekDay;
+                                    const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                    return times ? `${times[0]}-${times[1]}` : '—';
+                                  })() : a.start_date}
                                 </div>
                               ))}
                             </div>
@@ -653,9 +701,168 @@ export default function PlanningPage() {
               })
             )
           ) : (
-            <div>
-              <p>Vista mensual en desarrollo</p>
-            </div>
+            // Vista mensual
+            (() => {
+              const year = selectedDate.getFullYear();
+              const month = selectedDate.getMonth() + 1; // 1-indexed
+              const daysInMonth = getDaysInMonth(year, month);
+              const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+              // Agrupar asignaciones por día
+              const assignmentsByDay: Record<number, Assignment[]> = {};
+              filteredAssignments.forEach(a => {
+                if (a.start_date) {
+                  const date = new Date(a.start_date);
+                  if (date.getFullYear() === year && date.getMonth() + 1 === month) {
+                    const day = date.getDate();
+                    if (!assignmentsByDay[day]) assignmentsByDay[day] = [];
+                    assignmentsByDay[day].push(a);
+                  }
+                }
+                // También considerar specific_schedule para asignaciones recurrentes
+                if (a.specific_schedule) {
+                  daysArray.forEach(dayNum => {
+                    const date = new Date(year, month - 1, dayNum);
+                    const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                    const dayKey = weekDays[date.getDay()] as WeekDay;
+                    const times = getScheduleForDay(a.specific_schedule, dayKey);
+                    if (times && times.length === 2 && times[0] && times[1]) {
+                      if (!assignmentsByDay[dayNum]) assignmentsByDay[dayNum] = [];
+                      assignmentsByDay[dayNum].push(a);
+                    }
+                  });
+                }
+              });
+              if (monthlyViewType === 'grid') {
+                // Render cuadrícula mensual
+                return (
+                  <div>
+                    <div className="grid grid-cols-7 gap-2 mb-2 text-xs text-slate-500">
+                      <div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div><div>Dom</div>
+                    </div>
+                    <div className="grid grid-cols-7 gap-2">
+                      {(() => {
+                        const firstDay = new Date(year, month - 1, 1).getDay();
+                        const blanks = (firstDay + 6) % 7;
+                        const cells = [];
+                        for (let i = 0; i < blanks; i++) {
+                          cells.push(<div key={`blank-${i}`}></div>);
+                        }
+                        daysArray.forEach(dayNum => {
+                          const dayAssignments = assignmentsByDay[dayNum] || [];
+                          // Agrupación
+                          let grouped: [string, Assignment[]][] = [];
+                          if (groupBy === 'worker') {
+                            grouped = Object.entries(dayAssignments.reduce((acc, a) => {
+                              const key = a.worker?.id || 'Sin trabajadora';
+                              if (!acc[key]) acc[key] = [];
+                              acc[key].push(a);
+                              return acc;
+                            }, {} as Record<string, Assignment[]>));
+                          } else if (groupBy === 'user') {
+                            grouped = Object.entries(dayAssignments.reduce((acc, a) => {
+                              const key = a.user?.id || 'Sin usuario';
+                              if (!acc[key]) acc[key] = [];
+                              acc[key].push(a);
+                              return acc;
+                            }, {} as Record<string, Assignment[]>));
+                          } else {
+                            grouped = dayAssignments.map((a, idx) => [`${a.id}-${dayNum}-${idx}`, [a]]);
+                          }
+                          cells.push(
+                            <div key={`day-${dayNum}`} className="border rounded min-h-[80px] p-1 flex flex-col bg-white">
+                              <div className="font-bold text-xs mb-1 text-slate-700">{dayNum}</div>
+                              {grouped.length === 0 ? (
+                                <div className="text-slate-300 text-xs">—</div>
+                              ) : (
+                                grouped.map(([groupKey, groupAssignments], groupIdx) => (
+                                  <div key={`group-${groupKey}-${dayNum}-${groupIdx}`} className="mb-1">
+                                    {groupBy !== 'none' && (
+                                      <div className="text-[10px] font-semibold text-slate-500 truncate mb-0.5">
+                                        {groupBy === 'worker'
+                                          ? groupAssignments[0].worker?.name + ' ' + groupAssignments[0].worker?.surname
+                                          : groupAssignments[0].user?.name + ' ' + groupAssignments[0].user?.surname}
+                                      </div>
+                                    )}
+                                    {groupAssignments.map((a, idx) => (
+                                      <div key={`a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                                        {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
+                                          const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                          const date = new Date(year, month - 1, dayNum);
+                                          const dayKey = weekDays[date.getDay()] as WeekDay;
+                                          const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                          return times ? `${times[0]}-${times[1]}` : '—';
+                                        })() : a.start_date}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          );
+                        });
+                        return cells;
+                      })()}
+                    </div>
+                  </div>
+                );
+              } else {
+                // Render lista mensual agrupada por día
+                return (
+                  <div className="space-y-4">
+                    {daysArray.map(dayNum => {
+                      const dayAssignments = assignmentsByDay[dayNum] || [];
+                      if (dayAssignments.length === 0) return null;
+                      // Agrupación
+                      let grouped: [string, Assignment[]][] = [];
+                      if (groupBy === 'worker') {
+                        grouped = Object.entries(dayAssignments.reduce((acc, a) => {
+                          const key = a.worker?.id || 'Sin trabajadora';
+                          if (!acc[key]) acc[key] = [];
+                          acc[key].push(a);
+                          return acc;
+                        }, {} as Record<string, Assignment[]>));
+                      } else if (groupBy === 'user') {
+                        grouped = Object.entries(dayAssignments.reduce((acc, a) => {
+                          const key = a.user?.id || 'Sin usuario';
+                          if (!acc[key]) acc[key] = [];
+                          acc[key].push(a);
+                          return acc;
+                        }, {} as Record<string, Assignment[]>));
+                      } else {
+                        grouped = dayAssignments.map((a, idx) => [`${a.id}-${dayNum}-${idx}`, [a]]);
+                      }
+                      return (
+                        <div key={`list-day-${dayNum}`} className="border rounded bg-white p-2">
+                          <div className="font-bold text-slate-700 mb-1 text-sm">{dayNum} {selectedDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}</div>
+                          {grouped.map(([groupKey, groupAssignments], groupIdx) => (
+                            <div key={`list-group-${groupKey}-${dayNum}-${groupIdx}`} className="mb-1">
+                              {groupBy !== 'none' && (
+                                <div className="text-xs font-semibold text-slate-500 truncate mb-0.5">
+                                  {groupBy === 'worker'
+                                    ? groupAssignments[0].worker?.name + ' ' + groupAssignments[0].worker?.surname
+                                    : groupAssignments[0].user?.name + ' ' + groupAssignments[0].user?.surname}
+                                </div>
+                              )}
+                              {groupAssignments.map((a, idx) => (
+                                <div key={`list-a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-xs text-slate-700 truncate">
+                                  {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
+                                    const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                    const date = new Date(year, month - 1, dayNum);
+                                    const dayKey = weekDays[date.getDay()] as WeekDay;
+                                    const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                    return times ? `${times[0]}-${times[1]}` : '—';
+                                  })() : a.start_date}
+                                </div>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+            })()
           )
         )}
       </div>
@@ -793,15 +1000,77 @@ export default function PlanningPage() {
               <option value="user">Usuario</option>
             </select>
           </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Filtrar por trabajadora</label>
+            <input
+              type="text"
+              className="border rounded px-2 py-1 text-sm w-full mb-1"
+              placeholder="Buscar trabajadora..."
+              value={filterWorkerId ? (workers?.find(w => w.id === filterWorkerId)?.name + ' ' + workers?.find(w => w.id === filterWorkerId)?.surname) : filterWorkerSearch}
+              onChange={e => {
+                setFilterWorkerSearch(e.target.value);
+                setFilterWorkerId('');
+              }}
+              onFocus={e => e.target.select()}
+              autoComplete="off"
+            />
+            {filterWorkerSearch !== '' && !filterWorkerId && (
+              <div className="relative">
+                <div className="absolute z-10 w-full bg-white border rounded shadow max-h-40 overflow-y-auto">
+                  <button className="w-full text-left px-3 py-1 text-sm hover:bg-slate-100" onClick={() => { setFilterWorkerId(''); setFilterWorkerSearch(''); }}>Todas</button>
+                  {workers?.filter(w => (w.name + ' ' + w.surname).toLowerCase().includes(filterWorkerSearch.toLowerCase())).map(w => (
+                    <button key={w.id} className="w-full text-left px-3 py-1 text-sm hover:bg-slate-100" onClick={() => { setFilterWorkerId(w.id); setFilterWorkerSearch(''); }}>{w.name} {w.surname}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {filterWorkerId && (
+              <div className="mt-1">
+                <button className="text-xs text-blue-600 underline" onClick={() => { setFilterWorkerId(''); setFilterWorkerSearch(''); }}>Quitar filtro</button>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Filtrar por usuario</label>
+            <input
+              type="text"
+              className="border rounded px-2 py-1 text-sm w-full mb-1"
+              placeholder="Buscar usuario..."
+              value={filterUserId ? (users?.find(u => u.id === filterUserId)?.name + ' ' + users?.find(u => u.id === filterUserId)?.surname) : filterUserSearch}
+              onChange={e => {
+                setFilterUserSearch(e.target.value);
+                setFilterUserId('');
+              }}
+              onFocus={e => e.target.select()}
+              autoComplete="off"
+            />
+            {filterUserSearch !== '' && !filterUserId && (
+              <div className="relative">
+                <div className="absolute z-10 w-full bg-white border rounded shadow max-h-40 overflow-y-auto">
+                  <button className="w-full text-left px-3 py-1 text-sm hover:bg-slate-100" onClick={() => { setFilterUserId(''); setFilterUserSearch(''); }}>Todos</button>
+                  {users?.filter(u => (u.name + ' ' + u.surname).toLowerCase().includes(filterUserSearch.toLowerCase())).map(u => (
+                    <button key={u.id} className="w-full text-left px-3 py-1 text-sm hover:bg-slate-100" onClick={() => { setFilterUserId(u.id); setFilterUserSearch(''); }}>{u.name} {u.surname}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {filterUserId && (
+              <div className="mt-1">
+                <button className="text-xs text-blue-600 underline" onClick={() => { setFilterUserId(''); setFilterUserSearch(''); }}>Quitar filtro</button>
+              </div>
+            )}
+          </div>
         </div>
       </BottomDrawer>
       {/* Modal para asignar usuario a trabajadora */}
       {showAssignModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-label="Asignar usuario">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
             <div className="flex justify-between items-center mb-4">
               <div className="font-bold text-lg">Asignar usuario</div>
-              <button onClick={() => { setShowAssignModal(false); setAssignHours(''); setAssignStartDate(''); setSelectedWorker(null); setWorkerSearch(''); }} className="p-2 rounded-full hover:bg-slate-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => { setShowAssignModal(false); setAssignHours(''); setAssignStartDate(''); setSelectedWorker(null); setWorkerSearch(''); }} className="p-2 rounded-full hover:bg-slate-100" aria-label="Cerrar">
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
             </div>
             <div className="mb-4">Selecciona una trabajadora para asignar a <span className="font-medium">{selectedUser?.name} {selectedUser?.surname}</span>:</div>
             {/* Combobox de trabajadora */}
@@ -886,11 +1155,13 @@ export default function PlanningPage() {
 
       {/* Modal de resolución de conflicto */}
       {resolveModal.open && resolveModal.conflict && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" aria-label="Resolver conflicto">
           <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-lg">
             <div className="flex justify-between items-center mb-4">
               <div className="font-bold text-lg">Resolver conflicto</div>
-              <button onClick={() => setResolveModal({ open: false, conflict: null })} className="p-2 rounded-full hover:bg-slate-100"><X className="w-5 h-5" /></button>
+              <button onClick={() => setResolveModal({ open: false, conflict: null })} className="p-2 rounded-full hover:bg-slate-100" aria-label="Cerrar">
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
             </div>
             <div className="mb-4 text-sm text-slate-700">{resolveModal.conflict.description}</div>
             <div className="space-y-3 mb-4">

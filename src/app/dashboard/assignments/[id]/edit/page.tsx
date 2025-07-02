@@ -6,7 +6,7 @@ import { useAssignments } from '@/hooks/useAssignments'
 import { useToast } from '@/components/ui/toast'
 import { AssignmentForm, AssignmentFormData } from '@/components/AssignmentForm'
 import { Assignment } from '@/lib/types'
-import { ArrowLeft, User, Users, Clock, Calendar, FileText } from 'lucide-react'
+import { ArrowLeft, Users, Clock, Calendar, FileText } from 'lucide-react'
 import Link from 'next/link'
 
 export default function EditAssignmentPage({ params }: { params: Promise<{ id: string }> }) {

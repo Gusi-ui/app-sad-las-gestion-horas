@@ -27,9 +27,7 @@ import {
   CheckCircle,
   XCircle,
   Plus,
-  Settings,
-  LogOut,
-  Menu
+  Settings
 } from 'lucide-react'
 import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
 import { useRouter } from 'next/navigation'
@@ -125,10 +123,10 @@ export default function WorkerDetailsPage() {
     return workerStats.find(stat => stat.id === workerId)
   }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
+  // const handleLogout = async () => {
+  //   await supabase.auth.signOut()
+  //   router.push('/')
+  // }
 
   if (isLoading) {
     return (

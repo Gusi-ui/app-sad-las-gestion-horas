@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
-import { ArrowLeft, Save, X, AlertTriangle, Users, User, Clock, Calendar, Settings, LogOut, Menu } from 'lucide-react'
+import { ArrowLeft, Save, X, AlertTriangle, Users, User, Clock, Calendar, Settings } from 'lucide-react'
 import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
@@ -258,10 +258,10 @@ export default function EditWorkerPage() {
     }
   }
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
+  // const handleLogout = async () => {
+  //   await supabase.auth.signOut()
+  //   router.push('/')
+  // }
 
   if (isLoading) {
     return (

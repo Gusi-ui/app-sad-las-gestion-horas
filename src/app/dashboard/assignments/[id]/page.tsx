@@ -10,7 +10,6 @@ import { useToast } from '@/components/ui/toast'
 import { 
   ArrowLeft, 
   Edit, 
-  Trash2, 
   Users, 
   Clock, 
   Calendar,
@@ -55,7 +54,7 @@ export default function AssignmentDetailPage() {
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  // const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const fetchAssignment = async () => {
@@ -84,28 +83,28 @@ export default function AssignmentDetailPage() {
     }
   }, [assignmentId, getAssignmentById])
 
-  const handleDelete = async () => {
-    if (!assignment) return
+  // const handleDelete = async () => {
+  //   if (!assignment) return
     
-    if (!confirm(`¿Estás segura de que quieres eliminar esta asignación?\n\nEsta acción no se puede deshacer.`)) {
-      return
-    }
+  //   if (!confirm(`¿Estás segura de que quieres eliminar esta asignación?\n\nEsta acción no se puede deshacer.`)) {
+  //     return
+  //   }
 
-    setIsDeleting(true)
-    try {
-      const { error } = await deleteAssignment(assignment.id)
-      if (error) {
-        showToast(`Error al eliminar: ${error}`, 'error')
-      } else {
-        showToast('Asignación eliminada correctamente', 'success')
-        router.push('/dashboard/assignments')
-      }
-    } catch {
-      showToast('Error inesperado al eliminar', 'error')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
+  //   setIsDeleting(true)
+  //   try {
+  //     const { error } = await deleteAssignment(assignment.id)
+  //     if (error) {
+  //         showToast(`Error al eliminar: ${error}`, 'error')
+  //     } else {
+  //         showToast('Asignación eliminada correctamente', 'success')
+  //         router.push('/dashboard/assignments')
+  //     }
+  //   } catch {
+  //     showToast('Error inesperado al eliminar', 'error')
+  //   } finally {
+  //     setIsDeleting(false)
+  //   }
+  // }
 
   const getStatusText = () => {
     switch (assignment?.status) {

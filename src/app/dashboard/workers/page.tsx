@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
 import { useWorkers } from '@/hooks/useWorkers'
 import { supabase } from '@/lib/supabase'
-import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, AlertTriangle, Mail, Award } from 'lucide-react'
+import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, AlertTriangle, Mail, Award, Search } from 'lucide-react'
 import { Worker } from '@/lib/types'
 
 interface ModalState {
@@ -29,6 +29,7 @@ export default function WorkersPage() {
     type: 'deactivate',
     worker: null
   })
+  const [searchValue, setSearchValue] = useState('');
 
   // Cerrar menú móvil cuando se hace click fuera
   useEffect(() => {
@@ -126,9 +127,16 @@ export default function WorkersPage() {
   }
 
   // Filtrar trabajadoras según el estado del filtro
-  const filteredWorkers = showInactiveWorkers 
-    ? workers 
-    : workers.filter(worker => worker.is_active)
+  const filteredWorkers = (showInactiveWorkers ? workers : workers.filter(worker => worker.is_active))
+    .filter(worker => {
+      const q = searchValue.toLowerCase();
+      return (
+        worker.name.toLowerCase().includes(q) ||
+        worker.surname.toLowerCase().includes(q) ||
+        worker.email?.toLowerCase().includes(q) ||
+        worker.phone?.toLowerCase().includes(q)
+      );
+    });
 
   const activeWorkers = workers.filter(worker => worker.is_active)
   const inactiveWorkers = workers.filter(worker => !worker.is_active)
@@ -319,42 +327,60 @@ export default function WorkersPage() {
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
         
         {/* ACCIONES RÁPIDAS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Link href="/dashboard/workers/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="p-2 bg-green-100 rounded-lg w-fit mx-auto mb-3">
-                  <Plus className="w-6 h-6 text-green-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-1">Nueva Trabajadora</h3>
-                <p className="text-sm text-slate-600">Agregar trabajadora</p>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link href="/dashboard/assignments">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="p-2 bg-purple-100 rounded-lg w-fit mx-auto mb-3">
-                  <Clock className="w-6 h-6 text-purple-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-1">Asignaciones</h3>
-                <p className="text-sm text-slate-600">Gestionar asignaciones</p>
-              </CardContent>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
+              <div className="p-2 bg-green-100 rounded-lg mb-2">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+                Nueva Trabajadora
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+                Agregar trabajadora
+              </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/planning">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4 sm:p-6 text-center">
-                <div className="p-2 bg-orange-100 rounded-lg w-fit mx-auto mb-3">
-                  <Calendar className="w-6 h-6 text-orange-600" />
-                </div>
-                <h3 className="font-semibold text-slate-900 mb-1">Planning</h3>
-                <p className="text-sm text-slate-600">Ver calendario</p>
-              </CardContent>
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
+              <div className="p-2 bg-orange-100 rounded-lg mb-2">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+                Planning
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+                Ver calendario
+              </p>
             </Card>
           </Link>
+
+          <Link href="/dashboard/assignments">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
+              <div className="p-2 bg-purple-100 rounded-lg mb-2">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+                Asignaciones
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+                Gestionar asignaciones
+              </p>
+            </Card>
+          </Link>
+
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto p-0">
+            <div className="p-2 bg-sky-100 rounded-lg mb-1 mt-1">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600" />
+            </div>
+            <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+              Buscar trabajadora
+            </h3>
+            <div className="w-full flex-1 flex items-center">
+              <input type="text" placeholder="Nombre, email o teléfono" className="mt-0 py-1 text-xs sm:text-sm rounded border border-slate-300 w-full focus:outline-none" value={searchValue} onChange={e => setSearchValue(e.target.value)} />
+            </div>
+          </Card>
         </div>
 
         {/* LISTADO DE TRABAJADORAS */}
