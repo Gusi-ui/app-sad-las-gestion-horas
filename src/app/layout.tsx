@@ -21,10 +21,7 @@ export const metadata: Metadata = {
     telephone: false,
   },
   icons: {
-    icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" }
-    ],
+    icon: "/favicon.svg",
     apple: "/favicon.svg",
   },
   manifest: "/manifest.json",
@@ -42,11 +39,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <head>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-        <link rel="alternate icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.svg" />
-      </head>
       <body
         className={`${inter.variable} font-sans antialiased bg-slate-50 text-slate-900`}
       >
