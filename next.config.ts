@@ -8,7 +8,11 @@ const nextConfig: NextConfig = {
   // Configuración de imágenes
   images: {
     domains: ['localhost'],
+    unoptimized: true, // Para Vercel
   },
+  
+  // Configuración para Vercel
+  serverExternalPackages: ['@supabase/supabase-js'],
   
   // Configuración de seguridad
   async headers() {
@@ -31,6 +35,16 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+  
+  // Configuración de tipos para Vercel
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  
+  // Configuración de ESLint para Vercel
+  eslint: {
+    ignoreDuringBuilds: false,
   },
 };
 
