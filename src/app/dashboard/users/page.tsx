@@ -25,7 +25,7 @@ interface User {
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
+
 
 interface ModalState {
   isOpen: boolean

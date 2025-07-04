@@ -19,7 +19,6 @@ import { getDaysInMonth } from '@/lib/calendar'
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day: string): string[] | undefined {
   if (!schedule) return undefined;

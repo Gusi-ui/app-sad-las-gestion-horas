@@ -12,7 +12,6 @@ import { Plus, User, Phone, Clock, Calendar, Settings, LogOut, Edit, Menu, Users
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)

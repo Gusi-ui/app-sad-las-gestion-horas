@@ -11,7 +11,7 @@ import { Suspense } from 'react'
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
+
 
 function NewAssignmentContent() {
   const router = useRouter()
