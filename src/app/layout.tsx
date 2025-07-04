@@ -9,11 +9,22 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Gestión de Servicios a Domicilio",
-  description: "Aplicación para gestionar usuarios y servicios de ayuda a domicilio",
-  icons: {
-    icon: "/favicon.ico",
+  title: "SAD LAS - Gestión de Horas",
+  description: "Sistema de gestión de horas y asignaciones para trabajadores de servicios a domicilio",
+  keywords: ["gestión", "horas", "trabajadores", "asignaciones", "servicios", "domicilio"],
+  authors: [{ name: "SAD LAS" }],
+  creator: "SAD LAS",
+  publisher: "SAD LAS",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
   },
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
+  manifest: "/manifest.json",
 };
 
 export const viewport = {
