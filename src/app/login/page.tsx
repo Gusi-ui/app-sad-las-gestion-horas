@@ -59,7 +59,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
@@ -68,7 +68,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-secondary mb-1">Email</label>
               <input
                 id="email"
                 type="email"
@@ -76,11 +76,11 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-lg"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <label htmlFor="password" className="block text-sm font-medium text-secondary mb-1">Contraseña</label>
               <input
                 id="password"
                 type="password"
@@ -88,12 +88,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-lg"
               />
             </div>
             {error && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="p-3 bg-danger/10 border border-danger/20 rounded-lg">
+                <p className="text-danger text-sm">{error}</p>
               </div>
             )}
             <Button

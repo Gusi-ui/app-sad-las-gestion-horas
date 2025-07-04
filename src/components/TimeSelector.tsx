@@ -62,7 +62,7 @@ export function TimeSelector({ value, onChange, className = '' }: TimeSelectorPr
     <select
       value={value}
       onChange={(e) => onChange(Number(e.target.value))}
-      className={`w-24 px-3 py-2 text-center rounded-lg border border-slate-300 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 bg-white ${className}`}
+      className={`w-24 px-3 py-2 text-center rounded-lg border border-secondary focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary bg-white ${className}`}
     >
       {TIME_OPTIONS.map((option) => (
         <option key={option.value} value={option.value}>

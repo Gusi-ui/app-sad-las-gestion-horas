@@ -84,9 +84,9 @@ export default function HoursPredictionBanner({
     
     const getStatusColor = () => {
       switch (status) {
-        case 'perfect': return 'bg-green-100 border-green-300 text-green-800'
-        case 'remaining': return 'bg-blue-100 border-blue-300 text-blue-800'
-        case 'exceeded': return 'bg-red-100 border-red-300 text-red-800'
+        case 'perfect': return 'bg-success/10 border-success/20 text-success'
+        case 'remaining': return 'bg-primary/10 border-primary/20 text-primary'
+        case 'exceeded': return 'bg-danger/10 border-danger/20 text-danger'
       }
     }
     
@@ -116,9 +116,9 @@ export default function HoursPredictionBanner({
   
   const getStatusColor = () => {
     switch (prediction.status) {
-      case 'perfect': return 'bg-green-100 border-green-300 text-green-800'
-      case 'remaining': return 'bg-blue-100 border-blue-300 text-blue-800'
-      case 'exceeded': return 'bg-red-100 border-red-300 text-red-800'
+      case 'perfect': return 'bg-success/10 border-success/20 text-success'
+      case 'remaining': return 'bg-primary/10 border-primary/20 text-primary'
+      case 'exceeded': return 'bg-danger/10 border-danger/20 text-danger'
     }
   }
   

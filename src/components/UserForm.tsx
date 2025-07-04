@@ -173,7 +173,7 @@ export function UserForm({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-secondary">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-6">
@@ -187,7 +187,7 @@ export function UserForm({
                 </Button>
               </Link>
               <div>
-                <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                <h1 className="text-xl sm:text-2xl font-bold text-secondary">
                   {isEditing ? 'Editar' : 'Nuevo'} Usuario
                 </h1>
                 <p className="text-sm sm:text-base text-slate-600">
@@ -231,7 +231,7 @@ export function UserForm({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Nombre *
                   </label>
                   <input
@@ -239,16 +239,16 @@ export function UserForm({
                     value={formData.name}
                     onChange={(e) => handleNameChange(e.target.value)}
                     placeholder="Nombre del usuario"
-                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.name ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${errors.name ? 'border-danger' : ''}`}
                     maxLength={50}
                   />
                   {errors.name && (
-                    <p className="text-sm text-red-600 mt-1">{errors.name}</p>
+                    <p className="text-sm text-danger mt-1">{errors.name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Apellidos *
                   </label>
                   <input
@@ -256,16 +256,16 @@ export function UserForm({
                     value={formData.surname}
                     onChange={(e) => handleSurnameChange(e.target.value)}
                     placeholder="Apellidos del usuario"
-                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.surname ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${errors.surname ? 'border-danger' : ''}`}
                     maxLength={100}
                   />
                   {errors.surname && (
-                    <p className="text-sm text-red-600 mt-1">{errors.surname}</p>
+                    <p className="text-sm text-danger mt-1">{errors.surname}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Teléfono *
                   </label>
                   <input
@@ -273,11 +273,11 @@ export function UserForm({
                     value={formData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="123 456 789"
-                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.phone ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${errors.phone ? 'border-danger' : ''}`}
                     maxLength={11}
                   />
                   {errors.phone && (
-                    <p className="text-sm text-red-600 mt-1">{errors.phone}</p>
+                    <p className="text-sm text-danger mt-1">{errors.phone}</p>
                   )}
                   <p className="text-xs text-slate-500 mt-1">
                     Formato: 123 456 789 (debe empezar por 6, 7 o 9)
@@ -285,7 +285,7 @@ export function UserForm({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                  <label className="block text-sm font-medium text-secondary mb-1">
                     Dirección
                   </label>
                   <input
@@ -293,11 +293,11 @@ export function UserForm({
                     value={formData.address}
                     onChange={(e) => handleAddressChange(e.target.value)}
                     placeholder="Dirección completa (ej: Calle Mayor 123, 1º A, Madrid)"
-                    className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.address ? 'border-red-500' : ''}`}
+                    className={`w-full p-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${errors.address ? 'border-danger' : ''}`}
                     maxLength={200}
                   />
                   {errors.address && (
-                    <p className="text-sm text-red-600 mt-1">{errors.address}</p>
+                    <p className="text-sm text-danger mt-1">{errors.address}</p>
                   )}
                   <p className="text-xs text-slate-500 mt-1">
                     Opcional. Si se especifica, debe ser una dirección completa
@@ -312,8 +312,8 @@ export function UserForm({
                 <CardTitle>Configuración del Servicio</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-xl p-4">
-                  <label className="block text-lg font-bold text-blue-800 mb-3 text-center">
+                <div className="bg-gradient-to-br from-primary/10 to-primary/20 border-2 border-primary/30 rounded-xl p-4">
+                  <label className="block text-lg font-bold text-primary mb-3 text-center">
                     Horas Mensuales Asignadas *
                   </label>
                   
@@ -326,54 +326,54 @@ export function UserForm({
                       value={formData.monthly_hours}
                       onChange={(e) => handleMonthlyHoursChange(e.target.value)}
                       placeholder="0.5"
-                      className={`w-full text-center text-3xl font-bold py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full text-center text-3xl font-bold py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
                         errors.monthly_hours 
-                          ? 'border-red-500 bg-red-50' 
-                          : 'border-blue-300 bg-white'
+                          ? 'border-danger bg-danger/10' 
+                          : 'border-primary/30 bg-white'
                       }`}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-blue-600 text-2xl font-bold">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-primary text-2xl font-bold">
                       h
                     </span>
                   </div>
 
                   <div className="text-center mb-4">
-                    <div className="text-sm font-medium text-blue-600 mb-1">Vista Previa:</div>
-                    <div className="text-5xl font-bold text-blue-900">
+                    <div className="text-sm font-medium text-primary mb-1">Vista Previa:</div>
+                    <div className="text-5xl font-bold text-primary">
                       {formData.monthly_hours || 0}
-                      <span className="text-3xl text-blue-700">h</span>
+                      <span className="text-3xl text-primary/80">h</span>
                     </div>
-                    <div className="text-sm text-blue-600">
+                    <div className="text-sm text-primary">
                       por mes
                     </div>
                   </div>
 
                   {errors.monthly_hours && (
                     <div className="text-center">
-                      <p className="text-sm text-red-600 bg-red-50 p-2 rounded-lg border border-red-200">
+                      <p className="text-sm text-danger bg-danger/10 p-2 rounded-lg border border-danger/20">
                         {errors.monthly_hours}
                       </p>
                     </div>
                   )}
 
-                  <div className="text-center text-xs text-blue-700 space-y-1">
+                  <div className="text-center text-xs text-primary space-y-1">
                     <p>• Mínimo: 0.5 horas</p>
                     <p>• Máximo: 200 horas</p>
                     <p>• Incrementos de 0.5 horas</p>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-200 rounded-xl p-4">
+                <div className="bg-gradient-to-br from-success/10 to-success/20 border-2 border-success/30 rounded-xl p-4">
                   <label className="flex items-center space-x-3 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={formData.is_active}
                       onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                      className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                      className="w-5 h-5 text-success border-secondary rounded focus:ring-success"
                     />
                     <div>
-                      <div className="font-bold text-green-800">Usuario Activo</div>
-                      <div className="text-sm text-green-700">
+                      <div className="font-bold text-success">Usuario Activo</div>
+                      <div className="text-sm text-success/80">
                         {formData.is_active 
                           ? 'El usuario puede recibir asignaciones' 
                           : 'El usuario está inactivo y no recibirá asignaciones'
@@ -396,12 +396,12 @@ export function UserForm({
                 value={formData.notes}
                 onChange={(e) => handleNotesChange(e.target.value)}
                 placeholder="Información adicional sobre el usuario, preferencias especiales, instrucciones para las trabajadoras, etc..."
-                className={`w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${errors.notes ? 'border-red-500' : ''}`}
+                className={`w-full p-3 border border-secondary rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${errors.notes ? 'border-danger' : ''}`}
                 rows={4}
                 maxLength={1000}
               />
               {errors.notes && (
-                <p className="text-sm text-red-600 mt-1">{errors.notes}</p>
+                <p className="text-sm text-danger mt-1">{errors.notes}</p>
               )}
               <p className="text-xs text-slate-500 mt-1">
                 Opcional. Máximo 1000 caracteres. Si se especifica, debe tener al menos 10 caracteres.

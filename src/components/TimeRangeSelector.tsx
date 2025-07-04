@@ -83,8 +83,8 @@ export function TimeRangeSelector({ value, onChange, className = '' }: TimeRange
       {/* Resumen de horas */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4 text-sky-600" />
-          <span className="text-sm font-medium text-slate-700">Horarios del día</span>
+          <Clock className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium text-secondary">Horarios del día</span>
         </div>
         <div className="text-sm text-slate-600">
           Total: <span className="font-semibold">{totalHours.toFixed(2)}h</span>
@@ -94,14 +94,14 @@ export function TimeRangeSelector({ value, onChange, className = '' }: TimeRange
       {/* Lista de horarios */}
       <div className="space-y-2">
         {timeSlots.map((slot, index) => (
-          <div key={slot.id} className="flex items-center space-x-2 p-3 bg-slate-50 rounded-lg border">
+          <div key={slot.id} className="flex items-center space-x-2 p-3 bg-secondary rounded-lg border border-secondary">
             <div className="flex items-center space-x-2 flex-1">
               <span className="text-sm text-slate-600 w-8">{index + 1}.</span>
               
               <select
                 value={slot.start}
                 onChange={(e) => updateTimeSlot(slot.id, 'start', e.target.value)}
-                className="px-2 py-1 text-sm border border-slate-300 rounded focus:border-sky-500 focus:outline-none"
+                className="px-2 py-1 text-sm border border-secondary rounded focus:border-primary focus:outline-none"
               >
                 {TIME_OPTIONS.map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -113,7 +113,7 @@ export function TimeRangeSelector({ value, onChange, className = '' }: TimeRange
               <select
                 value={slot.end}
                 onChange={(e) => updateTimeSlot(slot.id, 'end', e.target.value)}
-                className="px-2 py-1 text-sm border border-slate-300 rounded focus:border-sky-500 focus:outline-none"
+                className="px-2 py-1 text-sm border border-secondary rounded focus:border-primary focus:outline-none"
               >
                 {TIME_OPTIONS.map(time => (
                   <option key={time} value={time}>{time}</option>
@@ -154,7 +154,7 @@ export function TimeRangeSelector({ value, onChange, className = '' }: TimeRange
         const endTime = endHour + endMinute / 60
         return endTime <= startTime
       }) && (
-        <div className="text-red-500 text-xs">
+        <div className="text-danger text-xs">
           ⚠️ La hora de fin debe ser posterior a la hora de inicio
         </div>
       )}

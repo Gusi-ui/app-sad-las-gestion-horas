@@ -3,7 +3,7 @@ import { CheckCircle, XCircle, AlertCircle, X } from 'lucide-react'
 
 interface ToastProps {
   message: string
-  type: 'success' | 'error' | 'warning'
+  type: 'success' | 'error' | 'warning' | 'info'
   onClose: () => void
   duration?: number
 }
@@ -20,11 +20,13 @@ export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
+        return <CheckCircle className="w-5 h-5 text-success" />
       case 'error':
-        return <XCircle className="w-5 h-5 text-red-600" />
+        return <XCircle className="w-5 h-5 text-danger" />
       case 'warning':
-        return <AlertCircle className="w-5 h-5 text-amber-600" />
+        return <AlertCircle className="w-5 h-5 text-warning" />
+      case 'info':
+        return <AlertCircle className="w-5 h-5 text-primary" />
     }
   }
 
@@ -36,6 +38,8 @@ export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
         return 'bg-red-50 border-red-200 text-red-800'
       case 'warning':
         return 'bg-amber-50 border-amber-200 text-amber-800'
+      case 'info':
+        return 'bg-blue-50 border-blue-200 text-blue-800'
     }
   }
 
@@ -58,10 +62,10 @@ export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
 export function useToast() {
   const [toast, setToast] = useState<{
     message: string
-    type: 'success' | 'error' | 'warning'
+    type: 'success' | 'error' | 'warning' | 'info'
   } | null>(null)
 
-  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning') => {
+  const showToast = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info') => {
     setToast({ message, type })
   }, [])
 

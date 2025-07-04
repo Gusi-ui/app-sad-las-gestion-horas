@@ -8,7 +8,7 @@ interface ModalProps {
   onClose: () => void
   title: string
   message: string
-  type?: 'warning' | 'danger' | 'info'
+  type?: 'warning' | 'danger' | 'info' | 'success'
   confirmText?: string
   cancelText?: string
   onConfirm: () => void
@@ -51,11 +51,13 @@ export function Modal({
     
     switch (type) {
       case 'danger':
-        return <Trash2 className="w-6 h-6 text-red-600" />
+        return <Trash2 className="w-6 h-6 text-danger" />
       case 'warning':
-        return <AlertTriangle className="w-6 h-6 text-amber-600" />
+        return <AlertTriangle className="w-6 h-6 text-warning" />
+      case 'success':
+        return <AlertTriangle className="w-6 h-6 text-success" />
       default:
-        return <AlertTriangle className="w-6 h-6 text-blue-600" />
+        return <AlertTriangle className="w-6 h-6 text-primary" />
     }
   }
 
@@ -64,7 +66,9 @@ export function Modal({
       case 'danger':
         return 'danger'
       case 'warning':
-        return 'secondary'
+        return 'warning'
+      case 'success':
+        return 'success'
       default:
         return 'primary'
     }
@@ -78,11 +82,11 @@ export function Modal({
         <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
           <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
             <div className="sm:flex sm:items-start">
-              <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-slate-100 sm:mx-0 sm:h-10 sm:w-10">
+              <div className="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-secondary sm:mx-0 sm:h-10 sm:w-10">
                 {getIcon()}
               </div>
               <div className="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
-                <h3 className="text-base font-semibold leading-6 text-slate-900">
+                <h3 className="text-base font-semibold leading-6 text-secondary">
                   {title}
                 </h3>
                 <div className="mt-2">
