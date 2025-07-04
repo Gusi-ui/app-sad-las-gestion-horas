@@ -17,6 +17,10 @@ import { es } from 'date-fns/locale'
 import { Modal } from '@/components/ui/modal'
 import { getDaysInMonth } from '@/lib/calendar'
 
+// Configuración para evitar el prerender estático
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day: string): string[] | undefined {
   if (!schedule) return undefined;
   return schedule[day as WeekDay];
@@ -29,9 +33,9 @@ function BottomDrawer({ open, onClose, title, children }: { open: boolean, onClo
     <div className="fixed inset-0 z-50 flex flex-col items-center justify-end" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-label="Cerrar modal" tabIndex={0} />
       <div className="relative w-full max-w-md mx-auto bg-white rounded-t-2xl shadow-lg animate-slide-up" style={{ minHeight: '40vh', maxHeight: '90vh', overflowY: 'auto' }}>
-        <div className="flex items-center justify-between px-4 py-3 border-b">
-          <span className="font-semibold text-lg">{title}</span>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100" aria-label="Cerrar">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-secondary">
+          <span className="font-semibold text-lg text-secondary">{title}</span>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-secondary/30" aria-label="Cerrar">
             <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>

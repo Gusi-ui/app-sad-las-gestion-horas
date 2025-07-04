@@ -10,6 +10,10 @@ import { supabase } from '@/lib/supabase'
 import { User as SupabaseUser } from '@supabase/supabase-js'
 import { Plus, User, Phone, Clock, Calendar, Settings, LogOut, Edit, Menu, Users } from 'lucide-react'
 
+// Configuración para evitar el prerender estático
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
   const { data: allUsers, isLoading: allUsersLoading } = useUsers()

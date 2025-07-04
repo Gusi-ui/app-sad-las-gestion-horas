@@ -31,6 +31,10 @@ import {
 } from 'lucide-react'
 import { Assignment, AssignmentStatus } from '@/lib/types'
 
+// Configuración para evitar el prerender estático
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const statusLabels: Record<AssignmentStatus, string> = {
   active: 'Activa',
   paused: 'Pausada',

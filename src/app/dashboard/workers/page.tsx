@@ -12,6 +12,10 @@ import { supabase } from '@/lib/supabase'
 import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, AlertTriangle, Mail, Award, Search } from 'lucide-react'
 import { Worker } from '@/lib/types'
 
+// Configuración para evitar el prerender estático
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 interface ModalState {
   isOpen: boolean
   type: 'deactivate' | 'delete' | 'restore'
@@ -187,9 +191,9 @@ export default function WorkersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando trabajadoras...</p>
         </div>
       </div>

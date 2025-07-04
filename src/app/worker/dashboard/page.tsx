@@ -267,9 +267,9 @@ export default function WorkerDashboard() {
   // Función para obtener el color del estado
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': return 'text-blue-600';
-      case 'in-progress': return 'text-orange-600';
-      case 'completed': return 'text-green-600';
+      case 'pending': return 'text-primary';
+      case 'in-progress': return 'text-warning';
+      case 'completed': return 'text-success';
       default: return 'text-slate-600';
     }
   };
@@ -415,9 +415,9 @@ export default function WorkerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando tu panel...</p>
         </div>
       </div>
@@ -426,11 +426,11 @@ export default function WorkerDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">{error}</p>
+            <AlertTriangle className="w-12 h-12 text-danger mx-auto mb-4" />
+            <p className="text-danger mb-4">{error}</p>
             <Button onClick={() => window.location.reload()}>Reintentar</Button>
           </CardContent>
         </Card>
@@ -440,11 +440,11 @@ export default function WorkerDashboard() {
 
   if (!worker) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-secondary flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">No se encontró la trabajadora.</p>
+            <AlertTriangle className="w-12 h-12 text-danger mx-auto mb-4" />
+            <p className="text-danger mb-4">No se encontró la trabajadora.</p>
           </CardContent>
         </Card>
       </div>
@@ -452,13 +452,13 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <div className="min-h-screen bg-secondary pb-24">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-slate-200">
+      <header className="bg-white shadow-sm border-b border-secondary">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-xl font-bold text-secondary">
                 👩‍💼 Panel de {worker.name} {worker.surname}
               </h1>
               <p className="text-sm text-slate-600">
