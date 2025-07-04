@@ -123,7 +123,7 @@ export default function WorkerPlanningPage() {
                 <ul className="space-y-1">
                   {assignments.map(a => {
                     const slots = (a.specific_schedule as any)?.[day.value];
-                    console.log('Día:', day.value, 'Asignación:', a.id, 'Slots:', slots);
+                    // console.log('Día:', day.value, 'Asignación:', a.id, 'Slots:', slots);
                     const formatted = formatSchedule(slots);
                     if (!formatted) return (
                       <li key={a.id} className="text-slate-400 text-xs">Sin horarios configurados</li>

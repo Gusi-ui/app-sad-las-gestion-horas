@@ -68,7 +68,7 @@ export default function PlanningPage() {
   const { showToast, ToastComponent } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const { assignments, isLoading, createAssignment, deleteAssignment, updateAssignment } = useAssignments()
-  console.log('ASSIGNMENTS', assignments);
+  // console.log('ASSIGNMENTS', assignments);
   const { workers } = useWorkers()
   const { data: users } = useUsers()
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -264,13 +264,18 @@ export default function PlanningPage() {
   // Debug temporal para Dolores
   assignments.forEach(a => {
     if (a.user?.name === 'Dolores') {
-      console.log('DOLORES ASSIGNMENT:', a);
+      // console.log('DOLORES ASSIGNMENT:', a);
       const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
       const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
       const times = getScheduleForDay(a.specific_schedule, dayKey);
-      console.log('DOLORES TIMES FOR TODAY:', times);
+      // console.log('DOLORES TIMES FOR TODAY:', times);
     }
   });
+
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth() + 1; // 1-indexed
+  const daysInMonth = getDaysInMonth(year, month);
+  const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -842,8 +847,6 @@ export default function PlanningPage() {
                 return (
                   <div className="space-y-4">
                     {daysArray.map(dayNum => {
-                      const year = selectedDate.getFullYear();
-                      const month = selectedDate.getMonth() + 1;
                       const dayAssignments = assignmentsByDay[dayNum] || [];
                       if (dayAssignments.length === 0) return null;
                       // Agrupación

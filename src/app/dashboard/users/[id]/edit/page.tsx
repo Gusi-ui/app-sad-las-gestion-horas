@@ -32,15 +32,15 @@ export default function EditUserPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user: authUser }, error } = await supabase.auth.getUser()
-      console.log('🔐 Auth check:', { user: authUser?.id, error })
+      // console.log('🔐 Auth check:', { user: authUser?.id, error })
       
       if (error || !authUser) {
-        console.log('❌ User not authenticated, redirecting to login')
+        // console.log('❌ User not authenticated, redirecting to login')
         router.push('/login')
         return
       }
       
-      console.log('✅ User authenticated:', authUser.id)
+      // console.log('✅ User authenticated:', authUser.id)
     }
     
     checkAuth()
@@ -53,7 +53,7 @@ export default function EditUserPage() {
     }
 
     try {
-      console.log('Fetching user with ID:', userId)
+      // console.log('Fetching user with ID:', userId)
       
       const { data, error } = await supabase
         .from('users')
@@ -61,7 +61,7 @@ export default function EditUserPage() {
         .eq('id', userId)
         .single()
 
-      console.log('Fetch user response:', { data, error })
+      // console.log('Fetch user response:', { data, error })
 
       if (error) {
         console.error('Error fetching user:', error)
@@ -88,9 +88,9 @@ export default function EditUserPage() {
 
   const handleSubmit = useCallback(async (formData: UserFormData) => {
     try {
-      console.log('🔄 Starting user update...')
-      console.log('📝 Form data received:', formData)
-      console.log('🆔 User ID:', userId)
+      // console.log('🔄 Starting user update...')
+      // console.log('📝 Form data received:', formData)
+      // console.log('🆔 User ID:', userId)
       
       const updateData = {
         name: formData.name.trim(),
@@ -102,7 +102,7 @@ export default function EditUserPage() {
         monthly_hours: Number(formData.monthly_hours)
       }
       
-      console.log('📤 Update data:', updateData)
+      // console.log('📤 Update data:', updateData)
       
       const { error } = await supabase
         .from('users')
@@ -115,7 +115,7 @@ export default function EditUserPage() {
         return
       }
 
-      console.log('✅ User updated successfully')
+      // console.log('✅ User updated successfully')
       showToast('Usuario actualizado correctamente', 'success')
       setTimeout(() => {
         router.push('/dashboard/users')

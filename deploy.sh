@@ -12,9 +12,12 @@ fi
 echo "📦 Actualizando dependencias..."
 npm install
 
-# Ejecutar tests y linting
+# Ejecutar linting con configuración de producción
 echo "🔍 Ejecutando verificaciones..."
-npm run lint
+NODE_ENV=production npm run lint
+
+# Ejecutar build
+echo "🏗️  Ejecutando build..."
 npm run build
 
 # Verificar que el build fue exitoso
@@ -33,6 +36,8 @@ if [ $? -eq 0 ]; then
     echo "- NEXT_PUBLIC_SUPABASE_URL"
     echo "- NEXT_PUBLIC_SUPABASE_ANON_KEY"
     echo "- SUPABASE_SERVICE_ROLE_KEY"
+    echo ""
+    echo "💡 Tip: Si usas Vercel, puedes ejecutar: vercel --prod"
 else
     echo "❌ Error en el build. Revisa los errores arriba."
     exit 1

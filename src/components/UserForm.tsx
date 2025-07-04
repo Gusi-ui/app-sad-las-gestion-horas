@@ -104,10 +104,10 @@ export function UserForm({
       newErrors.monthly_hours = 'Las horas deben ser mayor que 0'
     }
 
-    console.log('🔍 Validation result:', { 
-      hasErrors: Object.values(newErrors).some(e => e !== ''),
-      errors: newErrors 
-    })
+    // console.log('🔍 Validation result:', { 
+    //   hasErrors: Object.values(newErrors).some(e => e !== ''),
+    //   errors: newErrors 
+    // })
 
     setErrors(newErrors)
     return Object.values(newErrors).every(error => error === '')
@@ -159,16 +159,16 @@ export function UserForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('🔍 Form submission started')
-    console.log('📝 Form data:', formData)
+    // console.log('🔍 Form submission started')
+    // console.log('📝 Form data:', formData)
     
     if (!validateForm()) {
-      console.log('❌ Form validation failed')
-      console.log('🚨 Errors:', errors)
+      // console.log('❌ Form validation failed')
+      // console.log('🚨 Errors:', errors)
       return
     }
 
-    console.log('✅ Form validation passed, calling onSubmit')
+    // console.log('✅ Form validation passed, calling onSubmit')
     await onSubmit(formData)
   }
 

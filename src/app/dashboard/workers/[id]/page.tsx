@@ -157,7 +157,7 @@ export default function WorkerDetailsPage() {
 
   const stats = getWorkerStats()
 
-  console.log('Worker details page rendering:', { worker, isLoading, error })
+  // console.log('Worker details page rendering:', { worker, isLoading, error })
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">

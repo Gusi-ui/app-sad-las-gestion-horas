@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       password,
       email_confirm: true
     })
-    console.log('Resultado createUser:', { userData, userError });
+    // console.log('Resultado createUser:', { userData, userError });
 
     if (userError || !userData?.user) {
       console.error('Error creando usuario en Auth:', userError);
@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
       role: 'worker',
       created_at: new Date().toISOString()
     })
-    console.log('Resultado insert worker_profiles:', { profileError });
+    // console.log('Resultado insert worker_profiles:', { profileError });
 
     if (profileError) {
       // Si falla el perfil, elimina el usuario creado en Auth para evitar inconsistencias
@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    console.log('Resultado insert workers:', { workersError });
+    // console.log('Resultado insert workers:', { workersError });
 
     if (workersError) {
       // Si falla, elimina el usuario y el perfil para evitar inconsistencias

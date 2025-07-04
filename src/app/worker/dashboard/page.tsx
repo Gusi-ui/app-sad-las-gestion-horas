@@ -40,38 +40,34 @@ const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
     sunday: 'Domingo'
   }
   
-  const today = new Date()
-  const todayDayName = Object.keys(dayNames)[today.getDay() === 0 ? 6 : today.getDay() - 1] // Convertir a formato lunes=0
-  
+  const today = new Date();
+  const todayDayName = Object.keys(dayNames)[today.getDay() === 0 ? 6 : today.getDay() - 1];
+
   const scheduleEntries = Object.entries(schedule)
     .filter(([, slots]) => slots && slots.length > 0)
     .map(([day, slots]) => {
-      const dayName = dayNames[day]
-      const isToday = day === todayDayName
-      
-      let timeSlots = ''
+      const dayName = dayNames[day];
+      const isToday = day === todayDayName;
+      let timeSlots = '';
       if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
-        timeSlots = `${slots[0]} - ${slots[1]}`
+        timeSlots = `${slots[0]} - ${slots[1]}`;
       } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-        timeSlots = slots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ')
+        timeSlots = slots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
       }
-      
-      return { day, dayName, timeSlots, isToday }
+      return { day, dayName, timeSlots, isToday };
     })
     .filter(entry => entry.timeSlots)
     .sort((a, b) => {
-      // Ordenar: hoy primero, luego por día de la semana
-      if (a.isToday && !b.isToday) return -1
-      if (!a.isToday && b.isToday) return 1
-      return 0
-    })
+      if (a.isToday && !b.isToday) return -1;
+      if (!a.isToday && b.isToday) return 1;
+      return 0;
+    });
 
-  if (scheduleEntries.length === 0) return 'Sin horario específico'
-  
+  if (scheduleEntries.length === 0) return 'Sin horario específico';
   return scheduleEntries.map(entry => {
-    const prefix = entry.isToday ? '🕐 HOY: ' : ''
-    return `${prefix}${entry.dayName} ${entry.timeSlots}`
-  }).join(' | ')
+    const prefix = entry.isToday ? '🕐 HOY: ' : '';
+    return `${prefix}${entry.dayName} ${entry.timeSlots}`;
+  }).join(' | ');
 }
 
 // Función para verificar si una asignación tiene servicio hoy
@@ -113,23 +109,23 @@ const getTodaySchedule = (assignment: AssignmentWithUser) => {
   
   // Debug para Jose Martínez
   if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-    console.log('JOSE MARTINEZ TODAY SCHEDULE DEBUG:', {
-      todayDayName,
-      todaySchedule,
-      today: today.toLocaleDateString(),
-      dayOfWeek: today.getDay()
-    });
+//     // console.log('JOSE MARTINEZ TODAY SCHEDULE DEBUG:', {
+//       todayDayName,
+//       todaySchedule,
+//       today: today.toLocaleDateString(),
+//       dayOfWeek: today.getDay()
+//     });
   }
   
   // Manejar múltiples slots de tiempo
   // Debug para Jose Martínez
   if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-    console.log('JOSE MARTINEZ GET TODAY SCHEDULE DEBUG:', {
-      todaySchedule,
-      todayScheduleType: typeof todaySchedule[0],
-      todayScheduleLength: todaySchedule.length,
-      isArray: Array.isArray(todaySchedule)
-    });
+//     // console.log('JOSE MARTINEZ GET TODAY SCHEDULE DEBUG:', {
+//       todaySchedule,
+//       todayScheduleType: typeof todaySchedule[0],
+//       todayScheduleLength: todaySchedule.length,
+//       isArray: Array.isArray(todaySchedule)
+//     });
   }
   
   // Caso 1: Array de objetos {start, end} (formato nuevo) - [{start: '08:00', end: '10:00'}, {start: '13:00', end: '15:00'}]
@@ -168,12 +164,12 @@ export default function WorkerDashboard() {
     
     // Debug: Log para Jose Martínez
     if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-      console.log('JOSE MARTINEZ DEBUG:', {
-        todaySchedule,
-        assignment: assignment.id,
-        specific_schedule: assignment.specific_schedule,
-        currentTime: new Date().toLocaleTimeString()
-      });
+//       // console.log('JOSE MARTINEZ DEBUG:', {
+//         todaySchedule,
+//         assignment: assignment.id,
+//         specific_schedule: assignment.specific_schedule,
+//         currentTime: new Date().toLocaleTimeString()
+//       });
     }
     
     // Parsear horario - manejar múltiples slots
@@ -226,22 +222,22 @@ export default function WorkerDashboard() {
         
         // Debug: Log para Jose Martínez
         if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-          console.log('JOSE MARTINEZ TIME DEBUG:', {
-            slot,
-            startHour,
-            startMinute,
-            endHour,
-            endMinute,
-            currentHour,
-            currentMinute,
-            currentTime,
-            startTimeMinutes,
-            endTimeMinutes,
-            status: currentTime < startTimeMinutes ? 'pending' : 
-                   currentTime >= startTimeMinutes && currentTime < endTimeMinutes ? 'in-progress' : 
-                   'completed',
-            now: new Date().toLocaleTimeString()
-          });
+//           // console.log('JOSE MARTINEZ TIME DEBUG:', {
+//             slot,
+//             startHour,
+//             startMinute,
+//             endHour,
+//             endMinute,
+//             currentHour,
+//             currentMinute,
+//             currentTime,
+//             startTimeMinutes,
+//             endTimeMinutes,
+//             status: currentTime < startTimeMinutes ? 'pending' : 
+//                    currentTime >= startTimeMinutes && currentTime < endTimeMinutes ? 'in-progress' : 
+//                    'completed',
+//             now: new Date().toLocaleTimeString()
+//           });
         }
         
         // Si estamos dentro de este slot, retornar el estado correspondiente
@@ -368,8 +364,8 @@ export default function WorkerDashboard() {
 
         // Calcular horas utilizadas y estado
         const currentDate = new Date();
-        const currentMonth = currentDate.getMonth() + 1;
-        const currentYear = currentDate.getFullYear();
+        // // const currentMonth = currentDate.getMonth() + 1;
+        // // const currentYear = currentDate.getFullYear();
         
         userStatusMap.forEach(userStatus => {
           // Calcular horas utilizadas basándose en las semanas transcurridas del mes
@@ -724,15 +720,14 @@ export default function WorkerDashboard() {
                        <div className="space-y-2">
                          {userStatus.assignments.map(assignment => {
                            // Debug: Log para ver el formato de los datos
-                           console.log('ASSIGNMENT DEBUG:', {
-                             id: assignment.id,
-                             user: assignment.users?.name,
-                             specific_schedule: assignment.specific_schedule
-                           });
+//                            // console.log('ASSIGNMENT DEBUG:', {
+//                              id: assignment.id,
+//                              user: assignment.users?.name,
+//                              specific_schedule: assignment.specific_schedule
+//                            });
                            
                            const today = new Date();
                            const todayDayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][today.getDay()];
-                           const isToday = assignment.specific_schedule?.[todayDayName as keyof typeof assignment.specific_schedule];
                            
                            return (
                              <div key={assignment.id} className="text-xs bg-slate-50 p-2 rounded">
@@ -752,12 +747,12 @@ export default function WorkerDashboard() {
                                          try {
                                            // Debug para Jose Martínez
                                            if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez' && day === 'friday') {
-                                             console.log('JOSE MARTINEZ FRIDAY TIMES DEBUG:', {
-                                               times,
-                                               timesLength: times.length,
-                                               timesType: typeof times[0],
-                                               isArray: Array.isArray(times)
-                                             });
+//                                              // console.log('JOSE MARTINEZ FRIDAY TIMES DEBUG:', {
+//                                                times,
+//                                                timesLength: times.length,
+//                                                timesType: typeof times[0],
+//                                                isArray: Array.isArray(times)
+//                                              });
                                            }
                                            
                                            // Caso 1: Array de strings (formato antiguo) - ['08:00', '10:00']
@@ -781,7 +776,7 @@ export default function WorkerDashboard() {
                                              timeStr = 'Formato desconocido';
                                            }
                                          } catch (error) {
-                                           console.log('ERROR PARSING TIMES:', times, error);
+                                           // console.log('ERROR PARSING TIMES:', times, error);
                                            timeStr = 'Error en formato';
                                          }
                                          

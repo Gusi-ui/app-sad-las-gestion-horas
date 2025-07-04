@@ -233,9 +233,9 @@ export default function PlanningCalendar({
   }
 
   const handleEditAssignment = (assignment: CalendarAssignment) => {
-    console.log('Editar: selectedAssignment', assignment)
+    // console.log('Editar: selectedAssignment', assignment)
     const original = assignments.find(a => a.id === assignment.id)
-    console.log('Editar: original assignment', original)
+    // console.log('Editar: original assignment', original)
     if (!original || !original.id) {
       showToast('Error: No se encontró la asignación original para editar', 'error')
       return
@@ -244,11 +244,11 @@ export default function PlanningCalendar({
   }
 
   const handleDuplicateAssignment = async (assignment: CalendarAssignment) => {
-    console.log('Duplicar: selectedAssignment', assignment)
+    // console.log('Duplicar: selectedAssignment', assignment)
     const original = assignments.find(a => a.id === assignment.id)
-    console.log('Duplicar: original assignment', original)
-    console.log('Duplicar: original.start_date', original?.start_date)
-    console.log('Duplicar: assignment.start_date', assignment.start_date)
+    // console.log('Duplicar: original assignment', original)
+    // console.log('Duplicar: original.start_date', original?.start_date)
+    // console.log('Duplicar: assignment.start_date', assignment.start_date)
     
     if (!original) {
       showToast('Error: No se encontró la asignación original para duplicar', 'error')
@@ -257,14 +257,14 @@ export default function PlanningCalendar({
     
     // Use the assignment's start_date if available, otherwise use original's
     const baseStartDate = assignment.start_date || original.start_date
-    console.log('Duplicar: baseStartDate', baseStartDate)
+    // console.log('Duplicar: baseStartDate', baseStartDate)
     
     if (!baseStartDate) {
       // If no start_date is available, use tomorrow as base
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const fallbackBaseDate = tomorrow.toISOString().split('T')[0]
-      console.log('Duplicar: usando fecha de mañana como base:', fallbackBaseDate)
+      // console.log('Duplicar: usando fecha de mañana como base:', fallbackBaseDate)
       
       const params = new URLSearchParams({
         worker_id: original.worker_id,
@@ -283,7 +283,7 @@ export default function PlanningCalendar({
     
     // Find an available start date by checking existing assignments
     const originalStartDate = new Date(baseStartDate)
-    console.log('Duplicar: originalStartDate', originalStartDate)
+    // console.log('Duplicar: originalStartDate', originalStartDate)
     const suggestedStartDate = new Date(originalStartDate)
     let attempts = 0
     const maxAttempts = 30 // Try up to 30 days ahead
@@ -291,7 +291,7 @@ export default function PlanningCalendar({
     while (attempts < maxAttempts) {
       suggestedStartDate.setDate(originalStartDate.getDate() + attempts + 1)
       const newStartDate = suggestedStartDate.toISOString().split('T')[0]
-      console.log(`Duplicar: intento ${attempts + 1}, fecha sugerida: ${newStartDate}`)
+      // console.log(`Duplicar: intento ${attempts + 1}, fecha sugerida: ${newStartDate}`)
       
       // Check if this date is available for this worker and user combination
       const existingAssignment = assignments.find(a => 
@@ -302,7 +302,7 @@ export default function PlanningCalendar({
       
       if (!existingAssignment) {
         // This date is available, use it
-        console.log(`Duplicar: fecha disponible encontrada: ${newStartDate}`)
+        // console.log(`Duplicar: fecha disponible encontrada: ${newStartDate}`)
         const params = new URLSearchParams({
           worker_id: original.worker_id,
           user_id: original.user_id,
@@ -325,7 +325,7 @@ export default function PlanningCalendar({
     const farFutureDate = new Date(originalStartDate)
     farFutureDate.setDate(originalStartDate.getDate() + 365) // One year later
     const fallbackDate = farFutureDate.toISOString().split('T')[0]
-    console.log(`Duplicar: usando fecha de fallback: ${fallbackDate}`)
+    // console.log(`Duplicar: usando fecha de fallback: ${fallbackDate}`)
     
     const params = new URLSearchParams({
       worker_id: original.worker_id,
@@ -723,7 +723,7 @@ export default function PlanningCalendar({
                     setSelectedAssignment(null)
                     setTimeout(() => {
                       if (selectedAssignment && selectedAssignment.id) {
-                        console.log('Navegando a editar asignación:', selectedAssignment.id)
+                        // console.log('Navegando a editar asignación:', selectedAssignment.id)
                         handleEditAssignment(selectedAssignment)
                       } else {
                         console.error('No se encontró el ID de la asignación para editar', selectedAssignment)
