@@ -3,10 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 // Importa la librería de Supabase con la service role key
 import { createClient } from '@supabase/supabase-js'
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // Service Role Key, NO la anon key
-)
+function createSupabaseClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase environment variables')
+  }
+  
+  return createClient(supabaseUrl, supabaseKey)
+}
 
 function generarPassword(longitud = 12) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
@@ -19,6 +25,8 @@ function generarPassword(longitud = 12) {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = createSupabaseClient()
+    
     const body = await req.json()
     const { email, full_name, worker_type = 'regular' } = body
 
