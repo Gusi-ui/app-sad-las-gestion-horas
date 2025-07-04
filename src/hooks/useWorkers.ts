@@ -34,7 +34,13 @@ export function useWorkers() {
         // Don't throw, stats are optional
       }
 
-      setWorkers(workersData || [])
+      // Asegurar que los arrays nulos se conviertan en arrays vacíos
+      const processedWorkers = (workersData || []).map(worker => ({
+        ...worker,
+        specializations: worker.specializations || [],
+        availability_days: worker.availability_days || []
+      }))
+      setWorkers(processedWorkers)
       setWorkerStats(statsData || [])
     } catch (err) {
       console.error('Error fetching workers:', err)

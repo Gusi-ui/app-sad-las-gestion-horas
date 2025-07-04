@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { supabase } from '@/lib/supabase'
 
-export default function LoginPage() {
+export default function WorkerLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,11 +44,11 @@ export default function LoginPage() {
           .single()
 
         if (profileError || !profile) {
-          setError('No tienes permisos para acceder a la administración.')
-        } else if (profile.role === 'admin') {
-        router.push('/dashboard')
+          setError('No tienes permisos para acceder a la zona de trabajadoras.')
+        } else if (profile.role === 'worker') {
+          router.push('/worker/dashboard')
         } else {
-          setError('No tienes permisos para acceder a la administración.')
+          setError('No tienes permisos para acceder a la zona de trabajadoras.')
         }
       }
     } catch {
@@ -62,8 +62,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-100 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Iniciar Sesión</CardTitle>
-          <p className="text-slate-600">Accede a tu cuenta para gestionar tus servicios</p>
+          <CardTitle className="text-2xl">Acceso Trabajadoras</CardTitle>
+          <p className="text-slate-600">Inicia sesión para ver tus servicios asignados</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

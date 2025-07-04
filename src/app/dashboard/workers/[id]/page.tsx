@@ -74,14 +74,15 @@ export default function WorkerDetailsPage() {
       try {
         setIsLoading(true)
         setError(null)
-        
         const { data, error } = await getWorkerById(workerId)
-        
-        if (error) {
-          throw new Error(error)
+        if (error) throw new Error(error)
+        if (data) {
+          setWorker({
+            ...data,
+            specializations: Array.isArray(data.specializations) ? data.specializations : [],
+            availability_days: Array.isArray(data.availability_days) ? data.availability_days : []
+          })
         }
-        
-        setWorker(data)
       } catch (err) {
         console.error('Error fetching worker:', err)
         setError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
@@ -89,10 +90,7 @@ export default function WorkerDetailsPage() {
         setIsLoading(false)
       }
     }
-
-    if (workerId) {
-      fetchWorker()
-    }
+    if (workerId) fetchWorker()
   }, [workerId, getWorkerById])
 
   const handleDelete = async () => {
@@ -164,7 +162,7 @@ export default function WorkerDetailsPage() {
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-red-100 shadow-sm border-b border-slate-200">
+      <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex items-center py-4">
             <Button variant="secondary" size="sm" onClick={() => router.back()} className="mr-2">

@@ -53,6 +53,7 @@ export default function NewWorkerPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null)
 
   const validatePhone = (phone: string): boolean => {
     const cleanPhone = phone.replace(/\s/g, '')
@@ -115,22 +116,6 @@ export default function NewWorkerPage() {
       newErrors.dni = 'DNI inválido (formato: 12345678A)'
     }
 
-    if (formData.hourly_rate < 10 || formData.hourly_rate > 50) {
-      newErrors.hourly_rate = 'Tarifa debe estar entre 10€ y 50€'
-    }
-
-    if (formData.max_weekly_hours < 1 || formData.max_weekly_hours > 40) {
-      newErrors.max_weekly_hours = 'Horas semanales deben estar entre 1 y 40'
-    }
-
-    if (formData.specializations.length === 0) {
-      newErrors.specializations = 'Debe seleccionar al menos una especialización'
-    }
-
-    if (formData.availability_days.length === 0) {
-      newErrors.availability_days = 'Debe seleccionar al menos un día de disponibilidad'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -178,36 +163,47 @@ export default function NewWorkerPage() {
     }
 
     setIsSubmitting(true)
+    setGeneratedPassword(null)
     try {
-      const { error } = await createWorker({
-        ...formData,
-        phone: formData.phone.replace(/\s/g, ''), // Remove spaces for storage
-        name: formData.name.trim(),
-        surname: formData.surname.trim(),
-        email: formData.email.trim() || undefined,
-        address: formData.address.trim() || undefined,
-        dni: formData.dni.trim() || undefined,
-        social_security_number: formData.social_security_number.trim() || undefined,
-        notes: formData.notes.trim() || undefined,
-        emergency_contact_name: formData.emergency_contact_name.trim() || undefined,
-        emergency_contact_phone: formData.emergency_contact_phone.trim() || undefined
+      // Llamada a la API de alta de trabajadora
+      const response = await fetch('/api/admin/create-worker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          full_name: `${formData.name.trim()} ${formData.surname.trim()}`,
+          worker_type: 'regular', // O puedes mapear según el formulario
+        })
       })
-
-      if (error) {
-        showToast(`Error al crear trabajadora: ${error}`, 'error')
+      const result = await response.json()
+      if (!response.ok || result.error) {
+        showToast(`Error al crear trabajadora: ${result.error || 'Error desconocido'}`, 'error')
       } else {
+        setGeneratedPassword(result.password)
         showToast(`${formData.name} ${formData.surname} creada correctamente`, 'success')
-        router.push('/dashboard/workers')
+        // No redirigimos automáticamente para que el admin pueda copiar la contraseña
       }
-    } catch {
-      showToast('Error inesperado al crear trabajadora', 'error')
+    } catch (err) {
+      showToast('Error de red o del servidor', 'error')
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-100 py-8">
+      {ToastComponent}
+      {generatedPassword && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
+            <h2 className="text-xl font-bold mb-4 text-green-700">Trabajadora creada correctamente</h2>
+            <p className="mb-2 text-slate-700">La contraseña generada es:</p>
+            <div className="font-mono text-lg bg-slate-100 rounded p-2 mb-4 select-all break-all">{generatedPassword}</div>
+            <p className="text-slate-500 mb-4">Copia y comunica esta contraseña a la trabajadora. No se volverá a mostrar.</p>
+            <Button onClick={() => { setGeneratedPassword(null); router.push('/dashboard/workers') }} className="w-full">Entendido</Button>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -245,7 +241,7 @@ export default function NewWorkerPage() {
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
                     placeholder="María"
-                    className={errors.name ? 'border-red-500' : ''}
+                    className={errors.name ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.name && (
                     <p className="text-red-500 text-xs mt-1">{errors.name}</p>
@@ -259,7 +255,7 @@ export default function NewWorkerPage() {
                     value={formData.surname}
                     onChange={(e) => handleInputChange('surname', e.target.value)}
                     placeholder="García López"
-                    className={errors.surname ? 'border-red-500' : ''}
+                    className={errors.surname ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.surname && (
                     <p className="text-red-500 text-xs mt-1">{errors.surname}</p>
@@ -276,7 +272,7 @@ export default function NewWorkerPage() {
                     value={formData.phone}
                     onChange={(e) => handlePhoneChange(e.target.value)}
                     placeholder="654 321 987"
-                    className={errors.phone ? 'border-red-500' : ''}
+                    className={errors.phone ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.phone && (
                     <p className="text-red-500 text-xs mt-1">{errors.phone}</p>
@@ -291,7 +287,7 @@ export default function NewWorkerPage() {
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     placeholder="maria.garcia@email.com"
-                    className={errors.email ? 'border-red-500' : ''}
+                    className={errors.email ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.email && (
                     <p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -307,6 +303,7 @@ export default function NewWorkerPage() {
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="Calle Principal 123, 28001 Madrid"
+                  className={errors.address ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                 />
               </div>
 
@@ -319,7 +316,7 @@ export default function NewWorkerPage() {
                     value={formData.dni}
                     onChange={(e) => handleInputChange('dni', e.target.value.toUpperCase())}
                     placeholder="12345678A"
-                    className={errors.dni ? 'border-red-500' : ''}
+                    className={errors.dni ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.dni && (
                     <p className="text-red-500 text-xs mt-1">{errors.dni}</p>
@@ -333,6 +330,7 @@ export default function NewWorkerPage() {
                     type="date"
                     value={formData.hire_date}
                     onChange={(e) => handleInputChange('hire_date', e.target.value)}
+                    className={errors.hire_date ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                 </div>
               </div>
@@ -348,7 +346,7 @@ export default function NewWorkerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Tarifa por Hora (€) *
+                    Tarifa por Hora (€)
                   </label>
                   <input
                     type="number"
@@ -357,7 +355,7 @@ export default function NewWorkerPage() {
                     max="50"
                     value={formData.hourly_rate}
                     onChange={(e) => handleInputChange('hourly_rate', parseFloat(e.target.value) || 0)}
-                    className={errors.hourly_rate ? 'border-red-500' : ''}
+                    className={errors.hourly_rate ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.hourly_rate && (
                     <p className="text-red-500 text-xs mt-1">{errors.hourly_rate}</p>
@@ -365,7 +363,7 @@ export default function NewWorkerPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Máximo Horas/Semana *
+                    Máximo Horas/Semana
                   </label>
                   <input
                     type="number"
@@ -373,7 +371,7 @@ export default function NewWorkerPage() {
                     max="40"
                     value={formData.max_weekly_hours}
                     onChange={(e) => handleInputChange('max_weekly_hours', parseInt(e.target.value) || 0)}
-                    className={errors.max_weekly_hours ? 'border-red-500' : ''}
+                    className={errors.max_weekly_hours ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                   {errors.max_weekly_hours && (
                     <p className="text-red-500 text-xs mt-1">{errors.max_weekly_hours}</p>
@@ -384,7 +382,7 @@ export default function NewWorkerPage() {
               {/* Specializations */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-3">
-                  Especializaciones *
+                  Especializaciones
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   {specializationOptions.map((option) => (
@@ -414,7 +412,7 @@ export default function NewWorkerPage() {
               {/* Availability Days */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-3">
-                  Días Disponibles *
+                  Días Disponibles
                 </label>
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-2">
                   {weekDayOptions.map((option) => (
@@ -458,6 +456,7 @@ export default function NewWorkerPage() {
                     value={formData.emergency_contact_name}
                     onChange={(e) => handleInputChange('emergency_contact_name', e.target.value)}
                     placeholder="Juan García"
+                    className={errors.emergency_contact_name ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                 </div>
                 <div>
@@ -468,6 +467,7 @@ export default function NewWorkerPage() {
                     value={formData.emergency_contact_phone}
                     onChange={(e) => handleInputChange('emergency_contact_phone', e.target.value)}
                     placeholder="612 345 678"
+                    className={errors.emergency_contact_phone ? 'border-red-500' : 'w-full px-4 py-3 border border-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-lg text-lg placeholder:text-slate-400 placeholder:opacity-70'}
                   />
                 </div>
               </div>
@@ -506,7 +506,6 @@ export default function NewWorkerPage() {
           </div>
         </form>
       </div>
-      {ToastComponent}
     </div>
   )
 } 

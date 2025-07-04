@@ -175,25 +175,32 @@ export default function AssignmentsPage() {
     }
   }
 
-  const formatSchedule = (schedule: Record<string, string[]> | undefined) => {
+  const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
     if (!schedule) return 'No configurado'
-    
-    const days = Object.entries(schedule)
-      .filter(([, times]) => times && times.length >= 2)
-      .map(([day, times]) => {
-        const dayNames: Record<string, string> = {
-          monday: 'Lun',
-          tuesday: 'Mar',
-          wednesday: 'Mié',
-          thursday: 'Jue',
-          friday: 'Vie',
-          saturday: 'Sáb',
-          sunday: 'Dom'
+    const dayNames: Record<string, string> = {
+      monday: 'Lun',
+      tuesday: 'Mar',
+      wednesday: 'Mié',
+      thursday: 'Jue',
+      friday: 'Vie',
+      saturday: 'Sáb',
+      sunday: 'Dom'
+    }
+    return Object.entries(schedule)
+      .filter(([, slots]) => slots && slots.length > 0)
+      .map(([day, slots]) => {
+        if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
+          // Formato antiguo
+          return `${dayNames[day]}: ${slots[0]}-${slots[1]}`
+        } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
+          // Formato nuevo
+          return `${dayNames[day]}: ` + slots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ')
+        } else {
+          return null
         }
-        return `${dayNames[day]}: ${times[0]}-${times[1]}`
       })
-    
-    return days.length > 0 ? days.join(', ') : 'No configurado'
+      .filter(Boolean)
+      .join(', ')
   }
 
   if (isLoading) {

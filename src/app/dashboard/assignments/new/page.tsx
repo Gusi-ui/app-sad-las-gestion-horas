@@ -37,6 +37,12 @@ function NewAssignmentContent() {
         return
       }
 
+      // Convertir TimeSlot[] a string[] para la base de datos
+      const convertedSchedule: Record<string, string[]> = {}
+      Object.entries(formData.specific_schedule).forEach(([day, timeSlots]) => {
+        convertedSchedule[day] = timeSlots.map(slot => [slot.start, slot.end]).flat()
+      })
+      
       const { error, conflicts } = await createAssignment({
         worker_id: formData.worker_id,
         user_id: formData.user_id,
@@ -46,7 +52,7 @@ function NewAssignmentContent() {
         priority: formData.priority,
         status: formData.status,
         notes: formData.notes?.trim() || undefined,
-        specific_schedule: formData.specific_schedule
+        specific_schedule: convertedSchedule
       })
 
       if (conflicts && conflicts.length > 0) {

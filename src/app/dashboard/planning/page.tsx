@@ -41,11 +41,34 @@ function BottomDrawer({ open, onClose, title, children }: { open: boolean, onClo
   )
 }
 
+// Utilidad para mostrar horarios flexibles
+function renderScheduleTimes(times: any): string {
+  if (!times) return 'Sin horario';
+  // Caso: array de strings (antiguo)
+  if (Array.isArray(times) && typeof times[0] === 'string') {
+    return times.length === 2 ? `${times[0]} - ${times[1]}` : times.join(', ');
+  }
+  // Caso: array de objetos {start, end}
+  if (Array.isArray(times) && typeof times[0] === 'object' && times[0] !== null) {
+    return times
+      .map((t: any) => {
+        if (typeof t === 'string') return t;
+        if (t.start && t.end) return `${t.start}-${t.end}`;
+        if (t.start) return t.start;
+        return '';
+      })
+      .filter(Boolean)
+      .join(', ');
+  }
+  return 'Sin horario';
+}
+
 export default function PlanningPage() {
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const { assignments, isLoading, createAssignment, deleteAssignment, updateAssignment } = useAssignments()
+  console.log('ASSIGNMENTS', assignments);
   const { workers } = useWorkers()
   const { data: users } = useUsers()
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -57,7 +80,7 @@ export default function PlanningPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null)
   const [groupBy, setGroupBy] = useState<'none' | 'worker' | 'user'>('none')
-  const [monthlyViewType, setMonthlyViewType] = useState<'grid' | 'list'>('grid')
+  const [monthlyViewType, setMonthlyViewType] = useState<'grid' | 'list'>('list')
 
   const [weekStart, setWeekStart] = useState(startOfWeek(selectedDate, { weekStartsOn: 1 }))
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -77,33 +100,44 @@ export default function PlanningPage() {
     if (filterUserId && a.user_id !== filterUserId) return false;
     if (viewMode === 'day') {
       if (a.specific_schedule) {
-        const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const
-        const dayKey = weekDays[selectedDate.getDay()] as WeekDay
-        const times = getScheduleForDay(a.specific_schedule, dayKey)
-        return times && times.length === 2 && times[0] && times[1]
+        const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+        const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
+        const times = getScheduleForDay(a.specific_schedule, dayKey);
+        // Si hay horario para ese día, mostrarla
+        if (times && times.length > 0) return true;
+        // Si no hay horario, pero el start_date coincide, mostrarla también
+        if (a.start_date) {
+          const start = new Date(a.start_date);
+          return isSameDay(start, selectedDate);
+        }
+        return false;
       }
       if (a.start_date) {
-        const start = new Date(a.start_date)
-        return isSameDay(start, selectedDate)
+        const start = new Date(a.start_date);
+        return isSameDay(start, selectedDate);
       }
-      return false
+      return false;
     }
-    return true
+    return true;
   })
 
   const assignmentsByDay = weekDays.map(day => {
     return filteredAssignments.filter(a => {
       if (a.specific_schedule) {
-        const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][day.getDay()]
-        const times = getScheduleForDay(a.specific_schedule, dayKey)
-        return times && times.length === 2 && times[0] && times[1]
+        const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][day.getDay()];
+        const times = getScheduleForDay(a.specific_schedule, dayKey);
+        if (times && times.length > 0) return true;
+        if (a.start_date) {
+          return isSameDay(new Date(a.start_date), day);
+        }
+        return false;
       }
       if (a.start_date) {
-        return isSameDay(new Date(a.start_date), day)
+        return isSameDay(new Date(a.start_date), day);
       }
-      return false
-    })
-  })
+      return false;
+    });
+  });
 
   const goToPrevDay = () => {
     const prev = new Date(selectedDate)
@@ -226,6 +260,17 @@ export default function PlanningPage() {
 
   // Estado para la reasignación
   const [reassignState, setReassignState] = useState<{ assignmentId: string | null, workerId: string, loading: boolean }>({ assignmentId: null, workerId: '', loading: false })
+
+  // Debug temporal para Dolores
+  assignments.forEach(a => {
+    if (a.user?.name === 'Dolores') {
+      console.log('DOLORES ASSIGNMENT:', a);
+      const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+      const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
+      const times = getScheduleForDay(a.specific_schedule, dayKey);
+      console.log('DOLORES TIMES FOR TODAY:', times);
+    }
+  });
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -444,7 +489,7 @@ export default function PlanningPage() {
                     <CardContent className="py-4 px-4 flex flex-col gap-1">
                       <div className="flex items-center justify-between">
                         <span className="font-semibold text-base">
-                          {times ? `${times[0]} - ${times[1]}` : 'Sin horario'}
+                          {renderScheduleTimes(times)}
                         </span>
                         <span className="text-xs text-slate-500 capitalize">{a.status}</span>
                       </div>
@@ -483,7 +528,7 @@ export default function PlanningPage() {
                           <CardContent className="py-3 px-4 flex flex-col gap-1">
                             <div className="flex items-center justify-between">
                               <span className="font-semibold text-base">
-                                {times ? `${times[0]} - ${times[1]}` : 'Sin horario'}
+                                {renderScheduleTimes(times)}
                               </span>
                               <span className="text-xs text-slate-500 capitalize">{a.status}</span>
                             </div>
@@ -513,28 +558,14 @@ export default function PlanningPage() {
                     {assignments[0].user?.name ? `${assignments[0].user?.name} ${assignments[0].user?.surname}` : 'Sin usuario'}
                   </div>
                   <div className="space-y-2">
-                    {assignments.map(a => {
-                      const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const
-                      const dayKey = weekDays[selectedDate.getDay()] as WeekDay
-                      const times = getScheduleForDay(a.specific_schedule, dayKey)
+                    {assignments.map((a, idx) => {
+                      const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                      const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
+                      const times = getScheduleForDay(a.specific_schedule, dayKey);
                       return (
-                        <Card key={a.id}>
-                          <CardContent className="py-3 px-4 flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                              <span className="font-semibold text-base">
-                                {times ? `${times[0]} - ${times[1]}` : 'Sin horario'}
-                              </span>
-                              <span className="text-xs text-slate-500 capitalize">{a.status}</span>
-                            </div>
-                            <div className="mt-1 text-sm text-slate-700 flex items-center gap-2">
-                              Trabajadora: {a.worker?.name} {a.worker?.surname}
-                            </div>
-                            <div className="flex gap-2 mt-2">
-                              <Link href={`/dashboard/assignments/${a.id}`}><Button size="sm" variant="secondary">Ver</Button></Link>
-                              <Link href={`/dashboard/assignments/${a.id}/edit`}><Button size="sm" variant="secondary">Editar</Button></Link>
-                            </div>
-                          </CardContent>
-                        </Card>
+                        <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                          {renderScheduleTimes(times)}
+                        </div>
                       )
                     })}
                   </div>
@@ -561,34 +592,35 @@ export default function PlanningPage() {
                           <div className="text-sm">Sin asignaciones</div>
                         </div>
                       ) : (
-                        assignmentsByDay[idx].map(a => (
-                          <div key={a.id} className="border rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-semibold text-sm">
-                                {a.specific_schedule ? (() => {
-                                  const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][day.getDay()]
-                                  const times = getScheduleForDay(a.specific_schedule, dayKey)
-                                  return times ? `${times[0]} - ${times[1]}` : 'Sin horario'
-                                })() : 'Sin horario'}
-                              </span>
-                              <span className="text-xs text-slate-500 capitalize px-2 py-1 bg-slate-100 rounded">{a.status}</span>
+                        assignmentsByDay[idx].map(a => {
+                          const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                          const dayKey = weekDays[day.getDay()] as WeekDay;
+                          const times = getScheduleForDay(a.specific_schedule, dayKey);
+                          return (
+                            <div key={a.id} className="border rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-semibold text-sm">
+                                  {renderScheduleTimes(times)}
+                                </span>
+                                <span className="text-xs text-slate-500 capitalize px-2 py-1 bg-slate-100 rounded">{a.status}</span>
+                              </div>
+                              <div className="text-sm text-slate-700 mb-1">
+                                <span className="font-medium">Usuario:</span> {a.user?.name} {a.user?.surname}
+                              </div>
+                              <div className="text-sm text-slate-700 mb-2">
+                                <span className="font-medium">Trabajadora:</span> {a.worker?.name} {a.worker?.surname}
+                              </div>
+                              <div className="flex gap-2">
+                                <Link href={`/dashboard/assignments/${a.id}`}>
+                                  <Button size="sm" variant="secondary">Ver</Button>
+                                </Link>
+                                <Link href={`/dashboard/assignments/${a.id}/edit`}>
+                                  <Button size="sm" variant="secondary">Editar</Button>
+                                </Link>
+                              </div>
                             </div>
-                            <div className="text-sm text-slate-700 mb-1">
-                              <span className="font-medium">Usuario:</span> {a.user?.name} {a.user?.surname}
-                            </div>
-                            <div className="text-sm text-slate-700 mb-2">
-                              <span className="font-medium">Trabajadora:</span> {a.worker?.name} {a.worker?.surname}
-                            </div>
-                            <div className="flex gap-2">
-                              <Link href={`/dashboard/assignments/${a.id}`}>
-                                <Button size="sm" variant="secondary">Ver</Button>
-                              </Link>
-                              <Link href={`/dashboard/assignments/${a.id}/edit`}>
-                                <Button size="sm" variant="secondary">Editar</Button>
-                              </Link>
-                            </div>
-                          </div>
-                        ))
+                          )
+                        })
                       )}
                     </div>
                   </CardContent>
@@ -597,7 +629,7 @@ export default function PlanningPage() {
             ) : groupBy === 'worker' ? (
               weekDays.map((day, idx) => {
                 // Agrupar assignmentsByDay[idx] por trabajadora
-                const grouped = Object.entries(assignmentsByDay[idx].reduce((acc, a) => {
+                const grouped: [string, Assignment[]][] = Object.entries(assignmentsByDay[idx].reduce((acc, a) => {
                   const key = a.worker?.id || 'Sin trabajadora';
                   if (!acc[key]) acc[key] = [];
                   acc[key].push(a);
@@ -615,37 +647,22 @@ export default function PlanningPage() {
                         </div>
                       </div>
                       <div className="space-y-4">
-                        {grouped.map(([workerId, assignments]) => (
+                        {grouped.map(([workerId, assignments]: [string, Assignment[]], groupIdx) => (
                           <div key={workerId} className="mb-2">
                             <div className="font-bold text-slate-800 mb-1 text-sm">
                               {assignments[0].worker?.name ? `${assignments[0].worker?.name} ${assignments[0].worker?.surname}` : 'Sin trabajadora'}
                             </div>
                             <div className="space-y-2">
-                              {assignments.map(a => (
-                                <div key={a.id} className="border rounded-lg p-3">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <span className="font-semibold text-sm">
-                                      {a.specific_schedule ? (() => {
-                                        const dayKey = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][day.getDay()]
-                                        const times = getScheduleForDay(a.specific_schedule, dayKey)
-                                        return times ? `${times[0]} - ${times[1]}` : 'Sin horario'
-                                      })() : 'Sin horario'}
-                                    </span>
-                                    <span className="text-xs text-slate-500 capitalize px-2 py-1 bg-slate-100 rounded">{a.status}</span>
+                              {assignments.map((a, idx) => {
+                                const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                const dayKey = weekDays[day.getDay()] as WeekDay;
+                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                return (
+                                  <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                                    {renderScheduleTimes(times)}
                                   </div>
-                                  <div className="text-sm text-slate-700 mb-1">
-                                    <span className="font-medium">Usuario:</span> {a.user?.name} {a.user?.surname}
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Link href={`/dashboard/assignments/${a.id}`}>
-                                      <Button size="sm" variant="secondary">Ver</Button>
-                                    </Link>
-                                    <Link href={`/dashboard/assignments/${a.id}/edit`}>
-                                      <Button size="sm" variant="secondary">Editar</Button>
-                                    </Link>
-                                  </div>
-                                </div>
-                              ))}
+                                )
+                              })}
                             </div>
                           </div>
                         ))}
@@ -657,7 +674,7 @@ export default function PlanningPage() {
             ) : (
               weekDays.map((day, idx) => {
                 // Agrupar assignmentsByDay[idx] por usuario
-                const grouped = Object.entries(assignmentsByDay[idx].reduce((acc, a) => {
+                const grouped: [string, Assignment[]][] = Object.entries(assignmentsByDay[idx].reduce((acc, a) => {
                   const key = a.user?.id || 'Sin usuario';
                   if (!acc[key]) acc[key] = [];
                   acc[key].push(a);
@@ -675,22 +692,22 @@ export default function PlanningPage() {
                         </div>
                       </div>
                       <div className="space-y-4">
-                        {grouped.map(([userId, assignments]) => (
+                        {grouped.map(([userId, assignments]: [string, Assignment[]], groupIdx) => (
                           <div key={userId} className="mb-2">
                             <div className="font-bold text-slate-800 mb-1 text-sm">
                               {assignments[0].user?.name ? `${assignments[0].user?.name} ${assignments[0].user?.surname}` : 'Sin usuario'}
                             </div>
                             <div className="space-y-2">
-                              {assignments.map((a, idx) => (
-                                <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
-                                  {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
-                                    const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
-                                    const dayKey = weekDays[day.getDay()] as WeekDay;
-                                    const times = getScheduleForDay(a.specific_schedule, dayKey);
-                                    return times ? `${times[0]}-${times[1]}` : '—';
-                                  })() : a.start_date}
-                                </div>
-                              ))}
+                              {assignments.map((a, idx) => {
+                                const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                const dayKey = weekDays[day.getDay()] as WeekDay;
+                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                return (
+                                  <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                                    {renderScheduleTimes(times)}
+                                  </div>
+                                )
+                              })}
                             </div>
                           </div>
                         ))}
@@ -725,9 +742,25 @@ export default function PlanningPage() {
                     const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
                     const dayKey = weekDays[date.getDay()] as WeekDay;
                     const times = getScheduleForDay(a.specific_schedule, dayKey);
-                    if (times && times.length === 2 && times[0] && times[1]) {
+                    if (times && times.length > 0) {
                       if (!assignmentsByDay[dayNum]) assignmentsByDay[dayNum] = [];
-                      assignmentsByDay[dayNum].push(a);
+                      // Evitar duplicados si ya se añadió por start_date
+                      if (!assignmentsByDay[dayNum].some(ass => ass.id === a.id)) {
+                        assignmentsByDay[dayNum].push(a);
+                      }
+                    } else if (a.start_date) {
+                      // Si no hay horario pero el start_date coincide con ese día
+                      const start = new Date(a.start_date);
+                      if (
+                        start.getFullYear() === year &&
+                        start.getMonth() + 1 === month &&
+                        start.getDate() === dayNum
+                      ) {
+                        if (!assignmentsByDay[dayNum]) assignmentsByDay[dayNum] = [];
+                        if (!assignmentsByDay[dayNum].some(ass => ass.id === a.id)) {
+                          assignmentsByDay[dayNum].push(a);
+                        }
+                      }
                     }
                   });
                 }
@@ -774,7 +807,7 @@ export default function PlanningPage() {
                               {grouped.length === 0 ? (
                                 <div className="text-slate-300 text-xs">—</div>
                               ) : (
-                                grouped.map(([groupKey, groupAssignments], groupIdx) => (
+                                grouped.map(([groupKey, groupAssignments]: [string, Assignment[]], groupIdx) => (
                                   <div key={`group-${groupKey}-${dayNum}-${groupIdx}`} className="mb-1">
                                     {groupBy !== 'none' && (
                                       <div className="text-[10px] font-semibold text-slate-500 truncate mb-0.5">
@@ -783,17 +816,16 @@ export default function PlanningPage() {
                                           : groupAssignments[0].user?.name + ' ' + groupAssignments[0].user?.surname}
                                       </div>
                                     )}
-                                    {groupAssignments.map((a, idx) => (
-                                      <div key={`a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-[10px] text-slate-700 truncate">
-                                        {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
-                                          const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
-                                          const date = new Date(year, month - 1, dayNum);
-                                          const dayKey = weekDays[date.getDay()] as WeekDay;
-                                          const times = getScheduleForDay(a.specific_schedule, dayKey);
-                                          return times ? `${times[0]}-${times[1]}` : '—';
-                                        })() : a.start_date}
-                                      </div>
-                                    ))}
+                                    {groupAssignments.map((a, idx) => {
+                                      const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                      const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
+                                      const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                      return (
+                                        <div key={`a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-[10px] text-slate-700 truncate">
+                                          {renderScheduleTimes(times)}
+                                        </div>
+                                      )
+                                    })}
                                   </div>
                                 ))
                               )}
@@ -810,6 +842,8 @@ export default function PlanningPage() {
                 return (
                   <div className="space-y-4">
                     {daysArray.map(dayNum => {
+                      const year = selectedDate.getFullYear();
+                      const month = selectedDate.getMonth() + 1;
                       const dayAssignments = assignmentsByDay[dayNum] || [];
                       if (dayAssignments.length === 0) return null;
                       // Agrupación
@@ -833,7 +867,9 @@ export default function PlanningPage() {
                       }
                       return (
                         <div key={`list-day-${dayNum}`} className="border rounded bg-white p-2">
-                          <div className="font-bold text-slate-700 mb-1 text-sm">{dayNum} {selectedDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}</div>
+                          <div className="font-bold text-slate-700 mb-1 text-sm">
+                            {dayNum} {selectedDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                          </div>
                           {grouped.map(([groupKey, groupAssignments], groupIdx) => (
                             <div key={`list-group-${groupKey}-${dayNum}-${groupIdx}`} className="mb-1">
                               {groupBy !== 'none' && (
@@ -843,17 +879,16 @@ export default function PlanningPage() {
                                     : groupAssignments[0].user?.name + ' ' + groupAssignments[0].user?.surname}
                                 </div>
                               )}
-                              {groupAssignments.map((a, idx) => (
-                                <div key={`list-a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-xs text-slate-700 truncate">
-                                  {a.specific_schedule ? 'Horario' : 'Inicio'}: {a.specific_schedule ? (() => {
-                                    const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
-                                    const date = new Date(year, month - 1, dayNum);
-                                    const dayKey = weekDays[date.getDay()] as WeekDay;
-                                    const times = getScheduleForDay(a.specific_schedule, dayKey);
-                                    return times ? `${times[0]}-${times[1]}` : '—';
-                                  })() : a.start_date}
-                                </div>
-                              ))}
+                              {groupAssignments.map((a, idx) => {
+                                const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
+                                const dayKey = weekDays[selectedDate.getDay()] as WeekDay;
+                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                return (
+                                  <div key={`list-a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-xs text-slate-700 truncate">
+                                    {renderScheduleTimes(times)}
+                                  </div>
+                                );
+                              })}
                             </div>
                           ))}
                         </div>

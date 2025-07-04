@@ -85,8 +85,8 @@ export default function EditWorkerPage() {
             hire_date: data.hire_date,
             hourly_rate: data.hourly_rate,
             max_weekly_hours: data.max_weekly_hours,
-            specializations: [...data.specializations],
-            availability_days: [...data.availability_days],
+            specializations: Array.isArray(data.specializations) ? data.specializations : [],
+            availability_days: Array.isArray(data.availability_days) ? data.availability_days : [],
             notes: data.notes || '',
             emergency_contact_name: data.emergency_contact_name || '',
             emergency_contact_phone: data.emergency_contact_phone || '',
@@ -175,14 +175,6 @@ export default function EditWorkerPage() {
       newErrors.max_weekly_hours = 'Horas semanales deben estar entre 1 y 40'
     }
 
-    if (formData.specializations.length === 0) {
-      newErrors.specializations = 'Debe seleccionar al menos una especialización'
-    }
-
-    if (formData.availability_days.length === 0) {
-      newErrors.availability_days = 'Debe seleccionar al menos un día de disponibilidad'
-    }
-
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -223,20 +215,38 @@ export default function EditWorkerPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
     if (!validateForm()) {
       showToast('Por favor, corrige los errores del formulario', 'error')
       return
     }
-
     setIsSubmitting(true)
     try {
+      let emailUpdated = false
+      if (worker && formData.email.trim() !== worker.email) {
+        // Cambió el email, actualiza en Auth y en la base de datos
+        const response = await fetch('/api/admin/update-worker-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: worker.id,
+            newEmail: formData.email.trim()
+          })
+        })
+        const result = await response.json()
+        if (!response.ok || result.error) {
+          showToast(`Error al actualizar el email: ${result.error || 'Error desconocido'}`, 'error')
+          setIsSubmitting(false)
+          return
+        }
+        emailUpdated = true
+      }
+      // Actualiza el resto de campos (excepto email si ya se actualizó)
       const { error } = await updateWorker(workerId, {
         ...formData,
-        phone: formData.phone.replace(/\s/g, ''), // Remove spaces for storage
+        email: formData.email.trim(),
         name: formData.name.trim(),
         surname: formData.surname.trim(),
-        email: formData.email.trim() || undefined,
+        phone: formData.phone.replace(/\s/g, ''),
         address: formData.address.trim() || undefined,
         dni: formData.dni.trim() || undefined,
         social_security_number: formData.social_security_number.trim() || undefined,
@@ -244,14 +254,13 @@ export default function EditWorkerPage() {
         emergency_contact_name: formData.emergency_contact_name.trim() || undefined,
         emergency_contact_phone: formData.emergency_contact_phone.trim() || undefined
       })
-
       if (error) {
         showToast(`Error al actualizar trabajadora: ${error}`, 'error')
       } else {
-        showToast(`${formData.name} ${formData.surname} actualizada correctamente`, 'success')
-        router.push(`/dashboard/workers/${workerId}`)
+        showToast(emailUpdated ? 'Email y datos actualizados correctamente' : 'Datos actualizados correctamente', 'success')
+        router.push('/dashboard/workers')
       }
-    } catch {
+    } catch (err) {
       showToast('Error inesperado al actualizar trabajadora', 'error')
     } finally {
       setIsSubmitting(false)

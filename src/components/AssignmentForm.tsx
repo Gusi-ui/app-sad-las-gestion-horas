@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import { Assignment, WeekDay, AssignmentPriority, AssignmentStatus } from '@/lib/types'
-import { WeeklyScheduleForm } from './WeeklyScheduleForm'
+import { WeeklyScheduleFormV2 } from './WeeklyScheduleFormV2'
 
 interface AssignmentFormProps {
   assignment?: Assignment | null
@@ -18,6 +18,12 @@ interface AssignmentFormProps {
   workerId?: string
 }
 
+interface TimeSlot {
+  id: string
+  start: string
+  end: string
+}
+
 export interface AssignmentFormData {
   worker_id: string
   user_id: string
@@ -27,7 +33,7 @@ export interface AssignmentFormData {
   priority: AssignmentPriority
   status: AssignmentStatus
   notes?: string
-  specific_schedule: Record<WeekDay, string[]>
+  specific_schedule: Record<WeekDay, TimeSlot[]>
 }
 
 export function AssignmentForm({ 
@@ -63,7 +69,7 @@ export function AssignmentForm({
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [weeklySchedule, setWeeklySchedule] = useState<{ day_of_week: number; hours: number }[]>([])
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, TimeSlot[]>>({})
   const [totalHours, setTotalHours] = useState(0)
 
   const availableWorkers = getAvailableWorkers()
@@ -81,55 +87,71 @@ export function AssignmentForm({
         priority: assignment.priority,
         status: assignment.status,
         notes: assignment.notes || '',
-        specific_schedule: assignment.specific_schedule || {
+        specific_schedule: {
           monday: [], tuesday: [], wednesday: [], thursday: [],
           friday: [], saturday: [], sunday: []
-        }
+        } as Record<WeekDay, TimeSlot[]>
       })
-      // Convertir el specific_schedule a weeklySchedule
-      const newWeekly: { day_of_week: number; hours: number }[] = []
+      
+      // Convertir el specific_schedule al nuevo formato
+      const newSchedule: Record<string, TimeSlot[]> = {}
       if (assignment.specific_schedule) {
-        Object.entries(assignment.specific_schedule).forEach(([day, times]) => {
-          if (times && times.length === 2) {
-            // Calcular horas entre start y end
-            const [start, end] = times
-            const [h1, m1] = start.split(':').map(Number)
-            const [h2, m2] = end.split(':').map(Number)
-            const hours = (h2 + m2/60) - (h1 + m1/60)
-            if (hours > 0) {
-              // Mapear day string a número (0=domingo, 1=lunes...)
-              const dayMap: Record<string, number> = { sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6 }
-              newWeekly.push({ day_of_week: dayMap[day], hours })
+        Object.entries(assignment.specific_schedule).forEach(([day, timeData]) => {
+          if (timeData && Array.isArray(timeData)) {
+            // Si es formato antiguo: ['08:00', '10:00']
+            if (timeData.length === 2 && typeof timeData[0] === 'string' && typeof timeData[1] === 'string') {
+              newSchedule[day] = [{
+                id: `${day}-0`,
+                start: timeData[0],
+                end: timeData[1]
+              }]
+            } else if (timeData.length > 0 && typeof timeData[0] === 'object') {
+              // Formato nuevo: TimeSlot[]
+              newSchedule[day] = timeData as unknown as TimeSlot[]
+            } else {
+              newSchedule[day] = []
             }
+          } else {
+            newSchedule[day] = []
           }
         })
       }
-      setWeeklySchedule(newWeekly)
-      setTotalHours(Math.round(newWeekly.reduce((acc, d) => acc + d.hours, 0) * 4.3))
+      // Asegurar que todos los días existen en el objeto
+      ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
+        if (!newSchedule[day]) newSchedule[day] = []
+      })
+      setWeeklySchedule(newSchedule)
+      
+      // Calcular horas totales
+      const total = Object.values(newSchedule).reduce((sum, slots) => {
+        return sum + slots.reduce((daySum, slot) => {
+          const [startHour, startMinute] = slot.start.split(':').map(Number)
+          const [endHour, endMinute] = slot.end.split(':').map(Number)
+          const startTime = startHour + startMinute / 60
+          const endTime = endHour + endMinute / 60
+          const duration = endTime - startTime
+          return daySum + Math.max(0, duration)
+        }, 0)
+      }, 0)
+      setTotalHours(Math.round(total * 4.3))
     }
   }, [assignment, isEditing])
 
-  // Sincronizar weeklySchedule y totalHours con formData
+  // Sincronizar weeklySchedule con formData
   useEffect(() => {
-    // Mapear weeklySchedule a specific_schedule formato antiguo
-    const dayMap: Record<number, string> = { 0: 'sunday', 1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday' }
-    const newSpecific: Record<WeekDay, string[]> = {
-      monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: []
-    }
-    weeklySchedule.forEach(({ day_of_week, hours }) => {
-      // Convertir horas a bloque 08:00-XX:00 (simple, para compatibilidad)
-      // Si ya hay un bloque, sobrescribir
-      if (hours > 0) {
-        const start = '08:00'
-        const endHour = 8 + hours
-        const end = `${endHour.toString().padStart(2, '0')}:00`
-        newSpecific[dayMap[day_of_week] as WeekDay] = [start, end]
-      }
-    })
     setFormData(prev => ({
       ...prev,
-      assigned_hours_per_week: weeklySchedule.reduce((acc, d) => acc + d.hours, 0),
-      specific_schedule: newSpecific
+      assigned_hours_per_week: Object.values(weeklySchedule).reduce((sum, slots) => {
+        return sum + slots.reduce((daySum, slot) => {
+          const [startHour, startMinute] = slot.start.split(':').map(Number)
+          const [endHour, endMinute] = slot.end.split(':').map(Number)
+          const startTime = startHour + startMinute / 60
+          const endTime = endHour + endMinute / 60
+          const duration = endTime - startTime
+          return daySum + Math.max(0, duration)
+        }, 0)
+      }, 0),
+      specific_schedule: weeklySchedule as Record<WeekDay, TimeSlot[]>
     }))
   }, [weeklySchedule])
 
@@ -154,8 +176,9 @@ export function AssignmentForm({
     if (formData.end_date && formData.end_date <= formData.start_date) {
       newErrors.end_date = 'La fecha de fin debe ser posterior a la fecha de inicio'
     }
-    // Validar que al menos un día tenga horas > 0
-    if (weeklySchedule.length === 0) {
+    // Validar que al menos un día tenga horarios
+    const hasSchedules = Object.values(weeklySchedule).some(slots => slots.length > 0)
+    if (!hasSchedules) {
       newErrors.schedule = 'Debe configurar al menos un día de horario'
     }
     setErrors(newErrors)
@@ -324,8 +347,8 @@ export function AssignmentForm({
             </CardContent>
           </Card>
 
-          {/* Horario Semanal */}
-          <WeeklyScheduleForm
+          {/* Horario Semanal Detallado */}
+          <WeeklyScheduleFormV2
             value={weeklySchedule}
             onChange={setWeeklySchedule}
             totalHours={totalHours}

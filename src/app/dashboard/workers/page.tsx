@@ -442,8 +442,6 @@ export default function WorkersPage() {
                       <tr className="border-b border-slate-200">
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Trabajadora</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Contacto</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Especialización</th>
-                        <th className="text-left py-3 px-4 font-medium text-slate-700">Tarifa</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Estado</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Contratada</th>
                         <th className="text-left py-3 px-4 font-medium text-slate-700">Acciones</th>
@@ -485,31 +483,7 @@ export default function WorkersPage() {
                               )}
                             </div>
                           </td>
-                          <td className="py-4 px-4">
-                            <div className="flex flex-wrap gap-1">
-                              {worker.specializations.slice(0, 2).map((spec, index) => (
-                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {spec}
-                                </span>
-                              ))}
-                              {worker.specializations.length > 2 && (
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                  +{worker.specializations.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 text-green-600 mr-1" />
-                              <span className="font-medium text-slate-900">
-                                {worker.hourly_rate}€/h
-                              </span>
-                            </div>
-                            <div className="text-sm text-slate-600">
-                              Máx {worker.max_weekly_hours}h/sem
-                            </div>
-                          </td>
+
                           <td className="py-4 px-4">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                               worker.is_active 
@@ -626,31 +600,9 @@ export default function WorkersPage() {
                             </span>
                           </div>
                         )}
-                        <div className="flex items-center text-sm text-slate-600">
-                          <Clock className="w-3 h-3 mr-2 text-slate-500" />
-                          <span className="font-medium text-slate-900">
-                            {worker.hourly_rate}€/h
-                          </span>
-                          <span className="mx-2">•</span>
-                          <span>Máx {worker.max_weekly_hours}h/sem</span>
-                        </div>
                         <div className="text-sm text-slate-600">
                           Contratada: {formatDate(worker.hire_date)}
                         </div>
-                        {worker.specializations.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {worker.specializations.slice(0, 3).map((spec, index) => (
-                              <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                {spec}
-                              </span>
-                            ))}
-                            {worker.specializations.length > 3 && (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
-                                +{worker.specializations.length - 3}
-                              </span>
-                            )}
-                          </div>
-                        )}
                       </div>
 
                       {/* Actions */}
@@ -746,7 +698,7 @@ export default function WorkersPage() {
                 <div className="ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Especializaciones</p>
                   <p className="text-2xl font-bold text-slate-900">
-                    {workers.reduce((sum, worker) => sum + worker.specializations.length, 0)}
+                    {workers.reduce((sum, worker) => sum + (worker.specializations?.length || 0), 0)}
                   </p>
                 </div>
               </div>
@@ -795,7 +747,7 @@ export default function WorkersPage() {
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Especializ.</p>
                   <p className="text-xl font-bold text-slate-900">
-                    {workers.reduce((sum, worker) => sum + worker.specializations.length, 0)}
+                    {workers.reduce((sum, worker) => sum + (worker.specializations?.length || 0), 0)}
                   </p>
                 </div>
               </div>

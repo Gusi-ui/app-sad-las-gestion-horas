@@ -41,8 +41,15 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
   const handleSubmit = async (formData: AssignmentFormData) => {
     try {
       const resolvedParams = await params
+      
+      // Convertir TimeSlot[] a string[] para la base de datos
+      const convertedSchedule: Record<string, string[]> = {}
+      Object.entries(formData.specific_schedule).forEach(([day, timeSlots]) => {
+        convertedSchedule[day] = timeSlots.map(slot => [slot.start, slot.end]).flat()
+      })
+      
       const result = await updateAssignment(resolvedParams.id, {
-        specific_schedule: formData.specific_schedule,
+        specific_schedule: convertedSchedule,
         priority: formData.priority,
         status: formData.status,
         notes: formData.notes?.trim() || undefined,
