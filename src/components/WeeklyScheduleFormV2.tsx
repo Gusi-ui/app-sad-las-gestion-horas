@@ -35,6 +35,20 @@ interface WeeklyScheduleFormV2Props {
   onTotalHoursChange: (totalHours: number) => void
 }
 
+// Función para comparar dos schedules
+function isScheduleEqual(a: Record<string, TimeSlot[]>, b: Record<string, TimeSlot[]>) {
+  const days = Object.keys(a)
+  for (const day of days) {
+    const slotsA = a[day] || []
+    const slotsB = b[day] || []
+    if (slotsA.length !== slotsB.length) return false
+    for (let i = 0; i < slotsA.length; i++) {
+      if (slotsA[i].start !== slotsB[i].start || slotsA[i].end !== slotsB[i].end) return false
+    }
+  }
+  return true
+}
+
 export function WeeklyScheduleFormV2({ 
   value, 
   onChange, 
@@ -42,6 +56,8 @@ export function WeeklyScheduleFormV2({
   onTotalHoursChange 
 }: WeeklyScheduleFormV2Props) {
   const [schedule, setSchedule] = useState<WeeklySchedule>(() => {
+    console.log('WeeklyScheduleFormV2 inicializando con value:', value);
+    
     const initial: WeeklySchedule = {}
     
     // Inicializar todos los días como deshabilitados
@@ -54,14 +70,17 @@ export function WeeklyScheduleFormV2({
     
     // Habilitar días que ya tienen horarios
     Object.entries(value).forEach(([day, timeSlots]) => {
+      console.log(`Verificando día ${day}:`, timeSlots);
       if (timeSlots && timeSlots.length > 0) {
         initial[day] = {
           enabled: true,
           timeSlots: timeSlots
         }
+        console.log(`Habilitado día ${day} con horarios:`, timeSlots);
       }
     })
     
+    console.log('Schedule inicial:', initial);
     return initial
   })
 
@@ -84,6 +103,25 @@ export function WeeklyScheduleFormV2({
     // Aproximadamente 4.3 semanas por mes
     return Math.round(weeklyTotal * 4.3)
   }
+
+  // Actualizar cuando cambia el value (datos iniciales)
+  useEffect(() => {
+    // Solo sincronizar si el value es diferente al schedule actual
+    const currentSchedule: Record<string, TimeSlot[]> = {}
+    Object.entries(schedule).forEach(([day, config]) => {
+      currentSchedule[day] = config.timeSlots
+    })
+    if (!isScheduleEqual(value, currentSchedule)) {
+      const newSchedule: WeeklySchedule = {}
+      DAYS_OF_WEEK.forEach(day => {
+        newSchedule[day.value] = {
+          enabled: value[day.value] && value[day.value].length > 0,
+          timeSlots: value[day.value] || []
+        }
+      })
+      setSchedule(newSchedule)
+    }
+  }, [value])
 
   // Actualizar cuando cambia el schedule
   useEffect(() => {
@@ -148,25 +186,25 @@ export function WeeklyScheduleFormV2({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <Clock className="w-5 h-5 text-sky-600" />
+          <Clock className="w-5 h-5 text-primary-600" />
           <span>Horario Semanal Detallado</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Resumen */}
-        <div className="bg-sky-50 p-4 rounded-lg">
+        <div className="bg-primary-50 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-sky-900">{enabledDays}</div>
-              <div className="text-sm text-sky-600">Días/semana</div>
+              <div className="text-2xl font-bold text-primary-900">{enabledDays}</div>
+              <div className="text-sm text-primary-600">Días/semana</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-sky-900">{weeklyTotal.toFixed(2)}h</div>
-              <div className="text-sm text-sky-600">Total semanal</div>
+              <div className="text-2xl font-bold text-primary-900">{weeklyTotal.toFixed(2)}h</div>
+              <div className="text-sm text-primary-600">Total semanal</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-sky-900">{calculateTotalHours()}h</div>
-              <div className="text-sm text-sky-600">Total mensual</div>
+              <div className="text-2xl font-bold text-primary-900">{calculateTotalHours()}h</div>
+              <div className="text-sm text-primary-600">Total mensual</div>
             </div>
           </div>
         </div>
@@ -187,7 +225,7 @@ export function WeeklyScheduleFormV2({
                   key={day.value}
                   className={`border rounded-lg transition-all ${
                     isEnabled 
-                      ? 'border-sky-300 bg-sky-50' 
+                      ? 'border-primary-300 bg-primary-50' 
                       : 'border-slate-200 bg-slate-50'
                   }`}
                 >
@@ -203,7 +241,7 @@ export function WeeklyScheduleFormV2({
                             className="sr-only"
                           />
                           <div className={`w-11 h-6 rounded-full transition-colors ${
-                            isEnabled ? 'bg-sky-600' : 'bg-slate-300'
+                            isEnabled ? 'bg-primary-600' : 'bg-slate-300'
                           }`}>
                             <div className={`w-5 h-5 bg-white rounded-full transition-transform transform ${
                               isEnabled ? 'translate-x-5' : 'translate-x-0.5'

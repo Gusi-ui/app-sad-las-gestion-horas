@@ -28,11 +28,11 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseClient()
     
     const body = await req.json()
-    const { email, full_name, worker_type = 'regular' } = body
+    const { email, full_name, phone, worker_type = 'regular' } = body
 
-    if (!email || !full_name) {
-      console.error('Faltan datos obligatorios', { email, full_name });
-      return NextResponse.json({ error: 'Faltan datos obligatorios' }, { status: 400 })
+    if (!email || !full_name || !phone) {
+      console.error('Faltan datos obligatorios', { email, full_name, phone });
+      return NextResponse.json({ error: 'Faltan datos obligatorios (email, nombre completo y teléfono)' }, { status: 400 })
     }
 
     const password = generarPassword()
@@ -81,6 +81,7 @@ export async function POST(req: NextRequest) {
       id: userId,
       name: name || '',
       surname: surname || '',
+      phone,
       email,
       is_active: true,
       hire_date: new Date().toISOString(),

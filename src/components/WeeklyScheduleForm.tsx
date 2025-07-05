@@ -117,25 +117,25 @@ export function WeeklyScheduleForm({
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
-          <Clock className="w-5 h-5 text-sky-600" />
+          <Clock className="w-5 h-5 text-primary-600" />
           <span>Horario Semanal</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Resumen */}
-        <div className="bg-sky-50 p-4 rounded-lg">
+        <div className="bg-primary-50 p-4 rounded-lg">
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <div className="text-2xl font-bold text-sky-900">{enabledDays}</div>
-              <div className="text-sm text-sky-600">Días/semana</div>
+              <div className="text-2xl font-bold text-primary-900">{enabledDays}</div>
+              <div className="text-sm text-primary-600">Días/semana</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-sky-900">{weeklyTotal}h</div>
-              <div className="text-sm text-sky-600">Total semanal</div>
+              <div className="text-2xl font-bold text-primary-900">{weeklyTotal}h</div>
+              <div className="text-sm text-primary-600">Total semanal</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-sky-900">{calculateTotalHours()}h</div>
-              <div className="text-sm text-sky-600">Total mensual</div>
+              <div className="text-2xl font-bold text-primary-900">{calculateTotalHours()}h</div>
+              <div className="text-sm text-primary-600">Total mensual</div>
             </div>
           </div>
         </div>
@@ -156,7 +156,7 @@ export function WeeklyScheduleForm({
                   key={day.value}
                   className={`border rounded-lg transition-all w-full ${
                     isEnabled 
-                      ? 'border-sky-300 bg-sky-50' 
+                      ? 'border-primary-300 bg-primary-50' 
                       : 'border-slate-200 bg-slate-50'
                   }`}
                 >
@@ -172,7 +172,7 @@ export function WeeklyScheduleForm({
                             className="sr-only"
                           />
                           <div className={`w-11 h-6 rounded-full transition-colors ${
-                            isEnabled ? 'bg-sky-600' : 'bg-slate-300'
+                            isEnabled ? 'bg-primary-600' : 'bg-slate-300'
                           }`}>
                             <div className={`w-5 h-5 bg-white rounded-full transition-transform transform ${
                               isEnabled ? 'translate-x-5' : 'translate-x-0.5'

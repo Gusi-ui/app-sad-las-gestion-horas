@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Calendar, User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Assignment, User as UserType } from "@/lib/types";
+import { Assignment, User as UserType, WeekDay } from "@/lib/types";
 
 const DAYS_OF_WEEK = [
   { value: "monday", label: "Lunes" },
@@ -20,6 +20,48 @@ const DAYS_OF_WEEK = [
 
 interface AssignmentWithUser extends Assignment {
   users?: UserType;
+}
+
+// Función para convertir hora a minutos para ordenamiento
+function timeToMinutes(time: string): number {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + (minutes || 0);
+}
+
+// Función para obtener la hora de inicio de un horario
+function getStartTime(slots: any[] | undefined): string | null {
+  if (!slots || slots.length === 0) return null;
+  
+  if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
+    return slots[0];
+  } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0]) {
+    return slots[0].start;
+  }
+  
+  return null;
+}
+
+// Función para ordenar asignaciones por hora de inicio
+function sortAssignmentsByTime(assignments: AssignmentWithUser[], dayKey: string): AssignmentWithUser[] {
+  return [...assignments].sort((a, b) => {
+    const slotsA = (a.specific_schedule as any)?.[dayKey];
+    const slotsB = (b.specific_schedule as any)?.[dayKey];
+    
+    const startTimeA = getStartTime(slotsA);
+    const startTimeB = getStartTime(slotsB);
+    
+    // Si ambos tienen horario, ordenar por hora
+    if (startTimeA && startTimeB) {
+      return timeToMinutes(startTimeA) - timeToMinutes(startTimeB);
+    }
+    
+    // Si solo uno tiene horario, el que tiene horario va primero
+    if (startTimeA && !startTimeB) return -1;
+    if (!startTimeA && startTimeB) return 1;
+    
+    // Si ninguno tiene horario, mantener orden original
+    return 0;
+  });
 }
 
 export default function WorkerPlanningPage() {
@@ -121,7 +163,7 @@ export default function WorkerPlanningPage() {
               <div key={day.value}>
                 <div className="font-semibold text-slate-800 mb-1">{day.label}</div>
                 <ul className="space-y-1">
-                  {assignments.map(a => {
+                  {sortAssignmentsByTime(assignments, day.value).map(a => {
                     const slots = (a.specific_schedule as any)?.[day.value];
                     // console.log('Día:', day.value, 'Asignación:', a.id, 'Slots:', slots);
                     const formatted = formatSchedule(slots);

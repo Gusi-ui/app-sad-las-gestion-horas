@@ -123,7 +123,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
 
   const getProgressColor = () => {
     if (progressPercentage >= 90) return 'bg-emerald-500'
-    if (progressPercentage >= 70) return 'bg-sky-500'
+            if (progressPercentage >= 70) return 'bg-primary-500'
     if (progressPercentage >= 50) return 'bg-amber-500'
     return 'bg-slate-400'
   }
@@ -141,7 +141,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <Calendar className="w-5 h-5 text-sky-600" />
+              <Calendar className="w-5 h-5 text-primary-600" />
               <span>Calendario - {getMonthName(viewingMonth.month)} {viewingMonth.year}</span>
             </div>
             <div className="flex items-center space-x-2">
@@ -245,10 +245,10 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
 
           {/* Resumen del mes actual */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <div className="bg-sky-50 p-3 rounded-lg text-center">
-              <div className="text-lg font-bold text-sky-900">{monthData.calculation.scheduledHours}h</div>
-              <div className="text-xs text-sky-600">Programadas</div>
-            </div>
+                    <div className="bg-primary-50 p-3 rounded-lg text-center">
+          <div className="text-lg font-bold text-primary-900">{monthData.calculation.scheduledHours}h</div>
+          <div className="text-xs text-primary-600">Programadas</div>
+        </div>
             <div className="bg-slate-50 p-3 rounded-lg text-center">
               <div className="text-lg font-bold text-slate-900">{monthData.calculation.workDays}</div>
               <div className="text-xs text-slate-600">Días laborables</div>
@@ -304,7 +304,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                         <div className={`text-[10px] px-1 py-0.5 rounded font-medium ${
                           dayData.isPastDay 
                             ? 'bg-emerald-100 text-emerald-800' 
-                            : 'bg-sky-100 text-sky-800'
+                            : 'bg-primary-100 text-primary-800'
                         }`}>
                           {dayData.serviceHours}h
                         </div>
@@ -335,7 +335,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                 .map((day) => (
                   <div key={day.id} className="flex justify-between items-center p-2 bg-slate-50 rounded">
                     <span className="font-medium">{getDayName(day.day_of_week)}</span>
-                    <span className="text-sky-600 font-semibold">{day.hours}h</span>
+                    <span className="text-primary-600 font-semibold">{day.hours}h</span>
                   </div>
                 ))}
             </div>
@@ -369,7 +369,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
           {/* Leyenda compacta */}
           <div className="flex flex-wrap gap-3 text-xs pt-2 border-t">
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-sky-100 border border-sky-200 rounded"></div>
+              <div className="w-3 h-3 bg-primary-100 border border-primary-200 rounded"></div>
               <span>Programado</span>
             </div>
             <div className="flex items-center space-x-1">

@@ -8,10 +8,44 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useUsers, useActiveUsers } from '@/hooks/useUsers'
 import { supabase } from '@/lib/supabase'
 import { User as SupabaseUser } from '@supabase/supabase-js'
-import { Plus, User, Phone, Clock, Calendar, Settings, LogOut, Edit, Menu, Users } from 'lucide-react'
+import { Plus, User, Phone, Clock, Calendar, Settings, LogOut, Edit, Menu, Users, MapPin, CalendarDays } from 'lucide-react'
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
+
+// Componente para mostrar horarios de usuario
+function UserScheduleDisplay({ schedule }: { schedule: any }) {
+  if (!schedule || typeof schedule !== 'object') {
+    return <span className="text-slate-500 text-sm">Sin horario definido</span>
+  }
+
+  const days = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+  const activeDays = Object.entries(schedule)
+    .filter(([_, times]) => times && Array.isArray(times) && times.length > 0)
+    .map(([day, times]) => ({ day: parseInt(day), times }))
+
+  if (activeDays.length === 0) {
+    return <span className="text-slate-500 text-sm">Sin horario definido</span>
+  }
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {activeDays.map(({ day, times }) => (
+        <div key={day} className="flex items-center space-x-1">
+          <div className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+            {days[day - 1]}
+          </div>
+          <span className="text-xs text-slate-600">
+            {Array.isArray(times) && times.length > 0 
+              ? times.map((time: any) => `${time.start} - ${time.end}`).join(' y ')
+              : 'Sin horario'
+            }
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const [user, setUser] = useState<SupabaseUser | null>(null)
@@ -39,7 +73,7 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando...</p>
@@ -49,7 +83,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-slate-50">
       {/* HEADER */}
       <header className="bg-white shadow-sm border-b border-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -154,60 +188,58 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         
         {/* ACCIONES RÁPIDAS */}
-        <div
-          className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6"
-        >
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Link href="/dashboard/users/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-primary/10 rounded-lg mb-2">
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-green-200 shadow-sm">
+              <div className="p-2 bg-green-50 rounded-lg mb-2">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-green-900 text-center whitespace-normal break-words leading-snug">
                 Nuevo Usuario
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-green-700 text-center whitespace-normal break-words leading-snug">
                 Crear usuario
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/workers/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-success/10 rounded-lg mb-2">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-blue-200 shadow-sm">
+              <div className="p-2 bg-blue-50 rounded-lg mb-2">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-blue-900 text-center whitespace-normal break-words leading-snug">
                 Nueva Trabajadora
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-blue-700 text-center whitespace-normal break-words leading-snug">
                 Agregar trabajadora
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/assignments/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-accent/10 rounded-lg mb-2">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-orange-200 shadow-sm">
+              <div className="p-2 bg-orange-50 rounded-lg mb-2">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-orange-900 text-center whitespace-normal break-words leading-snug">
                 Nueva Asignación
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-orange-700 text-center whitespace-normal break-words leading-snug">
                 Crear asignación
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/planning">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-warning/10 rounded-lg mb-2">
-                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-yellow-200 shadow-sm">
+              <div className="p-2 bg-yellow-50 rounded-lg mb-2">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-yellow-900 text-center whitespace-normal break-words leading-snug">
                 Planning
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-yellow-700 text-center whitespace-normal break-words leading-snug">
                 Ver calendario
               </p>
             </Card>
@@ -215,7 +247,7 @@ export default function DashboardPage() {
         </div>
 
         {/* USUARIOS RECIENTES */}
-        <Card>
+        <Card className="mb-6">
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-secondary">Usuarios Recientes</h2>
@@ -232,35 +264,62 @@ export default function DashboardPage() {
                 <p className="text-slate-600">Cargando usuarios...</p>
               </div>
             ) : allUsers && allUsers.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {allUsers.slice(0, 5).map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <User className="w-4 h-4 text-primary" />
+                  <div key={user.id} className="p-4 bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-3 flex-1">
+                        <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                          <User className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <h3 className="font-semibold text-secondary text-lg">
+                              {user.name} {user.surname}
+                            </h3>
+                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                              user.is_active 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {user.is_active ? 'Activo' : 'Inactivo'}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                            <div className="flex items-center space-x-2">
+                              <Phone className="w-4 h-4 text-slate-500" />
+                              <span className="text-sm text-slate-600">{user.phone}</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Clock className="w-4 h-4 text-slate-500" />
+                              <span className="text-sm text-slate-600">{user.monthly_hours}h/mes</span>
+                            </div>
+                          </div>
+
+                          {user.address && (
+                            <div className="flex items-start space-x-2 mb-3">
+                              <MapPin className="w-4 h-4 text-slate-500 mt-0.5" />
+                              <span className="text-sm text-slate-600">{user.address}</span>
+                            </div>
+                          )}
+
+                          <div className="flex items-start space-x-2">
+                            <CalendarDays className="w-4 h-4 text-slate-500 mt-0.5" />
+                            <div className="flex-1">
+                              <UserScheduleDisplay schedule={user.schedule} />
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium text-secondary">
-                          {user.name} {user.surname}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {user.phone} • {user.monthly_hours}h/mes
-                        </p>
+                      
+                      <div className="flex items-center space-x-2 ml-4">
+                        <Link href={`/dashboard/users/${user.id}/edit`}>
+                          <Button variant="secondary" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </Link>
                       </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        user.is_active 
-                          ? 'bg-success/10 text-success' 
-                          : 'bg-danger/10 text-danger'
-                      }`}>
-                        {user.is_active ? 'Activo' : 'Inactivo'}
-                      </span>
-                      <Link href={`/dashboard/users/${user.id}/edit`}>
-                        <Button variant="secondary" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                      </Link>
                     </div>
                   </div>
                 ))}
@@ -285,8 +344,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* RESUMEN GENERAL - SOLO UNA VEZ */}
-        <Card className="mt-6 sm:mt-8">
+        {/* RESUMEN GENERAL */}
+        <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-secondary">Resumen General</h2>
@@ -294,9 +353,9 @@ export default function DashboardPage() {
             
             {/* Desktop: 3 columnas */}
             <div className="hidden lg:grid grid-cols-3 gap-6">
-              <div className="flex items-center">
-                <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                  <User className="w-6 h-6 text-primary" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                  <User className="w-6 h-6 text-blue-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Total Usuarios</p>
@@ -307,9 +366,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <div className="p-2 bg-success/10 rounded-lg flex-shrink-0">
-                  <Clock className="w-6 h-6 text-success" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+                  <Clock className="w-6 h-6 text-green-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Usuarios Activos</p>
@@ -320,9 +379,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <div className="p-2 bg-warning/10 rounded-lg flex-shrink-0">
-                  <Phone className="w-6 h-6 text-warning" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-orange-50 rounded-lg flex-shrink-0">
+                  <Phone className="w-6 h-6 text-orange-600" />
                 </div>
                 <div className="ml-4 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Horas Totales/Mes</p>
@@ -336,9 +395,9 @@ export default function DashboardPage() {
 
             {/* Mobile: 1 columna */}
             <div className="lg:hidden grid grid-cols-1 gap-4">
-              <div className="flex items-center">
-                <div className="p-2 bg-primary/10 rounded-lg flex-shrink-0">
-                  <User className="w-5 h-5 text-primary" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                  <User className="w-5 h-5 text-blue-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Total Usuarios</p>
@@ -349,9 +408,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <div className="p-2 bg-success/10 rounded-lg flex-shrink-0">
-                  <Clock className="w-5 h-5 text-success" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
+                  <Clock className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Usuarios Activos</p>
@@ -362,9 +421,9 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center">
-                <div className="p-2 bg-warning/10 rounded-lg flex-shrink-0">
-                  <Phone className="w-5 h-5 text-warning" />
+              <div className="flex items-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                <div className="p-2 bg-orange-50 rounded-lg flex-shrink-0">
+                  <Phone className="w-5 h-5 text-orange-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-600">Horas Totales/Mes</p>

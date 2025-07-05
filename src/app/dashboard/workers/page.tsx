@@ -191,7 +191,7 @@ export default function WorkersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando trabajadoras...</p>
@@ -333,56 +333,62 @@ export default function WorkersPage() {
         {/* ACCIONES RÁPIDAS */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Link href="/dashboard/workers/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-green-100 rounded-lg mb-2">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-green-200 shadow-sm">
+              <div className="p-2 bg-green-50 rounded-lg mb-2">
                 <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-green-900 text-center whitespace-normal break-words leading-snug">
                 Nueva Trabajadora
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-green-700 text-center whitespace-normal break-words leading-snug">
                 Agregar trabajadora
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/planning">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-orange-100 rounded-lg mb-2">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-orange-200 shadow-sm">
+              <div className="p-2 bg-orange-50 rounded-lg mb-2">
                 <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-orange-900 text-center whitespace-normal break-words leading-snug">
                 Planning
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-orange-700 text-center whitespace-normal break-words leading-snug">
                 Ver calendario
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/assignments">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-purple-100 rounded-lg mb-2">
-                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-blue-200 shadow-sm">
+              <div className="p-2 bg-blue-50 rounded-lg mb-2">
+                <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-blue-900 text-center whitespace-normal break-words leading-snug">
                 Asignaciones
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-blue-700 text-center whitespace-normal break-words leading-snug">
                 Gestionar asignaciones
               </p>
             </Card>
           </Link>
 
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto p-0">
-            <div className="p-2 bg-sky-100 rounded-lg mb-1 mt-1">
-              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-sky-600" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto p-0 border border-yellow-200 shadow-sm">
+            <div className="p-2 bg-yellow-50 rounded-lg mb-1 mt-1">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
             </div>
-            <h3 className="font-semibold text-sm sm:text-base text-slate-900 text-center whitespace-normal break-words leading-snug">
+            <h3 className="font-semibold text-sm sm:text-base text-yellow-900 text-center whitespace-normal break-words leading-snug">
               Buscar trabajadora
             </h3>
-            <div className="w-full flex-1 flex items-center">
-              <input type="text" placeholder="Nombre, email o teléfono" className="mt-0 py-1 text-xs sm:text-sm rounded border border-slate-300 w-full focus:outline-none" value={searchValue} onChange={e => setSearchValue(e.target.value)} />
+            <div className="w-full flex-1 flex items-center px-3">
+              <input 
+                type="text" 
+                placeholder="Nombre, email o teléfono" 
+                className="mt-0 py-1 text-xs sm:text-sm rounded border border-slate-300 w-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-center placeholder:text-center" 
+                value={searchValue} 
+                onChange={e => setSearchValue(e.target.value)} 
+              />
             </div>
           </Card>
         </div>

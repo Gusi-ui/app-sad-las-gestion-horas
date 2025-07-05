@@ -39,7 +39,7 @@ export function Toast({ message, type, onClose, duration = 4000 }: ToastProps) {
       case 'warning':
         return 'bg-amber-50 border-amber-200 text-amber-800'
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800'
+        return 'bg-primary-50 border-primary-200 text-primary-800'
     }
   }
 

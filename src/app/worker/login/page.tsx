@@ -59,16 +59,16 @@ export default function WorkerLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-100 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md border border-purple-200 shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Acceso Trabajadoras</CardTitle>
-          <p className="text-slate-600">Inicia sesión para ver tus servicios asignados</p>
+          <CardTitle className="text-2xl text-purple-900">Acceso Trabajadoras</CardTitle>
+          <p className="text-purple-700">Inicia sesión para ver tus servicios asignados</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-purple-900 mb-1">Email</label>
               <input
                 id="email"
                 type="email"
@@ -76,11 +76,11 @@ export default function WorkerLoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg bg-white"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+              <label htmlFor="password" className="block text-sm font-medium text-purple-900 mb-1">Contraseña</label>
               <input
                 id="password"
                 type="password"
@@ -88,17 +88,17 @@ export default function WorkerLoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                className="w-full px-4 py-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-lg bg-white"
               />
             </div>
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-700 text-sm">{error}</p>
               </div>
             )}
             <Button
               type="submit"
-              className="w-full"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white"
               size="lg"
               loading={loading}
             >
@@ -106,7 +106,7 @@ export default function WorkerLoginPage() {
             </Button>
           </form>
           <div className="mt-4 text-center">
-            <Link href="/" className="text-sm text-slate-500 hover:text-slate-700">
+            <Link href="/" className="text-sm text-purple-600 hover:text-purple-800">
               ← Volver al inicio
             </Link>
           </div>

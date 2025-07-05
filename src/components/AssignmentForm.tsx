@@ -78,6 +78,8 @@ export function AssignmentForm({
   // Cargar datos de la asignación si estamos editando
   useEffect(() => {
     if (assignment && isEditing) {
+      console.log('Cargando datos de asignación para edición:', assignment);
+      
       setFormData({
         worker_id: assignment.worker_id,
         user_id: assignment.user_id,
@@ -96,23 +98,36 @@ export function AssignmentForm({
       // Convertir el specific_schedule al nuevo formato
       const newSchedule: Record<string, TimeSlot[]> = {}
       if (assignment.specific_schedule) {
+        console.log('Specific schedule original:', assignment.specific_schedule);
+        
         Object.entries(assignment.specific_schedule).forEach(([day, timeData]) => {
+          console.log(`Procesando día ${day}:`, timeData);
           if (timeData && Array.isArray(timeData)) {
-            // Si es formato antiguo: ['08:00', '10:00']
-            if (timeData.length === 2 && typeof timeData[0] === 'string' && typeof timeData[1] === 'string') {
-              newSchedule[day] = [{
-                id: `${day}-0`,
-                start: timeData[0],
-                end: timeData[1]
-              }]
+            // Si es formato antiguo: array de strings (puede ser más de dos)
+            if (timeData.length > 0 && typeof timeData[0] === 'string') {
+              const slots: TimeSlot[] = [];
+              for (let i = 0; i < timeData.length - 1; i += 2) {
+                if (typeof timeData[i] === 'string' && typeof timeData[i+1] === 'string') {
+                  slots.push({
+                    id: `${day}-${i/2}`,
+                    start: timeData[i],
+                    end: timeData[i+1]
+                  });
+                }
+              }
+              newSchedule[day] = slots;
+              console.log(`Convertido formato antiguo múltiple para ${day}:`, slots);
             } else if (timeData.length > 0 && typeof timeData[0] === 'object') {
               // Formato nuevo: TimeSlot[]
               newSchedule[day] = timeData as unknown as TimeSlot[]
+              console.log(`Formato nuevo para ${day}:`, newSchedule[day]);
             } else {
               newSchedule[day] = []
+              console.log(`Sin datos para ${day}`);
             }
           } else {
             newSchedule[day] = []
+            console.log(`No hay datos para ${day}`);
           }
         })
       }
@@ -120,6 +135,8 @@ export function AssignmentForm({
       ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
         if (!newSchedule[day]) newSchedule[day] = []
       })
+      
+      console.log('Schedule final:', newSchedule);
       setWeeklySchedule(newSchedule)
       
       // Calcular horas totales
@@ -239,9 +256,9 @@ export function AssignmentForm({
                 )}
                 
                 {selectedWorker && (
-                  <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900">Información de la trabajadora:</p>
-                    <p className="text-sm text-blue-700">
+                          <div className="mt-3 p-3 bg-primary-50 rounded-lg">
+          <p className="text-sm font-medium text-primary-900">Información de la trabajadora:</p>
+          <p className="text-sm text-primary-700">
                       Tarifa: {selectedWorker.hourly_rate}€/h • 
                       Máx: {selectedWorker.max_weekly_hours}h/semana
                     </p>
@@ -383,7 +400,7 @@ export function AssignmentForm({
             <Button
               type="submit"
               disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary-600 hover:bg-primary-700"
             >
               {loading ? 'Guardando...' : (isEditing ? 'Guardar Cambios' : 'Crear Asignación')}
             </Button>

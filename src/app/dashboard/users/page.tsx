@@ -250,23 +250,23 @@ export default function UsersPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando usuarios...</p>
+          <p className="text-slate-600">Cargando...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary mobile-menu-container">
+      <header className="bg-white shadow-sm border-b border-slate-200 mobile-menu-container">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
             <div className="flex-1 min-w-0">
-              <h1 className="text-xl sm:text-2xl font-bold text-secondary truncate">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">
                 Gestión de Usuarios
               </h1>
               <p className="text-sm text-slate-600 truncate">
@@ -327,7 +327,7 @@ export default function UsersPage() {
               ? 'max-h-96 opacity-100 visible' 
               : 'max-h-0 opacity-0 invisible'
           }`}>
-            <div className="py-4 border-t border-secondary bg-white shadow-lg">
+            <div className="py-4 border-t border-slate-200 bg-white shadow-lg">
               <div className="flex flex-col space-y-2 px-4">
                 <Link href="/dashboard" onClick={() => setShowMobileMenu(false)}>
                   <Button variant="secondary" size="sm" className="w-full justify-start">
@@ -376,60 +376,60 @@ export default function UsersPage() {
         {/* ACCIONES RÁPIDAS */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Link href="/dashboard/users/new">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-primary/10 rounded-lg mb-2">
-                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-green-200 shadow-sm">
+              <div className="p-2 bg-green-50 rounded-lg mb-2">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-green-900 text-center whitespace-normal break-words leading-snug">
                 Nuevo Usuario
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-green-700 text-center whitespace-normal break-words leading-snug">
                 Crear usuario
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/planning">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-warning/10 rounded-lg mb-2">
-                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-warning" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-orange-200 shadow-sm">
+              <div className="p-2 bg-orange-50 rounded-lg mb-2">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-orange-900 text-center whitespace-normal break-words leading-snug">
                 Planning
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-orange-700 text-center whitespace-normal break-words leading-snug">
                 Ver calendario
               </p>
             </Card>
           </Link>
 
           <Link href="/dashboard/workers">
-            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto">
-              <div className="p-2 bg-success/10 rounded-lg mb-2">
-                <User className="w-5 h-5 sm:w-6 sm:h-6 text-success" />
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-blue-200 shadow-sm">
+              <div className="p-2 bg-blue-50 rounded-lg mb-2">
+                <User className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
               </div>
-              <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+              <h3 className="font-semibold text-sm sm:text-base text-blue-900 text-center whitespace-normal break-words leading-snug">
                 Trabajadoras
               </h3>
-              <p className="text-xs sm:text-sm text-slate-700 text-center whitespace-normal break-words leading-snug">
+              <p className="text-xs sm:text-sm text-blue-700 text-center whitespace-normal break-words leading-snug">
                 Gestionar trabajadoras
               </p>
             </Card>
           </Link>
 
           {/* Tarjeta de búsqueda inteligente */}
-          <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto p-0">
-            <div className="p-2 bg-accent/10 rounded-lg mb-1 mt-1">
-              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
+          <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto p-0 border border-yellow-200 shadow-sm">
+            <div className="p-2 bg-yellow-50 rounded-lg mb-1 mt-1">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
             </div>
-            <h3 className="font-semibold text-sm sm:text-base text-secondary text-center whitespace-normal break-words leading-snug">
+            <h3 className="font-semibold text-sm sm:text-base text-yellow-900 text-center whitespace-normal break-words leading-snug">
               Buscar usuario
             </h3>
-            <div className="w-full flex-1 flex items-center">
+            <div className="w-full flex-1 flex items-center px-3">
               <input
                 type="text"
                 placeholder="Nombre, email o teléfono"
-                className="mt-0 py-1 text-xs sm:text-sm rounded border border-secondary w-full focus:outline-none focus:border-primary"
+                className="mt-0 py-1 text-xs sm:text-sm rounded border border-slate-300 w-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 text-center placeholder:text-center"
                 value={searchValue}
                 onChange={e => setSearchValue(e.target.value)}
               />

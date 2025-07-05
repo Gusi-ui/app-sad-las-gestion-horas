@@ -35,7 +35,7 @@ const weekDays: { key: WeekDay; label: string; short: string }[] = [
 ]
 
 const workerColors = [
-  'bg-blue-100 border-blue-300 text-blue-800',
+          'bg-primary-100 border-primary-300 text-primary-800',
   'bg-green-100 border-green-300 text-green-800',
   'bg-purple-100 border-purple-300 text-purple-800',
   'bg-pink-100 border-pink-300 text-pink-800',
@@ -389,7 +389,7 @@ export default function PlanningCalendar({
     return (
       <Card>
         <CardContent className="p-8 sm:p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando planning...</p>
         </CardContent>
       </Card>
@@ -558,7 +558,7 @@ export default function PlanningCalendar({
                           {dayDate?.getDate()}/{dayDate?.getMonth() + 1}
                         </div>
                         <div className="flex items-center justify-center space-x-1 mt-1">
-                          <span className="text-xs text-blue-600">{dayAssignments.length}</span>
+                          <span className="text-xs text-primary-600">{dayAssignments.length}</span>
                           {conflicts.length > 0 && (
                             <AlertTriangle className="w-3 h-3 text-red-500" />
                           )}
@@ -709,10 +709,10 @@ export default function PlanningCalendar({
               </div>
               
               {selectedAssignment.notes && (
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900 mb-1">Notas:</p>
-                  <p className="text-sm text-blue-700">{selectedAssignment.notes}</p>
-                </div>
+                        <div className="p-3 bg-primary-50 rounded-lg">
+          <p className="text-sm font-medium text-primary-900 mb-1">Notas:</p>
+          <p className="text-sm text-primary-700">{selectedAssignment.notes}</p>
+        </div>
               )}
               
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-3">

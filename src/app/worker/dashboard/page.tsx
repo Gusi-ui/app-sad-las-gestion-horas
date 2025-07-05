@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatScheduleOrdered } from "@/lib/utils";
+import { ScheduleDisplay } from "@/components/ScheduleDisplay";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, CheckCircle, TrendingUp, TrendingDown, AlertTriangle, MapPin, Phone, Mail, UserCheck, RotateCcw } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, TrendingUp, TrendingDown, AlertTriangle, MapPin, Phone, Mail, UserCheck, RotateCcw, Users } from "lucide-react";
 import { Worker, Assignment, User as UserType } from "@/lib/types";
+import Link from "next/link";
 
 interface AssignmentWithUser extends Assignment {
   users?: UserType;
@@ -24,6 +27,7 @@ interface UserHoursStatus {
   remainingHours: number;
   status: 'excess' | 'deficit' | 'perfect';
   assignments: AssignmentWithUser[];
+  totalWorkers: number;
 }
 
 // Función para formatear los horarios de una asignación
@@ -43,31 +47,25 @@ const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
   const today = new Date();
   const todayDayName = Object.keys(dayNames)[today.getDay() === 0 ? 6 : today.getDay() - 1];
 
-  const scheduleEntries = Object.entries(schedule)
-    .filter(([, slots]) => slots && slots.length > 0)
-    .map(([day, slots]) => {
-      const dayName = dayNames[day];
-      const isToday = day === todayDayName;
-      let timeSlots = '';
-      if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
-        timeSlots = `${slots[0]} - ${slots[1]}`;
-      } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-        timeSlots = slots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
-      }
-      return { day, dayName, timeSlots, isToday };
-    })
-    .filter(entry => entry.timeSlots)
-    .sort((a, b) => {
-      if (a.isToday && !b.isToday) return -1;
-      if (!a.isToday && b.isToday) return 1;
-      return 0;
-    });
-
-  if (scheduleEntries.length === 0) return 'Sin horario específico';
-  return scheduleEntries.map(entry => {
-    const prefix = entry.isToday ? '🕐 HOY: ' : '';
-    return `${prefix}${entry.dayName} ${entry.timeSlots}`;
-  }).join(' | ');
+  // Usar la función de utilidad para ordenar cronológicamente
+  const orderedSchedule = formatScheduleOrdered(schedule, dayNames);
+  
+  if (orderedSchedule === 'No configurado') return 'Sin horario específico';
+  
+  // Agregar indicador de "HOY" si hay servicio hoy
+  const todaySchedule = schedule[todayDayName];
+  if (todaySchedule && todaySchedule.length > 0) {
+    const todaySlots = todaySchedule.length === 2 && typeof todaySchedule[0] === 'string' && typeof todaySchedule[1] === 'string'
+      ? `${todaySchedule[0]} - ${todaySchedule[1]}`
+      : todaySchedule.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
+    
+    return orderedSchedule.replace(
+      `${dayNames[todayDayName]}: ${todaySlots}`,
+      `🕐 HOY: ${dayNames[todayDayName]} ${todaySlots}`
+    );
+  }
+  
+  return orderedSchedule;
 }
 
 // Función para verificar si una asignación tiene servicio hoy
@@ -322,8 +320,15 @@ export default function WorkerDashboard() {
         
         setWorker(workerData);
 
+        if (!supabase) {
+          setError("Error de configuración de base de datos");
+          return;
+        }
+
+        const supabaseClient = supabase;
+
         // Buscar asignaciones activas con datos de usuario
-        const { data: assignmentsData } = await supabase
+        const { data: assignmentsData } = await supabaseClient
           .from("assignments")
           .select("*, users(*)")
           .eq("worker_id", workerData.id)
@@ -335,37 +340,48 @@ export default function WorkerDashboard() {
         // Calcular estado de horas por usuario
         const userStatusMap = new Map<string, UserHoursStatus>();
         
-        assignmentsWithUsers.forEach(assignment => {
-          const userId = assignment.user_id;
-          const user = assignment.users;
+        // Primero, obtener TODAS las asignaciones activas para cada usuario (de todas las trabajadoras)
+        const userIds = [...new Set(assignmentsWithUsers.map(a => a.user_id))];
+        
+        for (const userId of userIds) {
+          // Buscar todas las asignaciones activas para este usuario (de todas las trabajadoras)
+          const { data: allUserAssignments } = await supabaseClient
+            .from("assignments")
+            .select("*, users(*), workers(*)")
+            .eq("user_id", userId)
+            .eq("status", "active");
           
-          if (!user) return;
+          const userAssignments = allUserAssignments || [];
+          const user = userAssignments[0]?.users;
           
-          if (!userStatusMap.has(userId)) {
-            userStatusMap.set(userId, {
-              userId,
-              userName: user.name,
-              userSurname: user.surname,
-              userAddress: user.address,
-              userPhone: user.phone,
-              monthlyHours: user.monthly_hours || 0,
-              assignedHours: 0,
-              usedHours: 0,
-              remainingHours: 0,
-              status: 'perfect',
-              assignments: []
-            });
-          }
+          if (!user) continue;
           
-          const userStatus = userStatusMap.get(userId)!;
-          userStatus.assignedHours += assignment.assigned_hours_per_week || 0;
-          userStatus.assignments.push(assignment);
-        });
+          // Calcular horas totales asignadas al usuario (de todas las trabajadoras)
+          const totalAssignedHours = userAssignments.reduce((sum, assignment) => 
+            sum + (assignment.assigned_hours_per_week || 0), 0
+          );
+          
+          // Filtrar solo las asignaciones de la trabajadora actual para mostrar en el dashboard
+          const currentWorkerAssignments = assignmentsWithUsers.filter(a => a.user_id === userId);
+          
+          userStatusMap.set(userId, {
+            userId,
+            userName: user.name,
+            userSurname: user.surname,
+            userAddress: user.address,
+            userPhone: user.phone,
+            monthlyHours: user.monthly_hours || 0,
+            assignedHours: totalAssignedHours, // Horas totales del usuario (todas las trabajadoras)
+            usedHours: 0,
+            remainingHours: 0,
+            status: 'perfect',
+            assignments: currentWorkerAssignments, // Solo asignaciones de esta trabajadora para mostrar
+            totalWorkers: userAssignments.length // Número total de trabajadoras que atienden al usuario
+          });
+        }
 
         // Calcular horas utilizadas y estado
         const currentDate = new Date();
-        // // const currentMonth = currentDate.getMonth() + 1;
-        // // const currentYear = currentDate.getFullYear();
         
         userStatusMap.forEach(userStatus => {
           // Calcular horas utilizadas basándose en las semanas transcurridas del mes
@@ -415,10 +431,10 @@ export default function WorkerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando tu panel...</p>
+          <p className="text-slate-600">Cargando...</p>
         </div>
       </div>
     );
@@ -426,12 +442,14 @@ export default function WorkerDashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-danger mx-auto mb-4" />
-            <p className="text-danger mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>Reintentar</Button>
+            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-600 mb-4">Error al cargar datos: {error}</p>
+            <Link href="/worker/login">
+              <Button>Volver al Login</Button>
+            </Link>
           </CardContent>
         </Card>
       </div>
@@ -440,7 +458,7 @@ export default function WorkerDashboard() {
 
   if (!worker) {
     return (
-      <div className="min-h-screen bg-secondary flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-danger mx-auto mb-4" />
@@ -452,7 +470,7 @@ export default function WorkerDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-secondary pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <header className="bg-white shadow-sm border-b border-secondary">
         <div className="max-w-4xl mx-auto px-4 py-4">
@@ -485,50 +503,51 @@ export default function WorkerDashboard() {
           <CardContent>
             <p className="text-slate-700">
               Este es tu panel personal donde puedes ver el estado de horas de cada usuario que atiendes. 
-              Recuerda que cada usuario tiene su propio límite mensual de horas.
+              <strong>El cómputo mensual se calcula por usuario</strong>, sumando las horas de todas las trabajadoras 
+              que le dan servicio. Esto te permite ver el total de horas que recibe cada usuario.
             </p>
           </CardContent>
         </Card>
 
         {/* Resumen General */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="border border-blue-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center">
-                                 <div className="p-2 bg-blue-100 rounded-lg flex-shrink-0">
-                   <UserCheck className="w-5 h-5 text-blue-600" />
-                 </div>
+                <div className="p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                  <UserCheck className="w-5 h-5 text-blue-600" />
+                </div>
                 <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Usuarios Atendidos</p>
-                  <p className="text-xl font-bold text-slate-900">{uniqueUsers}</p>
+                  <p className="text-sm font-medium text-blue-700">Usuarios Atendidos</p>
+                  <p className="text-xl font-bold text-blue-900">{uniqueUsers}</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-green-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-green-100 rounded-lg flex-shrink-0">
+                <div className="p-2 bg-green-50 rounded-lg flex-shrink-0">
                   <Clock className="w-5 h-5 text-green-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Horas Asignadas</p>
-                  <p className="text-xl font-bold text-slate-900">{totalAssignedHours}h/sem</p>
+                  <p className="text-sm font-medium text-green-700">Horas Asignadas</p>
+                  <p className="text-xl font-bold text-green-900">{totalAssignedHours}h/sem</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border border-purple-200 shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center">
-                <div className="p-2 bg-purple-100 rounded-lg flex-shrink-0">
+                <div className="p-2 bg-purple-50 rounded-lg flex-shrink-0">
                   <Calendar className="w-5 h-5 text-purple-600" />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-600">Servicios Hoy</p>
-                  <p className="text-xl font-bold text-slate-900">{todaysAssignments.length}</p>
+                  <p className="text-sm font-medium text-purple-700">Servicios Hoy</p>
+                  <p className="text-xl font-bold text-purple-900">{todaysAssignments.length}</p>
                 </div>
               </div>
             </CardContent>
@@ -580,7 +599,7 @@ export default function WorkerDashboard() {
                                 {getStatusIcon(getServiceStatus(assignment))} {getTodaySchedule(assignment)}
                               </span>
                               <span className={`text-xs px-2 py-1 rounded-full ${
-                                getServiceStatus(assignment) === 'pending' ? 'bg-blue-100 text-blue-800' :
+                                getServiceStatus(assignment) === 'pending' ? 'bg-primary-100 text-primary-800' :
                                 getServiceStatus(assignment) === 'in-progress' ? 'bg-orange-100 text-orange-800' :
                                 'bg-green-100 text-green-800'
                               }`}>
@@ -590,7 +609,7 @@ export default function WorkerDashboard() {
                               </span>
                             </div>
                           ) : (
-                            formatSchedule(assignment.specific_schedule)
+                            <ScheduleDisplay schedule={assignment.specific_schedule} showIcon={false} layout="rows" />
                           )}
                         </div>
                       </div>
@@ -602,7 +621,7 @@ export default function WorkerDashboard() {
                           {assignment.users?.phone}
                         </div>
                         <div className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          getServiceStatus(assignment) === 'pending' ? 'bg-blue-100 text-blue-800' :
+                          getServiceStatus(assignment) === 'pending' ? 'bg-primary-100 text-primary-800' :
                           getServiceStatus(assignment) === 'in-progress' ? 'bg-orange-100 text-orange-800' :
                           'bg-green-100 text-green-800'
                         }`}>
@@ -642,6 +661,10 @@ export default function WorkerDashboard() {
                         <h4 className="font-semibold text-slate-900 text-lg">
                           {userStatus.userName} {userStatus.userSurname}
                         </h4>
+                        <div className="flex items-center text-sm text-slate-600 mt-1">
+                          <Users className="w-3 h-3 mr-1" />
+                          {userStatus.totalWorkers} trabajadora{userStatus.totalWorkers !== 1 ? 's' : ''} atendiendo
+                        </div>
                         {userStatus.userAddress && (
                           <div className="flex items-center text-sm text-slate-600 mt-1">
                             <MapPin className="w-3 h-3 mr-1" />
@@ -661,7 +684,7 @@ export default function WorkerDashboard() {
                             ? 'bg-green-100 text-green-800' 
                             : userStatus.status === 'excess'
                             ? 'bg-red-100 text-red-800'
-                            : 'bg-blue-100 text-blue-800'
+                            : 'bg-primary-100 text-primary-800'
                         }`}>
                           {userStatus.status === 'perfect' && <CheckCircle className="w-3 h-3 mr-1" />}
                           {userStatus.status === 'excess' && <TrendingUp className="w-3 h-3 mr-1" />}
@@ -727,7 +750,7 @@ export default function WorkerDashboard() {
 //                            });
                            
                            const today = new Date();
-                           const todayDayName = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'][today.getDay()];
+                           const todayDayName = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][today.getDay() === 0 ? 6 : today.getDay() - 1];
                            
                            return (
                              <div key={assignment.id} className="text-xs bg-slate-50 p-2 rounded">

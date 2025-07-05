@@ -172,6 +172,7 @@ export default function NewWorkerPage() {
         body: JSON.stringify({
           email: formData.email.trim(),
           full_name: `${formData.name.trim()} ${formData.surname.trim()}`,
+          phone: formData.phone.trim(),
           worker_type: 'regular', // O puedes mapear según el formulario
         })
       })
@@ -191,7 +192,7 @@ export default function NewWorkerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 to-slate-100 py-8">
+    <div className="min-h-screen bg-slate-50 py-8">
       {ToastComponent}
       {generatedPassword && (
         <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">

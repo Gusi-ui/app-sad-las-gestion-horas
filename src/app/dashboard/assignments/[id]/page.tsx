@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useToast } from '@/components/ui/toast'
+import { formatScheduleOrdered } from '@/lib/utils'
+import { ScheduleDisplay, ScheduleCards } from '@/components/ScheduleDisplay'
 import { 
   ArrowLeft, 
   Edit, 
@@ -135,7 +137,6 @@ export default function AssignmentDetailPage() {
   }
 
   const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
-    if (!schedule) return 'No configurado'
     const dayNames: Record<string, string> = {
       monday: 'Lunes',
       tuesday: 'Martes',
@@ -145,22 +146,7 @@ export default function AssignmentDetailPage() {
       saturday: 'Sábado',
       sunday: 'Domingo'
     }
-    return Object.entries(schedule)
-      .filter(([, slots]) => slots && slots.length > 0)
-      .map(([day, slots]) => {
-        // slots puede ser string[] (antiguo) o TimeSlot[] (nuevo)
-        if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
-          // Formato antiguo
-          return `${dayNames[day]}: ${slots[0]} - ${slots[1]}`
-        } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-          // Formato nuevo
-          return `${dayNames[day]}: ` + slots.map((slot: any) => `${slot.start} - ${slot.end}`).join(', ')
-        } else {
-          return null
-        }
-      })
-      .filter(Boolean)
-      .join(', ')
+    return formatScheduleOrdered(schedule, dayNames)
   }
 
   if (isLoading) {
@@ -282,7 +268,7 @@ export default function AssignmentDetailPage() {
                 <div>
                   <h4 className="font-medium text-slate-900 mb-3">Horario Específico</h4>
                   <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-sm text-slate-700">{formatSchedule(assignment.specific_schedule)}</p>
+                    <ScheduleDisplay schedule={assignment.specific_schedule} showIcon={false} layout="rows" />
                   </div>
                 </div>
               </div>

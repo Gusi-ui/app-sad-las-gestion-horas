@@ -6,6 +6,7 @@ CREATE TABLE worker_profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   email TEXT UNIQUE NOT NULL,
   full_name TEXT NOT NULL,
+  role VARCHAR(20) DEFAULT 'worker' CHECK (role IN ('admin', 'worker')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -166,8 +167,8 @@ CREATE POLICY "Permitir acceso completo a días de servicio" ON service_days
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.worker_profiles (id, email, full_name)
-  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
+  INSERT INTO public.worker_profiles (id, email, full_name, role)
+  VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', ''), 'worker');
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
