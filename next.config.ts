@@ -15,9 +15,6 @@ const nextConfig: NextConfig = {
   // Deshabilitar completamente el prerender estático
   output: 'standalone',
   
-  // Configuración para evitar problemas de build
-  swcMinify: true,
-  
   // Configuración de imágenes
   images: {
     domains: ['localhost'],
