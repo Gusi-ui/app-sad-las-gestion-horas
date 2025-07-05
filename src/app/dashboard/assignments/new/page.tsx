@@ -11,7 +11,8 @@ import { Suspense } from 'react'
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
-
+export const runtime = 'edge'
+export const preferredRegion = 'iad1'
 
 function NewAssignmentContent() {
   const router = useRouter()

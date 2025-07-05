@@ -1,0 +1,21 @@
+{
+  "functions": {
+    "src/app/dashboard/**/*.tsx": {
+      "maxDuration": 30
+    },
+    "src/app/worker/**/*.tsx": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/dashboard/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ]
+} 

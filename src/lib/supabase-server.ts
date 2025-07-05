@@ -1,12 +1,20 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getSupabaseConfig } from './supabase-config'
 
 export async function createClient() {
   const cookieStore = await cookies()
+  const config = getSupabaseConfig()
+
+  // Solo crear el cliente si las variables de entorno están configuradas
+  if (config.url === 'https://placeholder.supabase.co') {
+    console.warn('⚠️ Supabase no configurado en servidor, retornando cliente placeholder')
+    return null
+  }
 
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    config.url,
+    config.anonKey,
     {
       cookies: {
         getAll() {
