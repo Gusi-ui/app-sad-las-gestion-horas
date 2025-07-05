@@ -11,7 +11,22 @@ Las variables de entorno de Supabase no están configuradas en Vercel, lo que im
 
 ## Solución
 
-### 1. Configurar Variables de Entorno en Vercel
+### 1. Solución Automática (Recomendada)
+
+Ejecuta el script de despliegue automatizado:
+
+```bash
+./deploy-vercel.sh
+```
+
+Este script:
+- Verifica si Vercel CLI está instalado
+- Vincula el proyecto si es necesario
+- Configura automáticamente las variables de entorno
+- Hace commit y push de los cambios
+- Despliega en Vercel
+
+### 2. Configurar Variables de Entorno en Vercel (Manual)
 
 #### Opción A: Usando el Script Automático
 ```bash
@@ -78,13 +93,23 @@ Se agregó la configuración `export const dynamic = 'force-dynamic'` a las pág
 - `src/app/dashboard/users/page.tsx`
 - `src/app/dashboard/page.tsx`
 
-### 2. Configuración de Next.js
+### 2. Configuración Robusta de Supabase
+Se creó `src/lib/supabase-config.ts` que:
+- Maneja casos donde las variables de entorno no están disponibles
+- Proporciona valores por defecto para evitar errores de build
+- Muestra warnings informativos sobre la configuración
+
+### 3. Configuración de Next.js
 Se actualizó `next.config.ts` para:
+- Usar `output: 'standalone'` para evitar prerender estático
 - Ignorar errores de ESLint y TypeScript durante el build
 - Optimizar la configuración para Vercel
 
-### 3. Configuración de Vercel
-Se actualizó `vercel.json` para incluir las variables de entorno necesarias.
+### 4. Configuración de Vercel
+Se actualizó `vercel.json` para:
+- Incluir las variables de entorno necesarias
+- Configurar variables de entorno específicas para el build
+- Agregar headers de cache para el dashboard
 
 ## Verificación
 
@@ -98,4 +123,13 @@ Después de configurar las variables de entorno, el despliegue debería funciona
 - Las variables de entorno con prefijo `NEXT_PUBLIC_` son visibles en el cliente
 - Asegúrate de que la **anon key** sea la correcta (no la service role key)
 - Los cambios en las variables de entorno requieren un nuevo despliegue
-- Si el problema persiste, verifica que las credenciales de Supabase sean correctas 
+- Si el problema persiste, verifica que las credenciales de Supabase sean correctas
+- La nueva configuración robusta permite que el build funcione incluso sin variables de entorno configuradas
+- El script `deploy-vercel.sh` automatiza todo el proceso de configuración y despliegue
+
+## Archivos Nuevos/Creados
+
+- `deploy-vercel.sh` - Script de despliegue automatizado
+- `src/lib/supabase-config.ts` - Configuración robusta de Supabase
+- `src/app/dashboard/layout.tsx` - Configuración global del dashboard
+- `src/app/vercel.json` - Configuración específica de Vercel para la app 
