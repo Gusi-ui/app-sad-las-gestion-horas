@@ -78,4 +78,169 @@ export function formatScheduleOrdered(schedule: Record<string, any[]> | undefine
     .filter(Boolean)
   
   return formattedDays.join(' | ')
+}
+
+// Funciones para cálculo de horas
+export interface HoursCalculation {
+  weeklyHours: number;
+  monthlyHours: number;
+  usedHours: number;
+  remainingHours: number;
+  status: 'excess' | 'deficit' | 'perfect';
+  percentage: number;
+}
+
+/**
+ * Calcula las horas semanales basadas en el horario específico
+ */
+export function calculateWeeklyHours(schedule: Record<string, any[]> | undefined): number {
+  if (!schedule) return 0;
+  
+  let totalHours = 0;
+  
+  Object.values(schedule).forEach(daySchedule => {
+    if (!Array.isArray(daySchedule) || daySchedule.length === 0) return;
+    
+    // Caso 1: Array de objetos {start, end} (formato nuevo)
+    if (typeof daySchedule[0] === 'object' && daySchedule[0] !== null && 'start' in daySchedule[0] && 'end' in daySchedule[0]) {
+      daySchedule.forEach((slot: any) => {
+        const [startHour, startMin] = slot.start.split(':').map(Number);
+        const [endHour, endMin] = slot.end.split(':').map(Number);
+        const startTime = startHour + startMin / 60;
+        const endTime = endHour + endMin / 60;
+        totalHours += Math.max(0, endTime - startTime);
+      });
+    }
+    // Caso 2: Array de strings (formato antiguo) - ['08:00', '10:00']
+    else if (daySchedule.length === 2 && typeof daySchedule[0] === 'string' && typeof daySchedule[1] === 'string') {
+      const [startHour, startMin] = daySchedule[0].split(':').map(Number);
+      const [endHour, endMin] = daySchedule[1].split(':').map(Number);
+      const startTime = startHour + startMin / 60;
+      const endTime = endHour + endMin / 60;
+      totalHours += Math.max(0, endTime - startTime);
+    }
+    // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
+    else if (Array.isArray(daySchedule) && daySchedule.length > 0 && typeof daySchedule[0] === 'string') {
+      daySchedule.forEach((slot: string) => {
+        if (slot.includes('-')) {
+          const parts = slot.split('-');
+          if (parts.length === 2) {
+            const [startHour, startMin] = parts[0].split(':').map(Number);
+            const [endHour, endMin] = parts[1].split(':').map(Number);
+            const startTime = startHour + startMin / 60;
+            const endTime = endHour + endMin / 60;
+            totalHours += Math.max(0, endTime - startTime);
+          }
+        }
+      });
+    }
+  });
+  
+  return Math.round(totalHours * 10) / 10; // Redondear a 1 decimal
+}
+
+/**
+ * Calcula las horas mensuales basadas en las horas semanales
+ */
+export function calculateMonthlyHours(weeklyHours: number): number {
+  // Aproximadamente 4.3 semanas por mes
+  return Math.round(weeklyHours * 4.3 * 10) / 10;
+}
+
+/**
+ * Calcula el estado completo de horas para un usuario
+ */
+export function calculateUserHoursStatus(
+  monthlyHours: number,
+  usedHours: number
+): HoursCalculation {
+  const remainingHours = monthlyHours - usedHours;
+  const percentage = monthlyHours > 0 ? (usedHours / monthlyHours) * 100 : 0;
+  
+  let status: 'excess' | 'deficit' | 'perfect';
+  if (Math.abs(remainingHours) < 0.1) {
+    status = 'perfect';
+  } else if (remainingHours < 0) {
+    status = 'excess';
+  } else {
+    status = 'deficit';
+  }
+  
+  return {
+    weeklyHours: Math.round((usedHours / 4.3) * 10) / 10,
+    monthlyHours,
+    usedHours,
+    remainingHours,
+    status,
+    percentage: Math.round(percentage * 10) / 10
+  };
+}
+
+/**
+ * Calcula las horas utilizadas hasta el día actual del mes
+ */
+export function calculateUsedHoursUntilToday(
+  schedule: Record<string, any[]> | undefined,
+  year: number,
+  month: number
+): number {
+  if (!schedule) return 0;
+  
+  const today = new Date();
+  const isCurrentMonth = month === today.getMonth() + 1 && year === today.getFullYear();
+  const lastDayToCount = isCurrentMonth ? today.getDate() : new Date(year, month, 0).getDate();
+  
+  let totalUsedHours = 0;
+  
+  // Iterar por cada día del mes hasta hoy (si es el mes actual) o hasta el final del mes
+  for (let day = 1; day <= lastDayToCount; day++) {
+    const date = new Date(year, month - 1, day);
+    const dayOfWeek = date.getDay();
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = dayNames[dayOfWeek] as keyof typeof schedule;
+    
+    const daySchedule = schedule[dayName];
+    if (daySchedule && daySchedule.length > 0) {
+      // Calcular horas para este día
+      let dayHours = 0;
+      
+      // Caso 1: Array de objetos {start, end}
+      if (typeof daySchedule[0] === 'object' && daySchedule[0] !== null && 'start' in daySchedule[0] && 'end' in daySchedule[0]) {
+        daySchedule.forEach((slot: any) => {
+          const [startHour, startMin] = slot.start.split(':').map(Number);
+          const [endHour, endMin] = slot.end.split(':').map(Number);
+          const startTime = startHour + startMin / 60;
+          const endTime = endHour + endMin / 60;
+          dayHours += Math.max(0, endTime - startTime);
+        });
+      }
+      // Caso 2: Array de strings - ['08:00', '10:00']
+      else if (daySchedule.length === 2 && typeof daySchedule[0] === 'string' && typeof daySchedule[1] === 'string') {
+        const [startHour, startMin] = daySchedule[0].split(':').map(Number);
+        const [endHour, endMin] = daySchedule[1].split(':').map(Number);
+        const startTime = startHour + startMin / 60;
+        const endTime = endHour + endMin / 60;
+        dayHours = Math.max(0, endTime - startTime);
+      }
+      // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
+      else if (Array.isArray(daySchedule) && daySchedule.length > 0 && typeof daySchedule[0] === 'string') {
+        daySchedule.forEach((slot: string) => {
+          if (slot.includes('-')) {
+            const parts = slot.split('-');
+            if (parts.length === 2) {
+              const [startHour, startMin] = parts[0].split(':').map(Number);
+              const [endHour, endMin] = parts[1].split(':').map(Number);
+              const startTime = startHour + startMin / 60;
+              const endTime = endHour + endMin / 60;
+              dayHours += Math.max(0, endTime - startTime);
+            }
+          }
+        });
+      }
+      
+      totalUsedHours += dayHours;
+    }
+  }
+  
+  return Math.round(totalUsedHours * 10) / 10;
 } 

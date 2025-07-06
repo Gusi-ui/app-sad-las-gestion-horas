@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X, AlertTriangle, Users, User, Clock, Calendar, Settings } from 'lucide-react'
-import { Worker, WorkerSpecialization, WeekDay } from '@/lib/types'
+import { Worker, WorkerSpecialization, WeekDay, WorkerType } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 
 const specializationOptions: { value: WorkerSpecialization; label: string }[] = [
@@ -26,6 +26,24 @@ const weekDayOptions: { value: WeekDay; label: string }[] = [
   { value: 'friday', label: 'Viernes' },
   { value: 'saturday', label: 'Sábado' },
   { value: 'sunday', label: 'Domingo' }
+]
+
+const workerTypeOptions: { value: WorkerType; label: string; description: string }[] = [
+  { 
+    value: 'laborable', 
+    label: '📅 Días Laborables', 
+    description: 'Lunes a Viernes (excluye festivos y fines de semana)' 
+  },
+  { 
+    value: 'holiday_weekend', 
+    label: '🌟 Festivos y Fines de Semana', 
+    description: 'Sábados, domingos y festivos locales de Mataró' 
+  },
+  { 
+    value: 'both', 
+    label: '🔄 Ambos Tipos', 
+    description: 'Días laborables + festivos y fines de semana' 
+  }
 ]
 
 export default function EditWorkerPage() {
@@ -49,6 +67,7 @@ export default function EditWorkerPage() {
     max_weekly_hours: 40,
     specializations: [] as WorkerSpecialization[],
     availability_days: [] as WeekDay[],
+    worker_type: 'laborable' as WorkerType,
     notes: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
@@ -87,6 +106,7 @@ export default function EditWorkerPage() {
             max_weekly_hours: data.max_weekly_hours,
             specializations: Array.isArray(data.specializations) ? data.specializations : [],
             availability_days: Array.isArray(data.availability_days) ? data.availability_days : [],
+            worker_type: data.worker_type || 'laborable',
             notes: data.notes || '',
             emergency_contact_name: data.emergency_contact_name || '',
             emergency_contact_phone: data.emergency_contact_phone || '',
@@ -524,6 +544,41 @@ export default function EditWorkerPage() {
                 </div>
                 {errors.specializations && (
                   <p className="text-red-500 text-xs mt-1">{errors.specializations}</p>
+                )}
+              </div>
+
+              {/* Worker Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Tipo de Trabajadora *
+                </label>
+                <div className="space-y-3">
+                  {workerTypeOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex items-start p-4 rounded-lg border cursor-pointer transition-colors ${
+                        formData.worker_type === option.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="worker_type"
+                        value={option.value}
+                        checked={formData.worker_type === option.value}
+                        onChange={(e) => handleInputChange('worker_type', e.target.value as WorkerType)}
+                        className="mt-1 mr-3"
+                      />
+                      <div>
+                        <div className="text-sm font-medium">{option.label}</div>
+                        <div className="text-xs text-slate-600 mt-1">{option.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {errors.worker_type && (
+                  <p className="text-red-500 text-xs mt-1">{errors.worker_type}</p>
                 )}
               </div>
 

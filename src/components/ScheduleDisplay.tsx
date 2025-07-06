@@ -38,19 +38,19 @@ export function ScheduleDisplay({ schedule, className = '', showIcon = true, lay
 
   // Layout en filas (nuevo formato atractivo)
   if (layout === 'rows') {
-
-    
     return (
       <div className={`${className}`}>
         <div className="space-y-2">
           {activeDays.map(day => {
             const slots = schedule[day]
             let timeDisplay = ''
+            let timeLines: string[] = []
 
             // Formatear los horarios
             if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'string') {
               if (slots.length === 2) {
                 timeDisplay = `${slots[0]} - ${slots[1]}`
+                timeLines = [timeDisplay]
               } else if (slots.length > 2 && slots.length % 2 === 0) {
                 const timeSlots = []
                 for (let i = 0; i < slots.length; i += 2) {
@@ -59,25 +59,46 @@ export function ScheduleDisplay({ schedule, className = '', showIcon = true, lay
                   }
                 }
                 timeDisplay = timeSlots.join(' y ')
+                timeLines = timeSlots
               }
             } else if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
               timeDisplay = slots.map((slot: any) => `${slot.start} - ${slot.end}`).join(' y ')
+              timeLines = slots.map((slot: any) => `${slot.start} - ${slot.end}`)
             }
 
             return (
               <div key={day} className="flex items-center justify-between bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg px-4 py-3 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3 shadow-sm">
-                    <span className="text-white font-bold text-sm">
+                  <div className="w-10 h-10 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center mr-3 shadow-sm">
+                    <span className="text-white font-bold text-sm sm:text-sm">
                       {dayNames[day].substring(0, 2)}
                     </span>
                   </div>
-                  <span className="font-semibold text-slate-900 text-sm">
+                  <span className="font-semibold text-slate-900 text-sm sm:text-sm">
                     {dayNames[day]}
                   </span>
                 </div>
-                <div className="text-blue-700 font-semibold text-sm bg-white px-3 py-1 rounded-full border border-blue-200">
-                  {timeDisplay}
+                {/* Horario: en móvil, mostrar cada slot en una línea, en desktop igual que antes */}
+                <div className="flex-shrink-0">
+                  <div className="
+                    bg-white border border-blue-200 rounded-full
+                    px-3 py-1
+                    text-blue-700 font-semibold
+                    text-xs sm:text-sm
+                    flex flex-col items-center justify-center
+                    min-w-[80px] min-h-[40px]
+                    sm:min-w-[120px] sm:min-h-[40px]
+                    text-center
+                  ">
+                    <span className="block sm:hidden">
+                      {timeLines.map((line, idx) => (
+                        <span key={idx} className="block leading-tight">{line}</span>
+                      ))}
+                    </span>
+                    <span className="hidden sm:block">
+                      {timeDisplay}
+                    </span>
+                  </div>
                 </div>
               </div>
             )

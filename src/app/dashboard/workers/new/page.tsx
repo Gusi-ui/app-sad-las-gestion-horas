@@ -27,6 +27,13 @@ const weekDayOptions: { value: WeekDay; label: string }[] = [
   { value: 'sunday', label: 'Domingo' }
 ]
 
+// Opciones para tipo de trabajadora
+const workerTypeOptions = [
+  { value: 'laborable', label: 'Días Laborables', description: 'Lunes a Viernes' },
+  { value: 'holiday_weekend', label: 'Festivos y Fines de Semana', description: 'Sábados, Domingos y Festivos' },
+  { value: 'both', label: 'Ambos', description: 'Todos los días' }
+]
+
 export default function NewWorkerPage() {
   const router = useRouter()
   const { createWorker } = useWorkers()
@@ -45,6 +52,7 @@ export default function NewWorkerPage() {
     max_weekly_hours: 40,
     specializations: [] as WorkerSpecialization[],
     availability_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as WeekDay[],
+    worker_type: 'laborable' as 'laborable' | 'holiday_weekend' | 'both',
     notes: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
@@ -146,12 +154,33 @@ export default function NewWorkerPage() {
   }
 
   const handleAvailabilityToggle = (day: WeekDay) => {
-    setFormData(prev => ({
-      ...prev,
-      availability_days: prev.availability_days.includes(day)
+    setFormData(prev => {
+      const newAvailabilityDays = prev.availability_days.includes(day)
         ? prev.availability_days.filter(d => d !== day)
         : [...prev.availability_days, day]
-    }))
+      
+      // Auto-detect worker type based on selected days
+      const laborableDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as WeekDay[]
+      const weekendDays = ['saturday', 'sunday'] as WeekDay[]
+      
+      const hasLaborableDays = laborableDays.some(d => newAvailabilityDays.includes(d))
+      const hasWeekendDays = weekendDays.some(d => newAvailabilityDays.includes(d))
+      
+      let newWorkerType: 'laborable' | 'holiday_weekend' | 'both' = 'laborable'
+      if (hasLaborableDays && hasWeekendDays) {
+        newWorkerType = 'both'
+      } else if (hasWeekendDays) {
+        newWorkerType = 'holiday_weekend'
+      } else {
+        newWorkerType = 'laborable'
+      }
+      
+      return {
+        ...prev,
+        availability_days: newAvailabilityDays,
+        worker_type: newWorkerType
+      }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,7 +202,11 @@ export default function NewWorkerPage() {
           email: formData.email.trim(),
           full_name: `${formData.name.trim()} ${formData.surname.trim()}`,
           phone: formData.phone.trim(),
-          worker_type: 'regular', // O puedes mapear según el formulario
+          worker_type: formData.worker_type,
+          availability_days: formData.availability_days,
+          hourly_rate: formData.hourly_rate,
+          max_weekly_hours: formData.max_weekly_hours,
+          specializations: formData.specializations,
         })
       })
       const result = await response.json()
@@ -410,6 +443,39 @@ export default function NewWorkerPage() {
                 )}
               </div>
 
+              {/* Worker Type */}
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-3">
+                  Tipo de Trabajadora
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {workerTypeOptions.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`flex flex-col p-3 rounded-lg border cursor-pointer transition-colors ${
+                        formData.worker_type === option.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="worker_type"
+                        value={option.value}
+                        checked={formData.worker_type === option.value}
+                        onChange={() => handleInputChange('worker_type', option.value)}
+                        className="sr-only"
+                      />
+                      <span className="text-sm font-medium">{option.label}</span>
+                      <span className="text-xs text-slate-600 mt-1">{option.description}</span>
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-slate-500 mt-2">
+                  💡 El tipo se detecta automáticamente según los días seleccionados, pero puedes ajustarlo manualmente.
+                </p>
+              </div>
+
               {/* Availability Days */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-3">
@@ -438,6 +504,9 @@ export default function NewWorkerPage() {
                 {errors.availability_days && (
                   <p className="text-red-500 text-xs mt-1">{errors.availability_days}</p>
                 )}
+                <p className="text-xs text-slate-500 mt-2">
+                  ✅ Tipo detectado: <strong>{workerTypeOptions.find(opt => opt.value === formData.worker_type)?.label}</strong>
+                </p>
               </div>
             </CardContent>
           </Card>

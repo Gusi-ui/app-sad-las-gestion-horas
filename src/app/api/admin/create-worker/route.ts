@@ -28,7 +28,16 @@ export async function POST(req: NextRequest) {
     const supabase = createSupabaseClient()
     
     const body = await req.json()
-    const { email, full_name, phone, worker_type = 'regular' } = body
+    const { 
+      email, 
+      full_name, 
+      phone, 
+      worker_type = 'laborable',
+      availability_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+      hourly_rate = 15.00,
+      max_weekly_hours = 40,
+      specializations = []
+    } = body
 
     if (!email || !full_name || !phone) {
       console.error('Faltan datos obligatorios', { email, full_name, phone });
@@ -60,9 +69,7 @@ export async function POST(req: NextRequest) {
     const { error: profileError } = await supabase.from('worker_profiles').insert({
       id: userId,
       email,
-      full_name,
       worker_type,
-      role: 'worker',
       created_at: new Date().toISOString()
     })
     // console.log('Resultado insert worker_profiles:', { profileError });
@@ -74,7 +81,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: profileError.message || 'Error creando perfil' }, { status: 500 })
     }
 
-    // 4. Crear registro en workers (solo con los datos básicos)
+    // 4. Crear registro en workers con todos los datos
     const [name, ...surnameParts] = full_name.split(' ')
     const surname = surnameParts.join(' ')
     const { error: workersError } = await supabase.from('workers').insert({
@@ -85,6 +92,11 @@ export async function POST(req: NextRequest) {
       email,
       is_active: true,
       hire_date: new Date().toISOString(),
+      hourly_rate,
+      max_weekly_hours,
+      specializations,
+      availability_days,
+      worker_type,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })

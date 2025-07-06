@@ -9,6 +9,8 @@ import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
 import { supabase } from '@/lib/supabase'
 import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, Search } from 'lucide-react'
+import { MonthlyBalancesTable } from '@/components/MonthlyBalancesTable'
+import { useMonthlyBalances } from '@/hooks/useMonthlyBalances'
 
 interface User {
   id: string
@@ -46,6 +48,15 @@ export default function UsersPage() {
     user: null
   })
   const [searchValue, setSearchValue] = useState('');
+
+  // Hook para obtener balances mensuales
+  const {
+    balances: monthlyBalances,
+    users: balanceUsers,
+    loading: balancesLoading,
+    error: balancesError,
+    refetch: refetchBalances
+  } = useMonthlyBalances();
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -561,6 +572,12 @@ export default function UsersPage() {
                                   Editar
                                 </Button>
                               </Link>
+                              <Link href={`/dashboard/users/${user.id}/assignments`}>
+                                <Button variant="secondary" size="sm" className="bg-blue-50 text-blue-700 hover:bg-blue-100">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Asignaciones
+                                </Button>
+                              </Link>
                               {user.is_active ? (
                                 <div className="flex space-x-1">
                                   <Button 
@@ -812,6 +829,14 @@ export default function UsersPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* BALANCES MENSUALES */}
+        <MonthlyBalancesTable
+          balances={monthlyBalances}
+          users={balanceUsers}
+          loading={balancesLoading}
+          className="mt-6 sm:mt-8"
+        />
       </main>
 
       {/* Footer de navegación fijo */}

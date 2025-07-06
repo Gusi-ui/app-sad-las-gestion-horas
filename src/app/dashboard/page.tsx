@@ -188,7 +188,7 @@ export default function DashboardPage() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         
         {/* ACCIONES RÁPIDAS */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
           <Link href="/dashboard/users/new">
             <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-green-200 shadow-sm">
               <div className="p-2 bg-green-50 rounded-lg mb-2">
@@ -241,6 +241,20 @@ export default function DashboardPage() {
               </h3>
               <p className="text-xs sm:text-sm text-yellow-700 text-center whitespace-normal break-words leading-snug">
                 Ver calendario
+              </p>
+            </Card>
+          </Link>
+
+          <Link href="/dashboard/holidays">
+            <Card className="hover:shadow-md transition-shadow cursor-pointer h-32 sm:h-28 flex flex-col items-center justify-center max-w-[140px] sm:max-w-full w-full mx-auto border border-purple-200 shadow-sm">
+              <div className="p-2 bg-purple-50 rounded-lg mb-2">
+                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              </div>
+              <h3 className="font-semibold text-sm sm:text-base text-purple-900 text-center whitespace-normal break-words leading-snug">
+                Festivos
+              </h3>
+              <p className="text-xs sm:text-sm text-purple-700 text-center whitespace-normal break-words leading-snug">
+                Gestionar festivos
               </p>
             </Card>
           </Link>

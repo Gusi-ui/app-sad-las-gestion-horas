@@ -106,26 +106,26 @@ export default function WorkerPlanningPage() {
   // Función para formatear los horarios de una asignación
   const formatSchedule = (slots: any[] | undefined) => {
     if (!slots || slots.length === 0) return null;
-    if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
-      // Formato antiguo
-      return `${slots[0]} - ${slots[1]}`;
-    } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-      // Formato nuevo
-      return slots.map((slot: any) => {
-        if (slot && typeof slot === 'object' && 'start' in slot && 'end' in slot) {
-          return `${slot.start} - ${slot.end}`;
-        }
-        return '';
-      }).filter(Boolean).join(', ');
-    } else {
-      // Si accidentalmente llega un array de objetos, forzar string legible
-      return slots.map(slot => {
-        if (typeof slot === 'object' && slot !== null && 'start' in slot && 'end' in slot) {
-          return `${slot.start} - ${slot.end}`;
-        }
-        return String(slot);
-      }).filter(Boolean).join(', ');
+    // Caso: array de objetos {start, end}
+    if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
+      return slots
+        .map((slot: any) => `${slot.start} - ${slot.end}`)
+        .join(' | ');
     }
+    // Caso: array de strings pares (['08:00', '09:30', '13:00', '15:00'])
+    if (Array.isArray(slots) && slots.length > 2 && slots.length % 2 === 0 && typeof slots[0] === 'string') {
+      const tramos = [];
+      for (let i = 0; i < slots.length; i += 2) {
+        tramos.push(`${slots[i]} - ${slots[i+1]}`);
+      }
+      return tramos.join(' | ');
+    }
+    // Caso: array de 2 strings (['08:00', '09:30'])
+    if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
+      return `${slots[0]} - ${slots[1]}`;
+    }
+    // Fallback: mostrar como string
+    return slots.map(String).join(' | ');
   };
 
   if (loading) {
@@ -145,12 +145,15 @@ export default function WorkerPlanningPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-slate-700 mb-4">
-            Aquí puedes ver tus servicios asignados y los horarios detallados de cada día de la semana.
-          </p>
-          <Button variant="secondary" onClick={() => router.push('/worker/dashboard')}>
-            Volver al dashboard
-          </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+            <span className="text-slate-700 font-medium whitespace-nowrap text-base pr-2">Servicios y horarios asignados.</span>
+            <Button
+              onClick={() => router.push('/worker/dashboard')}
+              className="bg-blue-500 hover:bg-blue-600 text-white shadow rounded px-4 py-2 transition-colors mt-2 sm:mt-0"
+            >
+              Volver al dashboard
+            </Button>
+          </div>
         </CardContent>
       </Card>
       <Card>
@@ -159,31 +162,56 @@ export default function WorkerPlanningPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {DAYS_OF_WEEK.map(day => (
-              <div key={day.value}>
-                <div className="font-semibold text-slate-800 mb-1">{day.label}</div>
-                <ul className="space-y-1">
-                  {sortAssignmentsByTime(assignments, day.value).map(a => {
-                    const slots = (a.specific_schedule as any)?.[day.value];
-                    // console.log('Día:', day.value, 'Asignación:', a.id, 'Slots:', slots);
-                    const formatted = formatSchedule(slots);
-                    if (!formatted) return (
-                      <li key={a.id} className="text-slate-400 text-xs">Sin horarios configurados</li>
-                    );
-                    return (
-                      <li key={a.id} className="flex items-center gap-2 text-slate-700 text-sm">
-                        <User className="w-4 h-4 text-blue-500 mr-1" />
-                        <span>{a.users?.name} {a.users?.surname}</span>
-                        <span className="text-slate-500">({formatted})</span>
-                        {a.users?.address && (
-                          <span className="text-slate-400 ml-2">{a.users?.address}</span>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
+            {DAYS_OF_WEEK.map(day => {
+              // Filtrar asignaciones con horario para este día
+              const dayAssignments = sortAssignmentsByTime(assignments, day.value).filter(a => {
+                const slots = (a.specific_schedule as any)?.[day.value];
+                return slots && slots.length > 0;
+              });
+              if (dayAssignments.length === 0) return null;
+              return (
+                <div key={day.value}>
+                  <div className="font-semibold text-slate-800 mb-1">{day.label}</div>
+                  <ul className="space-y-2">
+                    {dayAssignments.map(a => {
+                      const slots = (a.specific_schedule as any)?.[day.value];
+                      const formatted = formatSchedule(slots);
+                      return (
+                        <li key={a.id}
+                          className="
+                            flex-col items-start gap-1 text-slate-700 text-sm
+                            bg-blue-50 border border-blue-200 rounded-lg p-3 mb-2
+                            flex
+                          "
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <User className="w-4 h-4 text-blue-500 mr-1 flex-shrink-0" />
+                            <span className="font-semibold text-slate-900 truncate">
+                              {a.users?.name} {a.users?.surname}
+                            </span>
+                          </div>
+                          <div className="text-blue-700 font-medium text-sm w-full mt-1">
+                            {formatted}
+                          </div>
+                          {a.users?.address && (
+                            <div className="flex items-center text-xs text-slate-500 mt-1 w-full">
+                              <span className="mr-1">📍</span>
+                              <span className="truncate">{a.users?.address}</span>
+                            </div>
+                          )}
+                          {a.users?.phone && (
+                            <div className="flex items-center text-xs text-slate-500 mt-1 w-full">
+                              <span className="mr-1">📞</span>
+                              <span className="truncate">{a.users?.phone}</span>
+                            </div>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

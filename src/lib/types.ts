@@ -11,7 +11,7 @@ export interface User {
   monthly_hours?: number // Horas totales asignadas al mes (ej: 86h)
 }
 
-export type WorkerType = 'regular' | 'holidays' | 'weekends'
+export type WorkerType = 'laborable' | 'holiday_weekend' | 'both'
 
 export interface ServiceCard {
   id: string
@@ -80,6 +80,7 @@ export interface Worker {
   profile_photo_url?: string
   created_at: string
   updated_at: string
+  worker_type?: 'laborable' | 'holiday_weekend' | 'both'
 }
 
 export interface Assignment {

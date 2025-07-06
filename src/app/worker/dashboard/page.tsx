@@ -6,146 +6,23 @@ import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatScheduleOrdered } from "@/lib/utils";
 import { ScheduleDisplay } from "@/components/ScheduleDisplay";
+import { HoursStatusCard } from "@/components/HoursStatusCard";
+import { DetailedHoursStatusCard } from "@/components/DetailedHoursStatusCard";
+import { useHoursCalculation } from "@/hooks/useHoursCalculation";
+import { useMonthlyBalance } from "@/hooks/useMonthlyBalance";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, User, CheckCircle, TrendingUp, TrendingDown, AlertTriangle, MapPin, Phone, Mail, UserCheck, RotateCcw, Users } from "lucide-react";
+import { Calendar, Clock, User, CheckCircle, TrendingUp, TrendingDown, AlertTriangle, MapPin, Phone, Mail, UserCheck, RotateCcw, Users, Coffee, CalendarDays, BarChart3, Star } from "lucide-react";
 import { Worker, Assignment, User as UserType } from "@/lib/types";
 import Link from "next/link";
+import { MonthlyBalanceCard } from "@/components/MonthlyBalanceCard";
+import { HolidaysInfoCard } from "@/components/HolidaysInfoCard";
 
 interface AssignmentWithUser extends Assignment {
   users?: UserType;
 }
 
-interface UserHoursStatus {
-  userId: string;
-  userName: string;
-  userSurname: string;
-  userAddress?: string;
-  userPhone?: string;
-  monthlyHours: number;
-  assignedHours: number;
-  usedHours: number;
-  remainingHours: number;
-  status: 'excess' | 'deficit' | 'perfect';
-  assignments: AssignmentWithUser[];
-  totalWorkers: number;
-}
-
-// Función para formatear los horarios de una asignación
-const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
-  if (!schedule) return 'Sin horario específico'
-  
-  const dayNames: Record<string, string> = {
-    monday: 'Lunes',
-    tuesday: 'Martes', 
-    wednesday: 'Miércoles',
-    thursday: 'Jueves',
-    friday: 'Viernes',
-    saturday: 'Sábado',
-    sunday: 'Domingo'
-  }
-  
-  const today = new Date();
-  const todayDayName = Object.keys(dayNames)[today.getDay() === 0 ? 6 : today.getDay() - 1];
-
-  // Usar la función de utilidad para ordenar cronológicamente
-  const orderedSchedule = formatScheduleOrdered(schedule, dayNames);
-  
-  if (orderedSchedule === 'No configurado') return 'Sin horario específico';
-  
-  // Agregar indicador de "HOY" si hay servicio hoy
-  const todaySchedule = schedule[todayDayName];
-  if (todaySchedule && todaySchedule.length > 0) {
-    const todaySlots = todaySchedule.length === 2 && typeof todaySchedule[0] === 'string' && typeof todaySchedule[1] === 'string'
-      ? `${todaySchedule[0]} - ${todaySchedule[1]}`
-      : todaySchedule.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
-    
-    return orderedSchedule.replace(
-      `${dayNames[todayDayName]}: ${todaySlots}`,
-      `🕐 HOY: ${dayNames[todayDayName]} ${todaySlots}`
-    );
-  }
-  
-  return orderedSchedule;
-}
-
-// Función para verificar si una asignación tiene servicio hoy
-const hasServiceToday = (assignment: AssignmentWithUser) => {
-  if (!assignment.specific_schedule) return true // Si no hay horario específico, asumir que sí
-  
-  const today = new Date()
-  const todayDayName = Object.keys({
-    monday: 'monday',
-    tuesday: 'tuesday', 
-    wednesday: 'wednesday',
-    thursday: 'thursday',
-    friday: 'friday',
-    saturday: 'saturday',
-    sunday: 'sunday'
-  })[today.getDay() === 0 ? 6 : today.getDay() - 1]
-  
-  const todaySchedule = assignment.specific_schedule?.[todayDayName as keyof typeof assignment.specific_schedule]
-  return todaySchedule && todaySchedule.length > 0
-}
-
-// Función para obtener el horario de hoy de una asignación
-const getTodaySchedule = (assignment: AssignmentWithUser) => {
-  if (!assignment.specific_schedule) return null
-  
-  const today = new Date()
-  const todayDayName = Object.keys({
-    monday: 'monday',
-    tuesday: 'tuesday', 
-    wednesday: 'wednesday',
-    thursday: 'thursday',
-    friday: 'friday',
-    saturday: 'saturday',
-    sunday: 'sunday'
-  })[today.getDay() === 0 ? 6 : today.getDay() - 1]
-  
-  const todaySchedule = assignment.specific_schedule?.[todayDayName as keyof typeof assignment.specific_schedule]
-  if (!todaySchedule || todaySchedule.length === 0) return null
-  
-  // Debug para Jose Martínez
-  if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-//     // console.log('JOSE MARTINEZ TODAY SCHEDULE DEBUG:', {
-//       todayDayName,
-//       todaySchedule,
-//       today: today.toLocaleDateString(),
-//       dayOfWeek: today.getDay()
-//     });
-  }
-  
-  // Manejar múltiples slots de tiempo
-  // Debug para Jose Martínez
-  if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-//     // console.log('JOSE MARTINEZ GET TODAY SCHEDULE DEBUG:', {
-//       todaySchedule,
-//       todayScheduleType: typeof todaySchedule[0],
-//       todayScheduleLength: todaySchedule.length,
-//       isArray: Array.isArray(todaySchedule)
-//     });
-  }
-  
-  // Caso 1: Array de objetos {start, end} (formato nuevo) - [{start: '08:00', end: '10:00'}, {start: '13:00', end: '15:00'}]
-  if (Array.isArray(todaySchedule) && todaySchedule.length > 0 && typeof todaySchedule[0] === 'object' && todaySchedule[0] !== null && 'start' in todaySchedule[0] && 'end' in todaySchedule[0]) {
-    return todaySchedule.map((slot: any) => `${slot.start}-${slot.end}`).join(', ')
-  } 
-  // Caso 2: Array de strings (formato antiguo) - ['08:00', '10:00']
-  else if (todaySchedule.length === 2 && typeof todaySchedule[0] === 'string' && typeof todaySchedule[1] === 'string') {
-    return `${todaySchedule[0]} - ${todaySchedule[1]}`
-  }
-  // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
-  else if (Array.isArray(todaySchedule) && todaySchedule.length > 0 && typeof todaySchedule[0] === 'string') {
-    return todaySchedule.join(', ')
-  }
-  
-  return null
-}
-
 export default function WorkerDashboard() {
   const [worker, setWorker] = useState<Worker | null>(null);
-  const [assignments, setAssignments] = useState<AssignmentWithUser[]>([]);
-  const [userHoursStatus, setUserHoursStatus] = useState<UserHoursStatus[]>([]);
   const [completedServices, setCompletedServices] = useState<Set<string>>(() => {
     // Cargar servicios completados desde localStorage
     if (typeof window !== 'undefined') {
@@ -155,281 +32,261 @@ export default function WorkerDashboard() {
     return new Set();
   });
 
-  // Función para obtener el estado de un servicio basado en la hora
-  const getServiceStatus = (assignment: AssignmentWithUser) => {
-    const todaySchedule = getTodaySchedule(assignment);
-    if (!todaySchedule) return 'no-service'; // No hay servicio hoy
-    
-    // Debug: Log para Jose Martínez
-    if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-//       // console.log('JOSE MARTINEZ DEBUG:', {
-//         todaySchedule,
-//         assignment: assignment.id,
-//         specific_schedule: assignment.specific_schedule,
-//         currentTime: new Date().toLocaleTimeString()
-//       });
-    }
-    
-    // Parsear horario - manejar múltiples slots
-    const timeSlots: Array<{start: string, end: string}> = [];
-    
-    // Formato múltiple: "08:00-09:30, 13:00-15:00"
-    if (todaySchedule.includes(',')) {
-      const slots = todaySchedule.split(',').map(slot => slot.trim());
-      slots.forEach(slot => {
-        if (slot.includes('-')) {
-          const parts = slot.split('-');
-          if (parts.length === 2) {
-            timeSlots.push({ start: parts[0], end: parts[1] });
-          }
-        }
-      });
-    }
-    // Formato simple: "13:00-15:00" o "13:00 - 15:00"
-    else if (todaySchedule.includes('-')) {
-      const cleanSchedule = todaySchedule.replace(' - ', '-');
-      const parts = cleanSchedule.split('-');
-      if (parts.length === 2) {
-        timeSlots.push({ start: parts[0], end: parts[1] });
-      }
-    }
-    
-    // Si no pudimos parsear ningún horario, retornar no-service
-    if (timeSlots.length === 0) {
-      return 'no-service';
-    }
-    
-    try {
-      const now = new Date();
-      const currentHour = now.getHours();
-      const currentMinute = now.getMinutes();
-      const currentTime = currentHour * 60 + currentMinute;
-      
-      // Verificar cada slot de tiempo
-      for (const slot of timeSlots) {
-        const [startHour, startMinute] = slot.start.split(':').map(Number);
-        const [endHour, endMinute] = slot.end.split(':').map(Number);
-        
-        // Validar que los números son válidos
-        if (isNaN(startHour) || isNaN(startMinute) || isNaN(endHour) || isNaN(endMinute)) {
-          continue;
-        }
-        
-        const startTimeMinutes = startHour * 60 + startMinute;
-        const endTimeMinutes = endHour * 60 + endMinute;
-        
-        // Debug: Log para Jose Martínez
-        if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez') {
-//           // console.log('JOSE MARTINEZ TIME DEBUG:', {
-//             slot,
-//             startHour,
-//             startMinute,
-//             endHour,
-//             endMinute,
-//             currentHour,
-//             currentMinute,
-//             currentTime,
-//             startTimeMinutes,
-//             endTimeMinutes,
-//             status: currentTime < startTimeMinutes ? 'pending' : 
-//                    currentTime >= startTimeMinutes && currentTime < endTimeMinutes ? 'in-progress' : 
-//                    'completed',
-//             now: new Date().toLocaleTimeString()
-//           });
-        }
-        
-        // Si estamos dentro de este slot, retornar el estado correspondiente
-        if (currentTime >= startTimeMinutes && currentTime < endTimeMinutes) {
-          return 'in-progress'; // En progreso
-        }
-      }
-      
-      // Si no estamos en ningún slot activo, verificar si ya terminaron todos
-      const allSlotsCompleted = timeSlots.every(slot => {
-        const [endHour, endMinute] = slot.end.split(':').map(Number);
-        const endTimeMinutes = endHour * 60 + endMinute;
-        return currentTime >= endTimeMinutes;
-      });
-      
-      if (allSlotsCompleted) {
-        return 'completed'; // Todos los slots terminaron
-      } else {
-        return 'pending'; // Aún no ha empezado ningún slot
-      }
-    } catch (error) {
-      console.error('Error parsing time:', error, 'Schedule:', todaySchedule);
-      return 'no-service';
-    }
-  };
-
-  // Función para obtener el color del estado
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'text-primary';
-      case 'in-progress': return 'text-warning';
-      case 'completed': return 'text-success';
-      default: return 'text-slate-600';
-    }
-  };
-
-  // Función para obtener el icono del estado
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'pending': return '⏰';
-      case 'in-progress': return '🔄';
-      case 'completed': return '✅';
-      default: return '';
-    }
-  };
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  // Función para limpiar servicios completados (se puede llamar al cambiar de día)
-  const clearCompletedServices = () => {
-    setCompletedServices(new Set());
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('completedServices');
+  // Usar el hook personalizado para el cálculo de horas
+  const {
+    assignments,
+    userHoursStatus,
+    stats,
+    loading: hoursLoading,
+    error: hoursError,
+    getServiceStatus,
+    getTodaySchedule,
+    hasServiceToday
+  } = useHoursCalculation(worker?.id || null);
+
+  // Usar el hook para obtener el balance mensual
+  const {
+    balances: monthlyBalances,
+    loading: balanceLoading,
+    error: balanceError,
+    refetch: refetchBalances
+  } = useMonthlyBalance(worker?.id || null);
+
+  // Estado para festivos de hoy
+  const [todayHolidays, setTodayHolidays] = useState<Array<{name: string, type: string}>>([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(false);
+
+  // Estado para información de reasignaciones
+  const [reassignmentInfo, setReassignmentInfo] = useState<Map<string, {
+    hasReassignments: boolean;
+    reassignmentCount: number;
+    reassignmentDates: string[];
+  }>>(new Map());
+
+  // Función para obtener información de reasignaciones
+  const fetchReassignmentInfo = async () => {
+    if (!worker?.id || !assignments.length) return;
+
+    try {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth() + 1;
+      const currentYear = currentDate.getFullYear();
+
+      // Obtener usuarios únicos de las asignaciones
+      const uniqueUsers = new Set(assignments.map(a => a.user_id));
+      const reassignmentMap = new Map();
+
+      for (const userId of uniqueUsers) {
+        try {
+          // Obtener todas las asignaciones del usuario (no solo las de esta trabajadora)
+          const response = await fetch(`/api/admin/test-balance-data?userId=${userId}&month=${currentMonth}&year=${currentYear}`);
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.assignments && data.assignments.length > 0) {
+              // Usar la lógica de reasignación para detectar reasignaciones
+              const { generateMonthlyPlanningWithHolidayReassignment } = await import('@/lib/holidayReassignment');
+              
+              const planningResult = await generateMonthlyPlanningWithHolidayReassignment(
+                data.assignments,
+                userId,
+                currentMonth,
+                currentYear
+              );
+
+              if (planningResult.reassignments.length > 0) {
+                reassignmentMap.set(userId, {
+                  hasReassignments: true,
+                  reassignmentCount: planningResult.reassignments.length,
+                  reassignmentDates: planningResult.reassignments.map((r: any) => {
+                    const date = new Date(r.date);
+                    return `${date.getDate()}/${date.getMonth() + 1}`;
+                  })
+                });
+              } else {
+                reassignmentMap.set(userId, {
+                  hasReassignments: false,
+                  reassignmentCount: 0,
+                  reassignmentDates: []
+                });
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching reassignment info for user:', userId, error);
+          // Continuar con el siguiente usuario
+        }
+      }
+
+      setReassignmentInfo(reassignmentMap);
+    } catch (error) {
+      console.error('Error fetching reassignment info:', error);
     }
   };
 
+  // Cargar información de reasignaciones cuando cambien las asignaciones
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      
+    if (assignments.length > 0 && !hoursLoading) {
+      fetchReassignmentInfo();
+    }
+  }, [assignments, hoursLoading, worker?.id]);
+
+  useEffect(() => {
+    const fetchWorkerData = async () => {
       try {
-        // Obtener usuario autenticado
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) {
-          setError("No autenticado");
-          return;
-        }
-
-        // Buscar trabajadora por email
-        const { data: workerData, error: workerError } = await supabase
-          .from("workers")
-          .select("*")
-          .eq("email", user.email)
-          .single();
+        setLoading(true);
         
-        if (workerError || !workerData) {
-          setError("No se encontró la trabajadora asociada a este usuario");
-          return;
-        }
-        
-        setWorker(workerData);
-
+        // Verificar que supabase esté configurado
         if (!supabase) {
-          setError("Error de configuración de base de datos");
+          setError('Error de configuración: Supabase no está configurado');
+          setLoading(false);
+          return;
+        }
+        
+        // Obtener usuario actual
+        const { data: { user }, error: userError } = await supabase!.auth.getUser();
+        if (userError || !user) {
+          router.push('/worker/login');
           return;
         }
 
-        const supabaseClient = supabase;
+        // Obtener datos de la trabajadora
+        const { data: workerData, error: workerError } = await supabase!
+          .from('workers')
+          .select('*')
+          .eq('email', user.email)
+          .single();
 
-        // Buscar asignaciones activas con datos de usuario
-        const { data: assignmentsData } = await supabaseClient
-          .from("assignments")
-          .select("*, users(*)")
-          .eq("worker_id", workerData.id)
-          .eq("status", "active");
-        
-        const assignmentsWithUsers = (assignmentsData as AssignmentWithUser[]) || [];
-        setAssignments(assignmentsWithUsers);
-
-        // Calcular estado de horas por usuario
-        const userStatusMap = new Map<string, UserHoursStatus>();
-        
-        // Primero, obtener TODAS las asignaciones activas para cada usuario (de todas las trabajadoras)
-        const userIds = [...new Set(assignmentsWithUsers.map(a => a.user_id))];
-        
-        for (const userId of userIds) {
-          // Buscar todas las asignaciones activas para este usuario (de todas las trabajadoras)
-          const { data: allUserAssignments } = await supabaseClient
-            .from("assignments")
-            .select("*, users(*), workers(*)")
-            .eq("user_id", userId)
-            .eq("status", "active");
-          
-          const userAssignments = allUserAssignments || [];
-          const user = userAssignments[0]?.users;
-          
-          if (!user) continue;
-          
-          // Calcular horas totales asignadas al usuario (de todas las trabajadoras)
-          const totalAssignedHours = userAssignments.reduce((sum, assignment) => 
-            sum + (assignment.assigned_hours_per_week || 0), 0
-          );
-          
-          // Filtrar solo las asignaciones de la trabajadora actual para mostrar en el dashboard
-          const currentWorkerAssignments = assignmentsWithUsers.filter(a => a.user_id === userId);
-          
-          userStatusMap.set(userId, {
-            userId,
-            userName: user.name,
-            userSurname: user.surname,
-            userAddress: user.address,
-            userPhone: user.phone,
-            monthlyHours: user.monthly_hours || 0,
-            assignedHours: totalAssignedHours, // Horas totales del usuario (todas las trabajadoras)
-            usedHours: 0,
-            remainingHours: 0,
-            status: 'perfect',
-            assignments: currentWorkerAssignments, // Solo asignaciones de esta trabajadora para mostrar
-            totalWorkers: userAssignments.length // Número total de trabajadoras que atienden al usuario
-          });
+        if (workerError || !workerData) {
+          setError('No se encontró la trabajadora');
+          setLoading(false);
+          return;
         }
 
-        // Calcular horas utilizadas y estado
-        const currentDate = new Date();
-        
-        userStatusMap.forEach(userStatus => {
-          // Calcular horas utilizadas basándose en las semanas transcurridas del mes
-          const weeksInMonth = Math.ceil(currentDate.getDate() / 7);
-          userStatus.usedHours = Math.round(userStatus.assignedHours * weeksInMonth * 10) / 10;
-          userStatus.remainingHours = userStatus.monthlyHours - userStatus.usedHours;
-          
-          // Determinar estado
-          if (Math.abs(userStatus.remainingHours) < 1) {
-            userStatus.status = 'perfect';
-          } else if (userStatus.remainingHours < 0) {
-            userStatus.status = 'excess';
-          } else {
-            userStatus.status = 'deficit';
-          }
-        });
-
-        setUserHoursStatus(Array.from(userStatusMap.values()));
+        setWorker(workerData);
         
       } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Error al cargar los datos');
+        console.error('Error fetching worker data:', err);
+        setError('Error al cargar los datos de la trabajadora');
       } finally {
         setLoading(false);
       }
     };
     
-    fetchData();
-  }, []);
+    fetchWorkerData().catch(err => {
+      console.error('Unhandled error in fetchWorkerData:', err);
+      setError('Error inesperado al cargar los datos de la trabajadora');
+      setLoading(false);
+    });
+  }, [router]);
 
-  // Efecto para actualizar automáticamente el estado de los servicios cada minuto
+  // Cargar festivos de hoy
   useEffect(() => {
-    const interval = setInterval(() => {
-      // Forzar re-render para actualizar estados automáticos
-      setAssignments(prev => [...prev]);
-    }, 60000); // Cada minuto
+    const fetchTodayHolidays = async () => {
+      try {
+        setHolidaysLoading(true);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth() + 1;
+        const day = today.getDate();
+        
+        const response = await fetch(`/api/holidays?year=${year}&month=${month}`);
+        const data = await response.json();
+        
+        if (response.ok && data.holidays) {
+          const todayHolidays = data.holidays.filter((holiday: any) => 
+            holiday.day === day
+          );
+          setTodayHolidays(todayHolidays);
+        }
+      } catch (error) {
+        console.error('Error fetching today holidays:', error);
+      } finally {
+        setHolidaysLoading(false);
+      }
+    };
 
-    return () => clearInterval(interval);
+    fetchTodayHolidays();
   }, []);
 
-  // Servicios de hoy
-  const todaysAssignments = assignments.filter(hasServiceToday);
+  const clearCompletedServices = () => {
+    setCompletedServices(new Set());
+    localStorage.removeItem('completedServices');
+  };
 
-  // Resumen general
-  const totalAssignedHours = assignments.reduce((sum, a) => sum + (a.assigned_hours_per_week || 0), 0);
-  const uniqueUsers = new Set(assignments.map(a => a.user_id)).size;
+  // Función para formatear los horarios de una asignación
+  const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
+    if (!schedule) return 'Sin horario específico'
+    
+    const dayNames: Record<string, string> = {
+      monday: 'Lunes',
+      tuesday: 'Martes', 
+      wednesday: 'Miércoles',
+      thursday: 'Jueves',
+      friday: 'Viernes',
+      saturday: 'Sábado',
+      sunday: 'Domingo'
+    }
+    
+    const today = new Date();
+    const todayDayName = Object.keys(dayNames)[today.getDay() === 0 ? 6 : today.getDay() - 1];
 
-  if (loading) {
+    // Usar la función de utilidad para ordenar cronológicamente
+    const orderedSchedule = formatScheduleOrdered(schedule, dayNames);
+    
+    if (orderedSchedule === 'No configurado') return 'Sin horario específico';
+    
+    // Agregar indicador de "HOY" si hay servicio hoy
+    const todaySchedule = schedule[todayDayName];
+    if (todaySchedule && todaySchedule.length > 0) {
+      const todaySlots = todaySchedule.length === 2 && typeof todaySchedule[0] === 'string' && typeof todaySchedule[1] === 'string'
+        ? `${todaySchedule[0]} - ${todaySchedule[1]}`
+        : todaySchedule.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
+      
+      return orderedSchedule.replace(
+        `${dayNames[todayDayName]}: ${todaySlots}`,
+        `🕐 HOY: ${dayNames[todayDayName]} ${todaySlots}`
+      );
+    }
+    
+    return orderedSchedule;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'text-green-600';
+      case 'in-progress':
+        return 'text-orange-600';
+      case 'pending':
+        return 'text-blue-600';
+      case 'no-service':
+        return 'text-slate-500';
+      default:
+        return 'text-slate-600';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return '✅';
+      case 'in-progress':
+        return '🔄';
+      case 'pending':
+        return '⏰';
+      case 'no-service':
+        return '📅';
+      default:
+        return '📋';
+    }
+  };
+
+  if (loading || hoursLoading || balanceLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -440,13 +297,13 @@ export default function WorkerDashboard() {
     );
   }
 
-  if (error) {
+  if (error || hoursError || balanceError) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Card>
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">Error al cargar datos: {error}</p>
+            <p className="text-red-600 mb-4">Error al cargar datos: {error || hoursError}</p>
             <Link href="/worker/login">
               <Button>Volver al Login</Button>
             </Link>
@@ -469,22 +326,20 @@ export default function WorkerDashboard() {
     );
   }
 
+  // Servicios de hoy
+  const todaysAssignments = stats.todaysAssignments;
+
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-secondary">
+      <header className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-secondary">
-                👩‍💼 Panel de {worker.name} {worker.surname}
-              </h1>
-              <p className="text-sm text-slate-600">
-                Gestión de servicios y cómputo de horas por usuario
-              </p>
-            </div>
-            <Button variant="secondary" onClick={() => router.push("/worker/planning")}>
-              <Calendar className="w-4 h-4 mr-2" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span className="text-slate-700 font-medium whitespace-nowrap text-base pr-2">Servicios y horarios asignados.</span>
+            <Button
+              onClick={() => router.push("/worker/planning")}
+              className="bg-blue-500 hover:bg-blue-600 text-white shadow rounded px-4 py-2 transition-colors mt-2 sm:mt-0"
+            >
               Ver Planning
             </Button>
           </div>
@@ -497,16 +352,17 @@ export default function WorkerDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center">
               <User className="w-5 h-5 mr-2" />
-              ¡Hola, {worker.name}!
+              {(() => {
+                const now = new Date();
+                const hour = now.getHours();
+                let saludo = "Buenos días";
+                if (hour >= 14 && hour < 21) saludo = "Buenas tardes";
+                else if (hour >= 21 || hour < 6) saludo = "Buenas noches";
+                return `Bienvenida, ${worker.name}. ${saludo}`;
+              })()}
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-slate-700">
-              Este es tu panel personal donde puedes ver el estado de horas de cada usuario que atiendes. 
-              <strong>El cómputo mensual se calcula por usuario</strong>, sumando las horas de todas las trabajadoras 
-              que le dan servicio. Esto te permite ver el total de horas que recibe cada usuario.
-            </p>
-          </CardContent>
+          <CardContent />
         </Card>
 
         {/* Resumen General */}
@@ -519,7 +375,7 @@ export default function WorkerDashboard() {
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-blue-700">Usuarios Atendidos</p>
-                  <p className="text-xl font-bold text-blue-900">{uniqueUsers}</p>
+                  <p className="text-xl font-bold text-blue-900">{stats.uniqueUsers}</p>
                 </div>
               </div>
             </CardContent>
@@ -533,7 +389,7 @@ export default function WorkerDashboard() {
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-medium text-green-700">Horas Asignadas</p>
-                  <p className="text-xl font-bold text-green-900">{totalAssignedHours}h/sem</p>
+                  <p className="text-xl font-bold text-green-900">{stats.totalAssignedHours.toFixed(1)}h/sem</p>
                 </div>
               </div>
             </CardContent>
@@ -555,26 +411,34 @@ export default function WorkerDashboard() {
         </div>
 
         {/* Servicios de Hoy */}
-        {todaysAssignments.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <CheckCircle className="w-5 h-5 mr-2" />
-                  Servicios para hoy
-                </div>
-                <div className="text-sm text-slate-600">
-                  {todaysAssignments.filter(a => getServiceStatus(a) === 'completed').length} de {todaysAssignments.length} completado{todaysAssignments.filter(a => getServiceStatus(a) === 'completed').length !== 1 ? 's' : ''}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 sm:gap-0">
+              <div className="flex items-center mb-1 sm:mb-0">
+                <CalendarDays className="w-5 h-5 mr-2" />
+                <span>Servicios para hoy</span>
+                {todayHolidays.length > 0 && (
+                  <div className="ml-2 flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-500" />
+                    <span className="text-xs text-yellow-700 font-medium">
+                      {todayHolidays.length} festivo{todayHolidays.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                )}
+              </div>
+              <div className="text-sm text-slate-600 mt-1 sm:mt-0">
+                {todaysAssignments.filter(a => getServiceStatus(a) === 'completed').length} de {todaysAssignments.length} completado{todaysAssignments.filter(a => getServiceStatus(a) === 'completed').length !== 1 ? 's' : ''}
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {todaysAssignments.length > 0 ? (
               <div className="space-y-3">
                 {todaysAssignments.map(assignment => (
                   <div key={assignment.id} className={`border rounded-lg p-4 relative ${
                     getServiceStatus(assignment) === 'completed' ? 'bg-green-50 border-green-200' :
                     getServiceStatus(assignment) === 'in-progress' ? 'bg-orange-50 border-orange-200' :
-                    'bg-white'
+                    'bg-white border-slate-200'
                   }`}>
                     <div className="flex items-start justify-between">
                       {getServiceStatus(assignment) === 'completed' && (
@@ -598,274 +462,156 @@ export default function WorkerDashboard() {
                               <span className={`font-medium ${getStatusColor(getServiceStatus(assignment))}`}>
                                 {getStatusIcon(getServiceStatus(assignment))} {getTodaySchedule(assignment)}
                               </span>
-                              <span className={`text-xs px-2 py-1 rounded-full ${
-                                getServiceStatus(assignment) === 'pending' ? 'bg-primary-100 text-primary-800' :
-                                getServiceStatus(assignment) === 'in-progress' ? 'bg-orange-100 text-orange-800' :
-                                'bg-green-100 text-green-800'
-                              }`}>
-                                {getServiceStatus(assignment) === 'pending' ? 'Pendiente' :
-                                 getServiceStatus(assignment) === 'in-progress' ? 'En Progreso' :
-                                 'Completado'}
-                              </span>
                             </div>
                           ) : (
-                            <ScheduleDisplay schedule={assignment.specific_schedule} showIcon={false} layout="rows" />
+                            <span className="text-slate-500">Sin horario específico</span>
                           )}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-medium text-slate-900">
-                          {assignment.assigned_hours_per_week}h/sem
-                        </div>
-                        <div className="text-xs text-slate-500 mb-2">
-                          {assignment.users?.phone}
-                        </div>
-                        <div className={`text-xs px-2 py-1 rounded-full font-medium ${
-                          getServiceStatus(assignment) === 'pending' ? 'bg-primary-100 text-primary-800' :
+                      <div className="text-right ml-4">
+                        <div className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          getServiceStatus(assignment) === 'completed' ? 'bg-green-100 text-green-800' :
                           getServiceStatus(assignment) === 'in-progress' ? 'bg-orange-100 text-orange-800' :
-                          'bg-green-100 text-green-800'
+                          getServiceStatus(assignment) === 'pending' ? 'bg-blue-100 text-blue-800' :
+                          'bg-slate-100 text-slate-800'
                         }`}>
-                          {getServiceStatus(assignment) === 'pending' ? '⏰ Pendiente' :
-                           getServiceStatus(assignment) === 'in-progress' ? '🔄 En Progreso' :
-                           '✅ Completado'}
+                          {getServiceStatus(assignment) === 'completed' && 'Completado'}
+                          {getServiceStatus(assignment) === 'in-progress' && 'En progreso'}
+                          {getServiceStatus(assignment) === 'pending' && 'Pendiente'}
+                          {getServiceStatus(assignment) === 'no-service' && 'Sin servicio'}
                         </div>
                       </div>
                     </div>
                   </div>
                 ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Estado de Horas por Usuario */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <TrendingUp className="w-5 h-5 mr-2" />
-              Estado de Horas por Usuario
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {userHoursStatus.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <User className="w-12 h-12 mx-auto mb-4 text-slate-300" />
-                <p>No tienes usuarios asignados actualmente</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {userHoursStatus.map(userStatus => (
-                  <div key={userStatus.userId} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-slate-900 text-lg">
-                          {userStatus.userName} {userStatus.userSurname}
-                        </h4>
-                        <div className="flex items-center text-sm text-slate-600 mt-1">
-                          <Users className="w-3 h-3 mr-1" />
-                          {userStatus.totalWorkers} trabajadora{userStatus.totalWorkers !== 1 ? 's' : ''} atendiendo
-                        </div>
-                        {userStatus.userAddress && (
-                          <div className="flex items-center text-sm text-slate-600 mt-1">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {userStatus.userAddress}
-                          </div>
-                        )}
-                        {userStatus.userPhone && (
-                          <div className="flex items-center text-sm text-slate-600 mt-1">
-                            <Phone className="w-3 h-3 mr-1" />
-                            {userStatus.userPhone}
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-right">
-                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                          userStatus.status === 'perfect' 
-                            ? 'bg-green-100 text-green-800' 
-                            : userStatus.status === 'excess'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-primary-100 text-primary-800'
-                        }`}>
-                          {userStatus.status === 'perfect' && <CheckCircle className="w-3 h-3 mr-1" />}
-                          {userStatus.status === 'excess' && <TrendingUp className="w-3 h-3 mr-1" />}
-                          {userStatus.status === 'deficit' && <TrendingDown className="w-3 h-3 mr-1" />}
-                          {userStatus.status === 'perfect' && 'Perfecto'}
-                          {userStatus.status === 'excess' && `+${Math.abs(userStatus.remainingHours).toFixed(1)}h`}
-                          {userStatus.status === 'deficit' && `-${Math.abs(userStatus.remainingHours).toFixed(1)}h`}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Barra de progreso */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-600">Progreso del mes</span>
-                        <span className="font-medium">
-                          {userStatus.usedHours.toFixed(1)}h / {userStatus.monthlyHours}h
-                        </span>
-                      </div>
-                      <div className="w-full bg-slate-200 rounded-full h-2">
-                        <div 
-                          className={`h-2 rounded-full transition-all ${
-                            userStatus.status === 'perfect' 
-                              ? 'bg-green-500' 
-                              : userStatus.status === 'excess'
-                              ? 'bg-red-500'
-                              : 'bg-blue-500'
-                          }`}
-                          style={{ 
-                            width: `${Math.min((userStatus.usedHours / userStatus.monthlyHours) * 100, 100)}%` 
-                          }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between text-xs text-slate-600">
-                        <span>Utilizadas: {userStatus.usedHours.toFixed(1)}h</span>
-                        <span className={
-                          userStatus.status === 'perfect' 
-                            ? 'text-green-600' 
-                            : userStatus.status === 'excess'
-                            ? 'text-red-600'
-                            : 'text-blue-600'
-                        }>
-                          {userStatus.status === 'perfect' 
-                            ? '✅ Perfecto'
-                            : userStatus.status === 'excess'
-                            ? `⚠️ Exceso: ${Math.abs(userStatus.remainingHours).toFixed(1)}h`
-                            : `📋 Faltan: ${Math.abs(userStatus.remainingHours).toFixed(1)}h`
-                          }
-                        </span>
-                      </div>
-                    </div>
-
-                                         {/* Asignaciones activas */}
-                     <div className="mt-3 pt-3 border-t border-slate-200">
-                       <div className="text-sm text-slate-600 mb-2">Horarios semanales:</div>
-                       <div className="space-y-2">
-                         {userStatus.assignments.map(assignment => {
-                           // Debug: Log para ver el formato de los datos
-//                            // console.log('ASSIGNMENT DEBUG:', {
-//                              id: assignment.id,
-//                              user: assignment.users?.name,
-//                              specific_schedule: assignment.specific_schedule
-//                            });
-                           
-                           const today = new Date();
-                           const todayDayName = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][today.getDay() === 0 ? 6 : today.getDay() - 1];
-                           
-                           return (
-                             <div key={assignment.id} className="text-xs bg-slate-50 p-2 rounded">
-                               <div className="flex justify-between items-start">
-                                 <div className="flex-1">
-                                   {assignment.specific_schedule ? (
-                                     Object.entries(assignment.specific_schedule)
-                                       .filter(([, times]) => times && times.length > 0)
-                                       .map(([day, times]) => {
-                                         const dayNames: Record<string, string> = {
-                                           monday: 'Lun', tuesday: 'Mar', wednesday: 'Mié',
-                                           thursday: 'Jue', friday: 'Vie', saturday: 'Sáb', sunday: 'Dom'
-                                         };
-                                         const isTodayDay = day === todayDayName;
-                                         // Manejar diferentes formatos de tiempo
-                                         let timeStr = '';
-                                         try {
-                                           // Debug para Jose Martínez
-                                           if (assignment.users?.name === 'Jose' && assignment.users?.surname === 'Martínez' && day === 'friday') {
-//                                              // console.log('JOSE MARTINEZ FRIDAY TIMES DEBUG:', {
-//                                                times,
-//                                                timesLength: times.length,
-//                                                timesType: typeof times[0],
-//                                                isArray: Array.isArray(times)
-//                                              });
-                                           }
-                                           
-                                           // Caso 1: Array de strings (formato antiguo) - ['08:00', '10:00']
-                                           if (times.length === 2 && typeof times[0] === 'string' && typeof times[1] === 'string') {
-                                             timeStr = `${times[0]}-${times[1]}`;
-                                           }
-                                           // Caso 2: Array de objetos {start, end} (formato nuevo) - [{start: '08:00', end: '10:00'}, {start: '13:00', end: '15:00'}]
-                                           else if (Array.isArray(times) && times.length > 0 && typeof times[0] === 'object' && times[0] !== null) {
-                                             timeStr = times.map((time: any) => {
-                                               if (time && typeof time === 'object' && 'start' in time && 'end' in time) {
-                                                 return `${time.start}-${time.end}`;
-                                               }
-                                               return 'Formato desconocido';
-                                             }).join(', ');
-                                           }
-                                           // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
-                                           else if (Array.isArray(times) && times.length > 0 && typeof times[0] === 'string') {
-                                             timeStr = times.join(', ');
-                                           }
-                                           else {
-                                             timeStr = 'Formato desconocido';
-                                           }
-                                         } catch (error) {
-                                           // console.log('ERROR PARSING TIMES:', times, error);
-                                           timeStr = 'Error en formato';
-                                         }
-                                         
-                                         return (
-                                           <div key={day} className={`${isTodayDay ? 'font-bold text-blue-600' : 'text-slate-700'}`}>
-                                             {isTodayDay ? '🕐 HOY: ' : ''}{dayNames[day]} {timeStr}
-                                           </div>
-                                         );
-                                       })
-                                   ) : (
-                                     <div className="text-slate-500">Sin horario específico</div>
-                                   )}
-                                 </div>
-                                 <div className="text-right ml-2">
-                                   <span className="font-medium text-slate-900">{assignment.assigned_hours_per_week}h/sem</span>
-                                 </div>
-                               </div>
-                             </div>
-                           );
-                         })}
-                       </div>
-                     </div>
-                  </div>
-                ))}
+              <div className="text-center py-8">
+                <div className="text-slate-400 mb-4">
+                  <Coffee className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">¡Hoy no tienes servicios!</h3>
+                <p className="text-slate-600 mb-4">
+                  Disfruta de tu día libre. Puedes revisar tu planning para ver los próximos servicios.
+                </p>
+                <Button 
+                  variant="secondary" 
+                  onClick={() => router.push("/worker/planning")}
+                  className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+                >
+                  <Calendar className="w-4 h-4 mr-2" />
+                  Ver Planning
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Acciones Rápidas */}
-        <Card>
+        {/* Estado de Horas por Usuario */}
+        {/* Balance Mensual de Horas */}
+        <Card className="sm:mx-0 -mx-4 rounded-none sm:rounded-lg">
           <CardHeader>
-            <CardTitle>Acciones Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button 
-                variant="secondary" 
-                className="w-full justify-start"
-                onClick={() => router.push("/worker/planning")}
+            <CardTitle className="flex items-center justify-between whitespace-nowrap">
+              <div className="flex items-center">
+                <BarChart3 className="w-5 h-5 mr-2" />
+                Balance Mensual de Horas
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={refetchBalances}
+                className="text-xs"
               >
-                <Calendar className="w-4 h-4 mr-2" />
-                Ver Planning Completo
+                <RotateCcw className="w-3 h-3 mr-1" />
+                Actualizar
               </Button>
-                             <Button 
-                 variant="secondary" 
-                 className="w-full justify-start"
-                 onClick={() => window.location.reload()}
-               >
-                 <RotateCcw className="w-4 h-4 mr-2" />
-                 Actualizar Datos
-               </Button>
-               {todaysAssignments.filter(a => getServiceStatus(a) === 'completed').length > 0 && (
-                 <Button 
-                   variant="secondary" 
-                   className="w-full justify-start text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                   onClick={clearCompletedServices}
-                 >
-                   <RotateCcw className="w-4 h-4 mr-2" />
-                   Limpiar Completados
-                 </Button>
-               )}
-            </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="sm:px-6 px-0">
+            {monthlyBalances.length > 0 ? (
+              <div className="space-y-4 px-2">
+                {monthlyBalances.map(balance => (
+                  <MonthlyBalanceCard
+                    key={balance.id}
+                    balance={balance}
+                    className="sm:mx-0 -mx-4"
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-slate-400 mb-4">
+                  <BarChart3 className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No hay balances mensuales</h3>
+                <p className="text-slate-600">
+                  Los balances mensuales se generan automáticamente por administración.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Información de Festivos del Mes */}
+        <Card className="sm:mx-0 -mx-4 rounded-none sm:rounded-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center whitespace-nowrap">
+              <Calendar className="w-5 h-5 mr-2" />
+              Festivos del Mes
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="sm:px-6 px-0">
+            <HolidaysInfoCard 
+              month={new Date().getMonth() + 1} 
+              year={new Date().getFullYear()} 
+            />
+          </CardContent>
+        </Card>
+
+        {/* Estado de Horas por Usuario */}
+        <Card className="sm:mx-0 -mx-4 rounded-none sm:rounded-lg">
+          <CardHeader>
+            <CardTitle className="flex items-center whitespace-nowrap">
+              <Clock className="w-5 h-5 mr-2" />
+              Estado de Horas por Usuario
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="sm:px-6 px-0">
+            {userHoursStatus.length > 0 ? (
+              <div className="space-y-4 px-2">
+                {userHoursStatus.map(userStatus => {
+                  const userReassignmentInfo = reassignmentInfo.get(userStatus.userId);
+                  return (
+                    <DetailedHoursStatusCard
+                      key={userStatus.userId}
+                      monthlyHours={userStatus.monthlyHours}
+                      usedHours={userStatus.usedHours}
+                      userName={userStatus.userName}
+                      userSurname={userStatus.userSurname}
+                      userAddress={userStatus.userAddress}
+                      userPhone={userStatus.userPhone}
+                      totalWorkers={userStatus.totalWorkers}
+                      assignments={userStatus.assignments}
+                      className="sm:mx-0 -mx-4"
+                      reassignmentInfo={userReassignmentInfo}
+                    />
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <div className="text-slate-400 mb-4">
+                  <Users className="w-16 h-16 mx-auto" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">No hay usuarios asignados</h3>
+                <p className="text-slate-600">
+                  Contacta con administración para recibir asignaciones.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
     </div>
   );
-} 
+}

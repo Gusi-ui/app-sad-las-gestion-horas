@@ -5,7 +5,135 @@ export interface Holiday {
   type: 'national' | 'regional' | 'local'
 }
 
-// Festivos nacionales de España
+// Función para obtener festivos de la base de datos usando la API
+export async function getHolidaysFromDatabase(year: number, month?: number): Promise<Holiday[]> {
+  try {
+    let url = `/api/holidays?year=${year}`;
+    if (month) url += `&month=${month}`;
+    
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    const holidays = data.holidays || [];
+    
+    return holidays.map((holiday: any) => ({
+      date: `${holiday.year}-${holiday.month.toString().padStart(2, '0')}-${holiday.day.toString().padStart(2, '0')}`,
+      name: holiday.name,
+      type: holiday.type as 'national' | 'regional' | 'local'
+    }));
+  } catch (error) {
+    console.error('Error obteniendo festivos de la API:', error);
+    return getHolidaysForYear(year); // Fallback a festivos hardcodeados
+  }
+}
+
+// Función para verificar si una fecha es festivo usando la base de datos
+export async function isHolidayFromDatabase(date: Date): Promise<boolean> {
+  try {
+    const year = date.getFullYear()
+    const month = date.getMonth() + 1
+    const day = date.getDate()
+    
+    const holidays = await getHolidaysFromDatabase(year, month)
+    const dateStr = formatDateToISO(date)
+    
+    return holidays.some(holiday => holiday.date === dateStr)
+  } catch (error) {
+    console.error('Error en isHolidayFromDatabase:', error)
+    return isHoliday(date) // Fallback a función hardcodeada
+  }
+}
+
+// Función para obtener festivos de un mes usando la base de datos
+export async function getHolidaysForMonthFromDatabase(year: number, month: number): Promise<Holiday[]> {
+  try {
+    return await getHolidaysFromDatabase(year, month)
+  } catch (error) {
+    console.error('Error en getHolidaysForMonthFromDatabase:', error)
+    return getHolidaysForMonth(year, month) // Fallback a función hardcodeada
+  }
+}
+
+// Función para calcular horas mensuales usando festivos de la base de datos
+export async function calculateMonthlyHoursFromDatabase(
+  year: number,
+  month: number,
+  weeklySchedule: { [dayOfWeek: number]: number },
+  includesHolidays: boolean = false,
+  includesWeekends: boolean = false
+): Promise<WorkDayCalculation> {
+  const totalDaysInMonth = getDaysInMonth(year, month)
+  
+  let workDays = 0
+  let weekends = 0
+  let holidayCount = 0
+  let scheduledHours = 0
+
+  // Obtener festivos de la base de datos
+  const holidays = await getHolidaysForMonthFromDatabase(year, month)
+  const holidayDates = new Set(holidays.map(h => h.date))
+
+  // Iterar por cada día del mes
+  for (let day = 1; day <= totalDaysInMonth; day++) {
+    const currentDate = new Date(year, month - 1, day)
+    const dayOfWeek = currentDate.getDay()
+    const dateStr = formatDateToISO(currentDate)
+    const isHolidayDay = holidayDates.has(dateStr)
+    const isWeekendDay = isWeekend(currentDate)
+
+    // Contar tipos de días
+    if (isWeekendDay) {
+      weekends++
+    } else if (isHolidayDay) {
+      holidayCount++
+    } else {
+      workDays++
+    }
+
+    // Calcular horas programadas para este día
+    const hoursForThisDay = weeklySchedule[dayOfWeek] || 0
+    
+    if (hoursForThisDay > 0) {
+      // Decidir si trabajar este día según configuración
+      let shouldWork = true
+      
+      if (isWeekendDay && !includesWeekends) {
+        shouldWork = false
+      }
+      
+      if (isHolidayDay && !includesHolidays) {
+        shouldWork = false
+      }
+      
+      if (shouldWork) {
+        scheduledHours += hoursForThisDay
+      }
+    }
+  }
+
+  // Calcular horas teóricas semanales
+  const weeklyHours = Object.values(weeklySchedule).reduce((sum, hours) => sum + hours, 0)
+  
+  // Calcular aproximación de horas disponibles en el mes
+  const weeksInMonth = totalDaysInMonth / 7
+  const totalAvailableHours = weeklyHours * weeksInMonth
+
+  return {
+    totalDaysInMonth,
+    workDays,
+    weekends,
+    holidays: holidayCount,
+    scheduledHours,
+    totalAvailableHours,
+    difference: scheduledHours - totalAvailableHours,
+    weeklySchedule
+  }
+}
+
+// Festivos nacionales de España (MANTENER PARA COMPATIBILIDAD)
 const nationalHolidays2024: Holiday[] = [
   { date: '2024-01-01', name: 'Año Nuevo', type: 'national' },
   { date: '2024-01-06', name: 'Epifanía del Señor', type: 'national' },
@@ -32,7 +160,7 @@ const nationalHolidays2025: Holiday[] = [
   { date: '2025-12-25', name: 'Navidad', type: 'national' }
 ]
 
-// Festivos de Cataluña
+// Festivos de Cataluña (MANTENER PARA COMPATIBILIDAD)
 const regionalHolidays2024: Holiday[] = [
   { date: '2024-04-01', name: 'Lunes de Pascua', type: 'regional' },
   { date: '2024-06-24', name: 'San Juan', type: 'regional' },
@@ -47,7 +175,7 @@ const regionalHolidays2025: Holiday[] = [
   { date: '2025-12-26', name: 'San Esteban', type: 'regional' }
 ]
 
-// Festivos locales de Mataró
+// Festivos locales de Mataró (MANTENER PARA COMPATIBILIDAD)
 const localHolidays2024: Holiday[] = [
   { date: '2024-07-22', name: 'Santa María Magdalena (Patrona)', type: 'local' },
   { date: '2024-07-23', name: 'Fiesta Mayor de Mataró', type: 'local' },
@@ -62,7 +190,7 @@ const localHolidays2025: Holiday[] = [
   { date: '2025-06-09', name: 'Lunes de Pascua Granada', type: 'local' }
 ]
 
-// Base de datos de festivos completa
+// Base de datos de festivos completa (MANTENER PARA COMPATIBILIDAD)
 const allHolidays = [
   ...nationalHolidays2024,
   ...nationalHolidays2025,
@@ -72,6 +200,7 @@ const allHolidays = [
   ...localHolidays2025
 ]
 
+// Funciones originales (MANTENER PARA COMPATIBILIDAD)
 export function getHolidaysForYear(year: number): Holiday[] {
   return allHolidays.filter(holiday => holiday.date.startsWith(year.toString()))
 }
@@ -198,8 +327,7 @@ export function getDayName(dayOfWeek: number): string {
 // Función para obtener el rango de fechas de ±1 año
 export function getAvailableDateRange(): { start: Date; end: Date } {
   const now = new Date()
-  const start = new Date(now.getFullYear() - 1, 0, 1) // 1 año atrás
-  const end = new Date(now.getFullYear() + 1, 11, 31) // 1 año adelante
-  
+  const start = new Date(now.getFullYear() - 1, 0, 1)
+  const end = new Date(now.getFullYear() + 1, 11, 31)
   return { start, end }
 } 
