@@ -1,0 +1,21 @@
+# =====================================================
+# VARIABLES DE ENTORNO - SAD LAS V2
+# =====================================================
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
+
+# App Configuration
+NEXT_PUBLIC_APP_ENV=development
+NEXT_PUBLIC_APP_VERSION=2.0.0
+
+# =====================================================
+# INSTRUCCIONES:
+# =====================================================
+# 1. Copia este archivo a .env.local
+# 2. Reemplaza los valores con los de tu proyecto Supabase
+# 3. Las claves las encontrarás en:
+#    Supabase Dashboard > Settings > API
+# ===================================================== 
