@@ -66,8 +66,8 @@ CREATE TABLE workers (
   max_monthly_hours INTEGER DEFAULT 160,
   
   -- Especializaciones
-  specializations TEXT[] DEFAULT ARRAY[],
-  certifications TEXT[] DEFAULT ARRAY[],
+  specializations TEXT[] DEFAULT '{}',
+  certifications TEXT[] DEFAULT '{}',
   
   -- Disponibilidad
   availability_days TEXT[] DEFAULT ARRAY['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
@@ -104,12 +104,12 @@ CREATE TABLE users (
   -- Información del servicio
   monthly_hours DECIMAL(5,2) DEFAULT 0,
   service_type VARCHAR(50), -- 'elderly_care', 'disability_care', 'medical_assistance'
-  special_requirements TEXT[],
+  special_requirements TEXT[] DEFAULT '{}',
   
   -- Información médica
-  medical_conditions TEXT[],
-  allergies TEXT[],
-  medications TEXT[],
+  medical_conditions TEXT[] DEFAULT '{}',
+  allergies TEXT[] DEFAULT '{}',
+  medications TEXT[] DEFAULT '{}',
   
   -- Contactos de emergencia
   emergency_contacts JSONB, -- [{"name": "...", "phone": "...", "relationship": "..."}]
@@ -250,9 +250,9 @@ CREATE TABLE system_alerts (
   description TEXT,
   
   -- Entidades afectadas
-  affected_workers UUID[],
-  affected_users UUID[],
-  affected_assignments UUID[],
+  affected_workers UUID[] DEFAULT '{}',
+  affected_users UUID[] DEFAULT '{}',
+  affected_assignments UUID[] DEFAULT '{}',
   
   -- Fechas
   alert_date DATE NOT NULL,
