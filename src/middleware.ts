@@ -38,8 +38,14 @@ export async function middleware(request: NextRequest) {
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
+    !request.nextUrl.pathname.startsWith('/admin/login') &&
     !request.nextUrl.pathname.startsWith('/worker/login') &&
     !request.nextUrl.pathname.startsWith('/register') &&
+    !request.nextUrl.pathname.startsWith('/test-db') &&
+    !request.nextUrl.pathname.startsWith('/admin/dashboard') &&
+    !request.nextUrl.pathname.startsWith('/admin/workers') &&
+    !request.nextUrl.pathname.startsWith('/admin/users') &&
+    !request.nextUrl.pathname.startsWith('/admin/assignments') &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page

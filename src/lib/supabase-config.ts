@@ -1,4 +1,4 @@
-// Configuración robusta para Supabase
+// Configuración robusta para Supabase - SAD LAS V2
 export const getSupabaseConfig = () => {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -14,6 +14,11 @@ export const getSupabaseConfig = () => {
       url: 'https://placeholder.supabase.co',
       anonKey: 'placeholder-key'
     }
+  }
+
+  // Verificar que la URL sea la correcta del nuevo proyecto
+  if (url === 'https://zvvbyasukzedsrpqpzrv.supabase.co') {
+    console.log('✅ Usando nueva base de datos SAD LAS V2')
   }
 
   return { url, anonKey }

@@ -59,7 +59,7 @@ export default function HomePage() {
             
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 sm:mb-12 px-4">
-              <Link href="/login">
+              <Link href="/admin/dashboard">
                 <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 w-full sm:w-auto">
                   <User className="w-4 h-4 sm:w-5 sm:h-5" />
                   Acceso Administración
