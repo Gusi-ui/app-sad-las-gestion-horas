@@ -18,9 +18,12 @@ export class AuthService {
         return { user: null, error: 'Cliente de Supabase no disponible' }
       }
 
+      // Normalizar email a minúsculas para consistencia
+      const normalizedEmail = credentials.email.toLowerCase().trim()
+
       // Autenticar con Supabase Auth
       const { data: authData, error: authError } = await this.supabase.auth.signInWithPassword({
-        email: credentials.email,
+        email: normalizedEmail,
         password: credentials.password,
       })
 
@@ -44,23 +47,31 @@ export class AuthService {
           created_by,
           last_login
         `)
-        .eq('email', credentials.email)
+        .eq('email', normalizedEmail)
         .eq('is_active', true)
         .single()
 
-      if (adminError || !adminData) {
+      if (adminError) {
+        return { user: null, error: 'Administrador no encontrado o inactivo' }
+      }
+
+      if (!adminData) {
         return { user: null, error: 'Administrador no encontrado o inactivo' }
       }
 
       // Obtener el rol del sistema
-      const { data: roleData } = await this.supabase
+      const { data: roleData, error: roleError } = await this.supabase
         .from('system_roles')
         .select('name')
         .eq('id', adminData.role_id)
         .single()
 
-      if (adminError || !adminData) {
-        return { user: null, error: 'Administrador no encontrado o inactivo' }
+      if (roleError) {
+        return { user: null, error: 'Error al obtener rol del administrador' }
+      }
+
+      if (!roleData) {
+        return { user: null, error: 'Rol del administrador no encontrado' }
       }
 
       // Actualizar último login
@@ -82,7 +93,7 @@ export class AuthService {
 
       return { user: adminUser, error: null }
     } catch (error) {
-      console.error('Error en loginAdmin:', error)
+      console.error('Error inesperado en loginAdmin:', error)
       return { user: null, error: 'Error interno del servidor' }
     }
   }

@@ -35,23 +35,64 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // TEMPORAL: Permitir acceso sin autenticación para desarrollo
-  // TODO: Restaurar autenticación cuando esté configurada
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/admin/login') &&
-    !request.nextUrl.pathname.startsWith('/worker/login') &&
-    !request.nextUrl.pathname.startsWith('/register') &&
-    !request.nextUrl.pathname.startsWith('/test-db') &&
-    !request.nextUrl.pathname.startsWith('/admin/') &&
-    !request.nextUrl.pathname.startsWith('/dashboard/') &&
-    request.nextUrl.pathname !== '/'
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+  // Proteger rutas que requieren autenticación
+  if (!user) {
+    // Rutas públicas que no requieren autenticación
+    const publicPaths = [
+      '/login',
+      '/admin/login',
+      '/worker/login',
+      '/register',
+      '/test-db',
+      '/'
+    ]
+    
+    const isPublicPath = publicPaths.some(path => 
+      request.nextUrl.pathname.startsWith(path)
+    )
+    
+    if (!isPublicPath) {
+      // Redirigir a login si no está autenticado
+      const url = request.nextUrl.clone()
+      url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Proteger rutas de admin (requieren rol de admin)
+  if (user && request.nextUrl.pathname.startsWith('/admin/')) {
+    // Verificar si el usuario es admin
+    const { data: adminData } = await supabase
+      .from('admins')
+      .select('id, is_active')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!adminData) {
+      // No es admin, redirigir a login
+      const url = request.nextUrl.clone()
+      url.pathname = '/admin/login'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // Proteger rutas de worker (requieren rol de worker)
+  if (user && request.nextUrl.pathname.startsWith('/worker/')) {
+    // Verificar si el usuario es worker
+    const { data: workerData } = await supabase
+      .from('workers')
+      .select('id, is_active')
+      .eq('email', user.email)
+      .eq('is_active', true)
+      .single()
+
+    if (!workerData) {
+      // No es worker, redirigir a login
+      const url = request.nextUrl.clone()
+      url.pathname = '/worker/login'
+      return NextResponse.redirect(url)
+    }
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

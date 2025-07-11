@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { 
   Home, 
   Users, 
@@ -35,10 +36,46 @@ export default function AdminLayout({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, isAuthenticated, isLoading, logout } = useAuth()
+  
+  // Si estamos en la página de login, no usar el contexto de autenticación
+  const isLoginPage = pathname === '/admin/login'
 
-  const handleLogout = () => {
-    // TODO: Implementar logout
-    console.log('Logout clicked')
+  // Redirigir si no está autenticado o no es admin (solo si no estamos en login)
+  useEffect(() => {
+    if (!isLoginPage && !isLoading && (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'super_admin'))) {
+      router.push('/admin/login')
+    }
+  }, [isLoginPage, isLoading, isAuthenticated, user, router])
+
+  const handleLogout = async () => {
+    if (logout) {
+      await logout()
+      router.push('/admin/login')
+    }
+  }
+
+  // Si estamos en la página de login, solo renderizar los children
+  if (isLoginPage) {
+    return <>{children}</>
+  }
+
+  // Mostrar loading mientras se verifica la autenticación
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-slate-600">Verificando autenticación...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // No mostrar nada si no está autenticado
+  if (!isAuthenticated || !user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+    return null
   }
 
   return (
@@ -191,8 +228,9 @@ export default function AdminLayout({
               {/* User menu */}
               <div className="flex items-center space-x-3">
                 <div className="hidden sm:flex items-center space-x-2 text-sm text-slate-600">
-                  <span>Admin</span>
+                  <span>{user?.full_name || user?.email}</span>
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-xs text-slate-500">({user?.role === 'super_admin' ? 'Super Admin' : 'Admin'})</span>
                 </div>
                 <Button
                   onClick={handleLogout}
