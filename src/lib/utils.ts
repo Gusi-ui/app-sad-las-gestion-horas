@@ -244,3 +244,283 @@ export function calculateUsedHoursUntilToday(
   
   return Math.round(totalUsedHours * 10) / 10;
 } 
+
+// =====================================================
+// VALIDACIÓN DE DNI ESPAÑOL
+// =====================================================
+
+// Letras válidas del DNI español
+const DNI_LETTERS = 'TRWAGMYFPDXBNJZSQVHLCKE'
+
+// Validar formato de DNI (8 dígitos + 1 letra)
+export function isValidDNIFormat(dni: string): boolean {
+  if (!dni) return true // Permitir vacío
+  return /^\d{8}[A-Z]$/.test(dni.trim().toUpperCase())
+}
+
+// Calcular letra de control del DNI
+export function calculateDNILetter(numbers: string): string {
+  const num = parseInt(numbers)
+  return DNI_LETTERS[num % 23]
+}
+
+// Validar DNI completo (números + letra correcta)
+export function isValidDNI(dni: string): boolean {
+  if (!dni) return true // Permitir vacío
+  
+  const cleanDNI = dni.trim().toUpperCase()
+  
+  // Verificar formato
+  if (!isValidDNIFormat(cleanDNI)) {
+    return false
+  }
+  
+  // Extraer números y letra
+  const numbers = cleanDNI.substring(0, 8)
+  const letter = cleanDNI.substring(8)
+  
+  // Calcular letra correcta
+  const correctLetter = calculateDNILetter(numbers)
+  
+  return letter === correctLetter
+}
+
+// Obtener letra correcta para un DNI
+export function getCorrectDNILetter(numbers: string): string {
+  if (!/^\d{8}$/.test(numbers)) {
+    return ''
+  }
+  return calculateDNILetter(numbers)
+}
+
+// Formatear DNI (añadir guiones, espacios, etc.)
+export function formatDNI(dni: string): string {
+  if (!dni) return ''
+  
+  const cleanDNI = dni.replace(/[^0-9A-Z]/gi, '').toUpperCase()
+  
+  if (cleanDNI.length === 8) {
+    // Solo números, añadir letra calculada
+    return `${cleanDNI}-${calculateDNILetter(cleanDNI)}`
+  } else if (cleanDNI.length === 9) {
+    // Números + letra, formatear con guión
+    return `${cleanDNI.substring(0, 8)}-${cleanDNI.substring(8)}`
+  }
+  
+  return cleanDNI
+}
+
+// =====================================================
+// VALIDACIÓN DE CÓDIGOS POSTALES ESPAÑOLES
+// =====================================================
+
+// Rangos de códigos postales por provincia
+export const POSTAL_CODE_RANGES = {
+  'Alicante': [3000, 3699],
+  'Almería': [4000, 4999],
+  'Asturias': [33000, 33999],
+  'Ávila': [5000, 5999],
+  'Badajoz': [6000, 6999],
+  'Baleares': [7000, 7999],
+  'Barcelona': [8000, 8999],
+  'Burgos': [9000, 9999],
+  'Cáceres': [10000, 10999],
+  'Cádiz': [11000, 11999],
+  'Cantabria': [39000, 39999],
+  'Castellón': [12000, 12999],
+  'Ciudad Real': [13000, 13999],
+  'Córdoba': [14000, 14999],
+  'Cuenca': [16000, 16999],
+  'Girona': [17000, 17999],
+  'Granada': [18000, 18999],
+  'Guadalajara': [19000, 19999],
+  'Guipúzcoa': [20000, 20999],
+  'Huelva': [21000, 21999],
+  'Huesca': [22000, 22999],
+  'Jaén': [23000, 23999],
+  'La Coruña': [15000, 15999],
+  'La Rioja': [26000, 26999],
+  'Las Palmas': [35000, 35999],
+  'León': [24000, 24999],
+  'Lleida': [25000, 25999],
+  'Lugo': [27000, 27999],
+  'Madrid': [28000, 28999],
+  'Málaga': [29000, 29999],
+  'Murcia': [30000, 30999],
+  'Navarra': [31000, 31999],
+  'Ourense': [32000, 32999],
+  'Palencia': [34000, 34999],
+  'Pontevedra': [36000, 36999],
+  'Salamanca': [37000, 37999],
+  'Santa Cruz de Tenerife': [38000, 38999],
+  'Segovia': [40000, 40999],
+  'Sevilla': [41000, 41999],
+  'Soria': [42000, 42999],
+  'Tarragona': [43000, 43999],
+  'Teruel': [44000, 44999],
+  'Toledo': [45000, 45999],
+  'Valencia': [46000, 46999],
+  'Valladolid': [47000, 47999],
+  'Vizcaya': [48000, 48999],
+  'Zamora': [49000, 49999],
+  'Zaragoza': [50000, 50999],
+  'Ceuta': [51000, 51999],
+  'Melilla': [52000, 52999]
+} as const
+
+// Validar formato de código postal (5 dígitos)
+export function isValidPostalCodeFormat(postalCode: string): boolean {
+  if (!postalCode) return true // Permitir vacío
+  return /^\d{5}$/.test(postalCode.trim())
+}
+
+// Validar que el código postal existe en España
+export function isValidSpanishPostalCode(postalCode: string): boolean {
+  if (!postalCode) return true // Permitir vacío
+  
+  const code = parseInt(postalCode.trim())
+  if (isNaN(code)) return false
+  
+  // Verificar que esté en algún rango válido
+  return Object.values(POSTAL_CODE_RANGES).some(([min, max]) => 
+    code >= min && code <= max
+  )
+}
+
+// Obtener provincia por código postal
+export function getProvinceByPostalCode(postalCode: string): string | null {
+  if (!postalCode) return null
+  
+  const code = parseInt(postalCode.trim())
+  if (isNaN(code)) return null
+  
+  for (const [province, [min, max]] of Object.entries(POSTAL_CODE_RANGES)) {
+    if (code >= min && code <= max) {
+      return province
+    }
+  }
+  
+  return null
+}
+
+// Validar código postal para una provincia específica
+export function isValidPostalCodeForProvince(postalCode: string, province: string): boolean {
+  if (!postalCode || !province) return true // Permitir vacío
+  
+  const code = parseInt(postalCode.trim())
+  if (isNaN(code)) return false
+  
+  const range = POSTAL_CODE_RANGES[province as keyof typeof POSTAL_CODE_RANGES]
+  if (!range) return false
+  
+  const [min, max] = range
+  return code >= min && code <= max
+}
+
+// Obtener sugerencias de códigos postales para una provincia
+export function getPostalCodeSuggestions(province: string): string[] {
+  const range = POSTAL_CODE_RANGES[province as keyof typeof POSTAL_CODE_RANGES]
+  if (!range) return []
+  
+  const [min, max] = range
+  const suggestions = []
+  
+  // Generar algunos códigos postales comunes para la provincia
+  for (let i = min; i <= Math.min(min + 99, max); i += 10) {
+    suggestions.push(i.toString().padStart(5, '0'))
+  }
+  
+  return suggestions.slice(0, 5) // Máximo 5 sugerencias
+}
+
+// Validación completa de dirección
+export function validateAddress(address: {
+  street_address?: string
+  postal_code?: string
+  city?: string
+  province?: string
+}): {
+  isValid: boolean
+  errors: {
+    street_address?: string
+    postal_code?: string
+    city?: string
+    province?: string
+  }
+} {
+  const errors: any = {}
+  
+  // Validar código postal
+  if (address.postal_code) {
+    if (!isValidPostalCodeFormat(address.postal_code)) {
+      errors.postal_code = 'El código postal debe tener 5 dígitos'
+    } else if (!isValidSpanishPostalCode(address.postal_code)) {
+      errors.postal_code = 'Código postal no válido en España'
+    } else if (address.province && !isValidPostalCodeForProvince(address.postal_code, address.province)) {
+      errors.postal_code = `El código postal no corresponde a ${address.province}`
+    }
+  }
+  
+  // Validar que si hay código postal, haya calle
+  if (address.postal_code && !address.street_address?.trim()) {
+    errors.street_address = 'La dirección es obligatoria si se especifica código postal'
+  }
+  
+  // Validar que si hay calle, haya código postal
+  if (address.street_address?.trim() && !address.postal_code) {
+    errors.postal_code = 'El código postal es obligatorio si se especifica dirección'
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  }
+}
+
+// Validación completa de trabajadora
+export function validateWorker(worker: {
+  dni?: string
+  street_address?: string
+  postal_code?: string
+  city?: string
+  province?: string
+}): {
+  isValid: boolean
+  errors: {
+    dni?: string
+    street_address?: string
+    postal_code?: string
+    city?: string
+    province?: string
+  }
+} {
+  const errors: any = {}
+  
+  // Validar DNI
+  if (worker.dni) {
+    if (!isValidDNIFormat(worker.dni)) {
+      errors.dni = 'El DNI debe tener 8 dígitos seguidos de una letra'
+    } else if (!isValidDNI(worker.dni)) {
+      const numbers = worker.dni.substring(0, 8)
+      const correctLetter = getCorrectDNILetter(numbers)
+      errors.dni = `Letra incorrecta. La letra correcta es: ${correctLetter}`
+    }
+  }
+  
+  // Validar dirección
+  const addressValidation = validateAddress({
+    street_address: worker.street_address,
+    postal_code: worker.postal_code,
+    city: worker.city,
+    province: worker.province
+  })
+  
+  if (!addressValidation.isValid) {
+    Object.assign(errors, addressValidation.errors)
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  }
+} 

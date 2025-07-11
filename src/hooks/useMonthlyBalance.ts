@@ -67,7 +67,7 @@ export function useMonthlyBalance(workerId: string | null): UseMonthlyBalanceRet
       }
 
       const data = await response.json();
-      let balancesWithReassignments = data.balances || [];
+      const balancesWithReassignments = data.balances || [];
 
       // Enriquecer balances con información de reasignaciones
       try {

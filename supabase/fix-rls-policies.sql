@@ -1,8 +1,17 @@
--- =====================================================
-// CORRECCIÓN DE POLÍTICAS RLS - SAD LAS V2
--- =====================================================
+-- Script para arreglar las políticas RLS que causan recursión infinita
+-- Primero deshabilitar RLS temporalmente para poder arreglar las políticas
 
--- Primero, eliminar todas las políticas existentes que causan recursión
+-- Deshabilitar RLS en todas las tablas
+ALTER TABLE admins DISABLE ROW LEVEL SECURITY;
+ALTER TABLE workers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE monthly_plans DISABLE ROW LEVEL SECURITY;
+ALTER TABLE service_days DISABLE ROW LEVEL SECURITY;
+ALTER TABLE holidays DISABLE ROW LEVEL SECURITY;
+ALTER TABLE system_alerts DISABLE ROW LEVEL SECURITY;
+
+-- Eliminar todas las políticas existentes
 DROP POLICY IF EXISTS "Super admin access all" ON admins;
 DROP POLICY IF EXISTS "Super admin access all workers" ON workers;
 DROP POLICY IF EXISTS "Super admin access all users" ON users;
@@ -16,43 +25,30 @@ DROP POLICY IF EXISTS "Workers can view own monthly plans" ON monthly_plans;
 DROP POLICY IF EXISTS "Workers can view own service days" ON service_days;
 DROP POLICY IF EXISTS "Workers can update own service days" ON service_days;
 
--- =====================================================
--- NUEVAS POLÍTICAS RLS SIMPLIFICADAS
--- =====================================================
+-- Habilitar RLS nuevamente
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE workers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE monthly_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE service_days ENABLE ROW LEVEL SECURITY;
+ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE system_alerts ENABLE ROW LEVEL SECURITY;
 
--- Política temporal para permitir acceso total durante desarrollo
--- (Se puede restringir más adelante cuando implementemos autenticación)
+-- Crear políticas simplificadas que no causen recursión
+-- Para desarrollo, permitir acceso completo a usuarios autenticados
+CREATE POLICY "Allow all for authenticated users" ON admins FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON workers FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON users FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON assignments FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON monthly_plans FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON service_days FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON holidays FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Allow all for authenticated users" ON system_alerts FOR ALL USING (auth.role() = 'authenticated');
 
--- Admins: Permitir acceso total temporalmente
-CREATE POLICY "admins_allow_all" ON admins FOR ALL USING (true);
-
--- Workers: Permitir acceso total temporalmente
-CREATE POLICY "workers_allow_all" ON workers FOR ALL USING (true);
-
--- Users: Permitir acceso total temporalmente
-CREATE POLICY "users_allow_all" ON users FOR ALL USING (true);
-
--- Assignments: Permitir acceso total temporalmente
-CREATE POLICY "assignments_allow_all" ON assignments FOR ALL USING (true);
-
--- Monthly plans: Permitir acceso total temporalmente
-CREATE POLICY "monthly_plans_allow_all" ON monthly_plans FOR ALL USING (true);
-
--- Service days: Permitir acceso total temporalmente
-CREATE POLICY "service_days_allow_all" ON service_days FOR ALL USING (true);
-
--- Holidays: Permitir acceso total temporalmente
-CREATE POLICY "holidays_allow_all" ON holidays FOR ALL USING (true);
-
--- System alerts: Permitir acceso total temporalmente
-CREATE POLICY "system_alerts_allow_all" ON system_alerts FOR ALL USING (true);
-
--- =====================================================
--- VERIFICACIÓN
--- =====================================================
-
--- Verificar que las políticas se crearon correctamente
-SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual 
-FROM pg_policies 
-WHERE schemaname = 'public' 
-ORDER BY tablename, policyname; 
+-- Mensaje de confirmación
+DO $$ 
+BEGIN
+    RAISE NOTICE 'Políticas RLS arregladas exitosamente!';
+    RAISE NOTICE 'Acceso completo habilitado para usuarios autenticados';
+END $$; 

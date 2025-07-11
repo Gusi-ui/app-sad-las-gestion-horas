@@ -1,44 +1,24 @@
--- Migración segura para agregar campos address y monthly_hours a la tabla users
--- Verifica si los campos existen antes de crearlos
+-- MIGRACIÓN: Ampliación de la tabla users para recoger todos los datos del formulario de usuario
+-- Ejecutar de forma segura en Supabase (no falla si ya existen los campos)
 
--- Agregar campo address solo si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'address'
-    ) THEN
-        ALTER TABLE users ADD COLUMN address TEXT;
-        RAISE NOTICE 'Campo address agregado a la tabla users';
-    ELSE
-        RAISE NOTICE 'Campo address ya existe en la tabla users';
-    END IF;
-END $$;
+ALTER TABLE users
+-- Añadir campo DNI si no existe
+ADD COLUMN IF NOT EXISTS dni TEXT,
+-- Permitir nulos en email, postal_code, service_type, notes
+ALTER COLUMN email DROP NOT NULL,
+ALTER COLUMN postal_code DROP NOT NULL,
+ALTER COLUMN service_type DROP NOT NULL,
+ALTER COLUMN notes DROP NOT NULL,
+-- Cambiar emergency_contacts a JSONB si no lo es
+ALTER COLUMN emergency_contacts TYPE JSONB USING emergency_contacts::jsonb,
+-- Añadir arrays de texto para requisitos, condiciones médicas, alergias, medicamentos
+ADD COLUMN IF NOT EXISTS special_requirements TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS medical_conditions TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS allergies TEXT[] DEFAULT '{}',
+ADD COLUMN IF NOT EXISTS medications TEXT[] DEFAULT '{}';
 
--- Agregar campo monthly_hours solo si no existe
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'monthly_hours'
-    ) THEN
-        ALTER TABLE users ADD COLUMN monthly_hours DECIMAL(5,2) DEFAULT 0 CHECK (monthly_hours >= 0);
-        RAISE NOTICE 'Campo monthly_hours agregado a la tabla users';
-    ELSE
-        RAISE NOTICE 'Campo monthly_hours ya existe en la tabla users';
-    END IF;
-END $$;
+-- Opcional: Asegurar que status siempre tiene valor por defecto
+ALTER TABLE users ALTER COLUMN status SET DEFAULT 'active';
 
--- Actualizar registros existentes para establecer un valor por defecto en monthly_hours
-UPDATE users SET monthly_hours = 0 WHERE monthly_hours IS NULL;
-
--- Verificar el resultado
-SELECT 
-    column_name, 
-    data_type, 
-    is_nullable, 
-    column_default
-FROM information_schema.columns 
-WHERE table_name = 'users' 
-AND column_name IN ('address', 'monthly_hours')
-ORDER BY column_name; 
+-- Opcional: Añadir índice único a dni si lo necesitas
+-- CREATE UNIQUE INDEX IF NOT EXISTS users_dni_unique ON users(dni) WHERE dni IS NOT NULL; 

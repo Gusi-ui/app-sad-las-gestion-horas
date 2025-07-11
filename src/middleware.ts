@@ -35,6 +35,8 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // TEMPORAL: Permitir acceso sin autenticación para desarrollo
+  // TODO: Restaurar autenticación cuando esté configurada
   if (
     !user &&
     !request.nextUrl.pathname.startsWith('/login') &&
@@ -42,10 +44,8 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/worker/login') &&
     !request.nextUrl.pathname.startsWith('/register') &&
     !request.nextUrl.pathname.startsWith('/test-db') &&
-    !request.nextUrl.pathname.startsWith('/admin/dashboard') &&
-    !request.nextUrl.pathname.startsWith('/admin/workers') &&
-    !request.nextUrl.pathname.startsWith('/admin/users') &&
-    !request.nextUrl.pathname.startsWith('/admin/assignments') &&
+    !request.nextUrl.pathname.startsWith('/admin/') &&
+    !request.nextUrl.pathname.startsWith('/dashboard/') &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page

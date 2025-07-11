@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
 export default function AdminLoginPage() {
@@ -11,7 +11,6 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   
-  const { loginAdmin } = useAuth()
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -20,13 +19,42 @@ export default function AdminLoginPage() {
     setError('')
 
     try {
-      const result = await loginAdmin(email, password)
-      
-      if (result.success) {
-        router.push('/admin/dashboard')
-      } else {
-        setError(result.error || 'Error de autenticación')
+      // Autenticar con Supabase
+      if (!supabase) {
+        setError('Error de configuración del sistema')
+        return
       }
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        setError('Credenciales incorrectas. Verifica tu email y contraseña.')
+        return
+      }
+
+      if (!data.user) {
+        setError('No se pudo obtener el usuario autenticado.')
+        return
+      }
+
+      // Verificar si es un admin
+      const { data: adminData, error: adminError } = await supabase!
+        .from('admins')
+        .select('*')
+        .eq('email', email)
+        .eq('is_active', true)
+        .single()
+
+      if (adminError || !adminData) {
+        setError('No tienes permisos para acceder al panel administrativo.')
+        return
+      }
+
+      // Redirigir al dashboard del admin
+      router.push('/admin/dashboard')
     } catch (error) {
       setError('Error interno del servidor')
     } finally {
