@@ -7,7 +7,10 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Save, Calendar, Clock, User, Users, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Save, Calendar, Clock, Users, Plus, X } from 'lucide-react'
+import ToastNotification from '@/components/ui/toast-notification'
+import { getHolidaysForYear } from '@/lib/holidayUtils'
+import AssignmentCalendar from '@/components/AssignmentCalendar'
 
 interface Assignment {
   id: string
@@ -18,35 +21,152 @@ interface Assignment {
   end_date: string | null
   weekly_hours: number
   status: string
-  priority: number
-  worker_name: string
-  worker_surname: string
-  user_name: string
-  user_surname: string
+  schedule?: any
+}
+
+interface Worker {
+  id: string
+  name: string
+  surname: string
+  email?: string
+  is_active: boolean
+}
+
+interface User {
+  id: string
+  name: string
+  surname: string
+  email?: string
+  is_active: boolean
+}
+
+interface TimeSlot {
+  start: string
+  end: string
+}
+
+interface DaySchedule {
+  enabled: boolean
+  timeSlots: TimeSlot[]
+}
+
+interface WeeklySchedule {
+  monday: DaySchedule
+  tuesday: DaySchedule
+  wednesday: DaySchedule
+  thursday: DaySchedule
+  friday: DaySchedule
+  saturday: DaySchedule
+  sunday: DaySchedule
+}
+
+interface FormData {
+  worker_id: string
+  user_id: string
+  assignment_type: 'laborables' | 'festivos' | 'flexible'
+  start_date: string
+  end_date: string
+  weekly_hours: number
+  schedule: WeeklySchedule
+}
+
+const defaultDaySchedule: DaySchedule = {
+  enabled: false,
+  timeSlots: [{ start: '08:00', end: '09:00' }]
+}
+
+const defaultWeeklySchedule: WeeklySchedule = {
+  monday: { ...defaultDaySchedule },
+  tuesday: { ...defaultDaySchedule },
+  wednesday: { ...defaultDaySchedule },
+  thursday: { ...defaultDaySchedule },
+  friday: { ...defaultDaySchedule },
+  saturday: { ...defaultDaySchedule },
+  sunday: { ...defaultDaySchedule }
 }
 
 export default function EditAssignmentPage() {
   const params = useParams()
   const router = useRouter()
+  const assignmentId = params.id as string
+  
   const [assignment, setAssignment] = useState<Assignment | null>(null)
+  const [workers, setWorkers] = useState<Worker[]>([])
+  const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [formData, setFormData] = useState({
-    assignment_type: '',
+  const [formData, setFormData] = useState<FormData>({
+    worker_id: '',
+    user_id: '',
+    assignment_type: 'laborables',
     start_date: '',
     end_date: '',
     weekly_hours: 0,
-    status: 'active',
-    priority: 1
+    schedule: defaultWeeklySchedule
+  })
+  const [toast, setToast] = useState<{
+    message: string
+    type: 'success' | 'error' | 'warning' | 'info'
+    isVisible: boolean
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
   })
 
   useEffect(() => {
-    if (params.id) {
-      fetchAssignment(params.id as string)
+    if (assignmentId) {
+      fetchData()
     }
-  }, [params.id])
+  }, [assignmentId])
 
-  const fetchAssignment = async (assignmentId: string) => {
+  // Calcular horas semanales automáticamente cuando cambia el horario
+  useEffect(() => {
+    const totalHours = calculateWeeklyHours(formData.schedule)
+    setFormData(prev => ({ ...prev, weekly_hours: totalHours }))
+  }, [formData.schedule])
+
+  const orderedDays: (keyof WeeklySchedule)[] = [
+    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
+  ]
+
+  const [holidays, setHolidays] = useState<string[]>([])
+
+  useEffect(() => {
+    // Cargar festivos del año de la asignación
+    if (formData.start_date) {
+      const year = new Date(formData.start_date).getFullYear()
+      getHolidaysForYear(year).then(festivos => {
+        setHolidays(festivos.map(f => f.date))
+      })
+    }
+  }, [formData.start_date])
+
+  function isDayDisabled(day: keyof WeeklySchedule): boolean {
+    // Obtener la fecha del primer día de la semana de la asignación
+    if (!formData.start_date) return false
+    const startDate = new Date(formData.start_date)
+    // Buscar el primer día de ese mes que sea el día de la semana correspondiente
+    const year = startDate.getFullYear()
+    const month = startDate.getMonth()
+    let date = new Date(year, month, 1)
+    while (date.getDay() !== orderedDays.indexOf(day)) {
+      date.setDate(date.getDate() + 1)
+      if (date.getMonth() !== month) break // Evitar bucle infinito
+    }
+    const dateString = date.toISOString().split('T')[0]
+    const isWeekend = day === 'saturday' || day === 'sunday'
+    const isHoliday = holidays.includes(dateString)
+    if (formData.assignment_type === 'laborables') {
+      return isWeekend || isHoliday
+    }
+    if (formData.assignment_type === 'festivos') {
+      return !(isWeekend || isHoliday)
+    }
+    return false // flexible: todos los días habilitados
+  }
+
+  const fetchData = async () => {
     if (!supabase) {
       console.error('Supabase client no disponible')
       setLoading(false)
@@ -54,80 +174,342 @@ export default function EditAssignmentPage() {
     }
 
     try {
-      const { data, error } = await supabase
+      // Fetch assignment
+      const { data: assignmentData, error: assignmentError } = await supabase
         .from('assignments')
-        .select(`
-          *,
-          workers!inner(name, surname),
-          users!inner(name, surname)
-        `)
+        .select('*')
         .eq('id', assignmentId)
         .single()
 
-      if (error) {
-        console.error('Error al cargar asignación:', error)
-        alert('Error al cargar asignación: ' + JSON.stringify(error))
-      } else {
-        const formattedData = {
-          ...data,
-          worker_name: data.workers?.name || '',
-          worker_surname: data.workers?.surname || '',
-          user_name: data.users?.name || '',
-          user_surname: data.users?.surname || ''
-        }
-        setAssignment(formattedData)
-        setFormData({
-          assignment_type: data.assignment_type || '',
-          start_date: data.start_date ? data.start_date.split('T')[0] : '',
-          end_date: data.end_date ? data.end_date.split('T')[0] : '',
-          weekly_hours: data.weekly_hours || 0,
-          status: data.status || 'active',
-          priority: data.priority || 1
+      if (assignmentError) {
+        console.error('Error al cargar asignación:', assignmentError)
+        setToast({
+          message: 'Error al cargar asignación: ' + assignmentError.message,
+          type: 'error',
+          isVisible: true
+        })
+        return
+      }
+
+      // Fetch workers
+      const { data: workersData, error: workersError } = await supabase
+        .from('workers')
+        .select('id, name, surname, email, is_active')
+        .eq('is_active', true)
+        .order('name')
+
+      if (workersError) {
+        console.error('Error al cargar trabajadoras:', workersError)
+        setToast({
+          message: `Error al cargar trabajadoras: ${workersError.message || 'Error desconocido'}`,
+          type: 'error',
+          isVisible: true
         })
       }
+
+      // Fetch users
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, surname, email, is_active')
+        .eq('is_active', true)
+        .order('name')
+
+      if (usersError) {
+        console.error('Error al cargar usuarios:', usersError)
+        setToast({
+          message: `Error al cargar usuarios: ${usersError.message || 'Error desconocido'}`,
+          type: 'error',
+          isVisible: true
+        })
+      }
+
+      setAssignment(assignmentData)
+      setWorkers(workersData || [])
+      setUsers(usersData || [])
+      
+      // Set form data
+      const schedule = assignmentData.schedule || defaultWeeklySchedule
+      setFormData({
+        worker_id: assignmentData.worker_id,
+        user_id: assignmentData.user_id,
+        assignment_type: assignmentData.assignment_type as 'laborables' | 'festivos' | 'flexible',
+        start_date: assignmentData.start_date,
+        end_date: assignmentData.end_date || '',
+        weekly_hours: assignmentData.weekly_hours,
+        schedule: schedule
+      })
     } catch (error) {
       console.error('Error inesperado:', error)
-      alert('Error inesperado: ' + JSON.stringify(error))
+      setToast({
+        message: 'Error inesperado al cargar datos',
+        type: 'error',
+        isVisible: true
+      })
     } finally {
       setLoading(false)
     }
   }
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const calculateWeeklyHours = (schedule: WeeklySchedule): number => {
+    let totalHours = 0
+    const days = Object.keys(schedule) as (keyof WeeklySchedule)[]
+    
+    days.forEach(day => {
+      if (schedule[day].enabled) {
+        schedule[day].timeSlots.forEach(slot => {
+          try {
+            const start = new Date(`2000-01-01T${slot.start}`)
+            const end = new Date(`2000-01-01T${slot.end}`)
+            
+            // Verificar que las fechas son válidas
+            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+              console.warn(`Horario inválido para ${day}: ${slot.start} - ${slot.end}`)
+              return
+            }
+            
+            const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+            
+            // Verificar que las horas son válidas
+            if (isNaN(hours) || hours < 0) {
+              console.warn(`Cálculo de horas inválido para ${day}: ${hours}`)
+              return
+            }
+            
+            totalHours += hours
+          } catch (error) {
+            console.error(`Error al calcular horas para ${day}:`, error)
+          }
+        })
+      }
+    })
+    
+    // Verificar que el total es válido
+    if (isNaN(totalHours)) {
+      console.warn('Total de horas es NaN, devolviendo 0')
+      return 0
+    }
+    
+    return Math.round(totalHours * 100) / 100 // Redondear a 2 decimales
+  }
+
+  const handleInputChange = (field: keyof FormData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
+  const handleAssignmentTypeChange = (type: 'laborables' | 'festivos' | 'flexible') => {
+    setFormData(prev => {
+      const newSchedule = { ...defaultWeeklySchedule }
+      
+      if (type === 'laborables') {
+        // Solo lunes a viernes
+        newSchedule.monday.enabled = true
+        newSchedule.tuesday.enabled = true
+        newSchedule.wednesday.enabled = true
+        newSchedule.thursday.enabled = true
+        newSchedule.friday.enabled = true
+        newSchedule.saturday.enabled = false
+        newSchedule.sunday.enabled = false
+      } else if (type === 'festivos') {
+        // Solo fines de semana
+        newSchedule.monday.enabled = false
+        newSchedule.tuesday.enabled = false
+        newSchedule.wednesday.enabled = false
+        newSchedule.thursday.enabled = false
+        newSchedule.friday.enabled = false
+        newSchedule.saturday.enabled = true
+        newSchedule.sunday.enabled = true
+      } else if (type === 'flexible') {
+        // Todos los días
+        newSchedule.monday.enabled = true
+        newSchedule.tuesday.enabled = true
+        newSchedule.wednesday.enabled = true
+        newSchedule.thursday.enabled = true
+        newSchedule.friday.enabled = true
+        newSchedule.saturday.enabled = true
+        newSchedule.sunday.enabled = true
+      }
+      
+      return {
+        ...prev,
+        assignment_type: type,
+        schedule: newSchedule
+      }
+    })
+  }
+
+  const toggleDayEnabled = (day: keyof WeeklySchedule) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [day]: {
+          ...prev.schedule[day],
+          enabled: !prev.schedule[day].enabled
+        }
+      }
+    }))
+  }
+
+  const updateTimeSlot = (day: keyof WeeklySchedule, slotIndex: number, field: 'start' | 'end', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [day]: {
+          ...prev.schedule[day],
+          timeSlots: prev.schedule[day].timeSlots.map((slot, index) =>
+            index === slotIndex ? { ...slot, [field]: value } : slot
+          )
+        }
+      }
+    }))
+  }
+
+  const addTimeSlot = (day: keyof WeeklySchedule) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [day]: {
+          ...prev.schedule[day],
+          timeSlots: [...prev.schedule[day].timeSlots, { start: '08:00', end: '09:00' }]
+        }
+      }
+    }))
+  }
+
+  const removeTimeSlot = (day: keyof WeeklySchedule, slotIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      schedule: {
+        ...prev.schedule,
+        [day]: {
+          ...prev.schedule[day],
+          timeSlots: prev.schedule[day].timeSlots.filter((_, index) => index !== slotIndex)
+        }
+      }
+    }))
+  }
+
+  const validateForm = (): string[] => {
+    const errors: string[] = []
+
+    if (!formData.worker_id) {
+      errors.push('Debes seleccionar una trabajadora')
+    }
+
+    if (!formData.user_id) {
+      errors.push('Debes seleccionar un usuario')
+    }
+
+    if (!formData.start_date) {
+      errors.push('Debes especificar una fecha de inicio')
+    }
+
+    if (formData.weekly_hours <= 0) {
+      errors.push('Debes configurar al menos un horario con horas válidas')
+    }
+
+    if (formData.end_date && new Date(formData.end_date) <= new Date(formData.start_date)) {
+      errors.push('La fecha de fin debe ser posterior a la fecha de inicio')
+    }
+
+    // Validar que al menos un día esté habilitado
+    const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled)
+    if (!hasEnabledDays) {
+      errors.push('Debes habilitar al menos un día de la semana')
+    }
+
+    return errors
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!assignment || !supabase) return
+    
+    const errors = validateForm()
+    if (errors.length > 0) {
+      setToast({
+        message: errors.join(', '),
+        type: 'error',
+        isVisible: true
+      })
+      return
+    }
 
     setSaving(true)
-    try {
-      const updateData = {
-        ...formData,
-        end_date: formData.end_date || null
-      }
 
-      const { error } = await supabase
+    try {
+      if (!supabase) {
+        throw new Error('Cliente Supabase no disponible')
+      }
+      // Log de depuración
+      console.log('[EDIT] assignment_type:', formData.assignment_type)
+      console.log('[EDIT] objeto enviado:', {
+        worker_id: formData.worker_id,
+        user_id: formData.user_id,
+        assignment_type: formData.assignment_type,
+        start_date: formData.start_date,
+        end_date: formData.end_date || null,
+        weekly_hours: formData.weekly_hours,
+        schedule: formData.schedule
+      })
+      const { data, error } = await supabase
         .from('assignments')
-        .update(updateData)
-        .eq('id', assignment.id)
+        .update({
+          worker_id: formData.worker_id,
+          user_id: formData.user_id,
+          assignment_type: formData.assignment_type,
+          start_date: formData.start_date,
+          end_date: formData.end_date || null,
+          weekly_hours: formData.weekly_hours,
+          schedule: formData.schedule
+        })
+        .eq('id', assignmentId)
+        .select()
 
       if (error) {
-        throw error
+        throw new Error(`Error de base de datos: ${error.message} (${error.code})`)
       }
 
-      alert('Asignación actualizada correctamente')
-      router.push(`/admin/assignments/${assignment.id}`)
+      if (!data || data.length === 0) {
+        throw new Error('No se pudo actualizar la asignación')
+      }
+
+      setToast({
+        message: 'Asignación actualizada correctamente',
+        type: 'success',
+        isVisible: true
+      })
+
+      // Redirect to assignments list
+      setTimeout(() => {
+        router.push('/admin/assignments')
+      }, 1500)
+
     } catch (error) {
+      console.error('Error completo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      alert('Error al actualizar asignación: ' + errorMessage)
+      setToast({
+        message: `Error al actualizar asignación: ${errorMessage}`,
+        type: 'error',
+        isVisible: true
+      })
     } finally {
       setSaving(false)
     }
+  }
+
+  const dayNames = {
+    monday: 'Lunes',
+    tuesday: 'Martes',
+    wednesday: 'Miércoles',
+    thursday: 'Jueves',
+    friday: 'Viernes',
+    saturday: 'Sábado',
+    sunday: 'Domingo'
   }
 
   if (loading) {
@@ -143,14 +525,11 @@ export default function EditAssignmentPage() {
 
   if (!assignment) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Asignación no encontrada</h1>
-          <p className="text-slate-600 mb-6">La asignación que buscas no existe o ha sido eliminada.</p>
+          <p className="text-slate-600 text-lg">Asignación no encontrada</p>
           <Link href="/admin/assignments">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button className="mt-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
               Volver a Asignaciones
             </Button>
           </Link>
@@ -160,215 +539,265 @@ export default function EditAssignmentPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center">
-          <Link href={`/admin/assignments/${assignment.id}`}>
-            <Button variant="default" className="mr-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center space-x-4">
+          <Link href="/admin/assignments">
+            <Button className="border border-slate-300 hover:bg-slate-50 bg-white text-slate-700">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
               Editar Asignación
             </h1>
-            <p className="text-slate-600">Modificar asignación #{assignment.id.slice(0, 8)}</p>
+            <p className="text-slate-600 text-sm sm:text-base">
+              Modificar información de la asignación
+            </p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit}>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Información de la Asignación */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Calendar className="w-5 h-5 mr-2" />
-                Información de la Asignación
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600">ID de Asignación</label>
-                <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                  {assignment.id}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">El ID no se puede modificar</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">Tipo de Asignación *</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Assignment Details */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+            <CardTitle className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+              Información de la Asignación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Worker Selection */}
+              <div className="space-y-2">
+                <label htmlFor="worker_id" className="text-sm font-medium text-slate-700">
+                  Trabajadora *
+                </label>
                 <select
-                  value={formData.assignment_type}
-                  onChange={(e) => handleInputChange('assignment_type', e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="worker_id"
+                  value={formData.worker_id}
+                  onChange={(e) => handleInputChange('worker_id', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   required
                 >
-                  <option value="">Seleccionar tipo</option>
-                  <option value="regular">Regular</option>
-                  <option value="temporary">Temporal</option>
-                  <option value="emergency">Emergencia</option>
-                  <option value="special">Especial</option>
+                  <option value="">Seleccionar trabajadora</option>
+                  {workers.map((worker) => (
+                    <option key={worker.id} value={worker.id}>
+                      {worker.name} {worker.surname}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-slate-600">Estado</label>
+              {/* User Selection */}
+              <div className="space-y-2">
+                <label htmlFor="user_id" className="text-sm font-medium text-slate-700">
+                  Usuario *
+                </label>
                 <select
-                  value={formData.status}
-                  onChange={(e) => handleInputChange('status', e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="user_id"
+                  value={formData.user_id}
+                  onChange={(e) => handleInputChange('user_id', e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <option value="active">Activa</option>
-                  <option value="inactive">Inactiva</option>
-                  <option value="suspended">Suspendida</option>
-                  <option value="completed">Completada</option>
+                  <option value="">Seleccionar usuario</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} {user.surname}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-slate-600">Prioridad</label>
+              {/* Assignment Type */}
+              <div className="space-y-2">
+                <label htmlFor="assignment_type" className="text-sm font-medium text-slate-700">
+                  Tipo de Asignación *
+                </label>
                 <select
-                  value={formData.priority}
-                  onChange={(e) => handleInputChange('priority', parseInt(e.target.value))}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="assignment_type"
+                  value={formData.assignment_type}
+                  onChange={(e) => handleAssignmentTypeChange(e.target.value as 'laborables' | 'festivos' | 'flexible')}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required
                 >
-                  <option value={1}>1 - Baja</option>
-                  <option value={2}>2 - Media</option>
-                  <option value={3}>3 - Alta</option>
-                  <option value={4}>4 - Crítica</option>
+                  <option value="laborables">Días Laborables (L-V)</option>
+                  <option value="festivos">Días Festivos (S-D)</option>
+                  <option value="flexible">Asignación Flexible (Todos los días)</option>
                 </select>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Fechas y Horarios */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                Fechas y Horarios
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600">Fecha de Inicio *</label>
+              {/* Assignment Calendar Preview */}
+              <div className="col-span-1 md:col-span-2">
+                <AssignmentCalendar
+                  schedule={formData.schedule}
+                  assignmentType={formData.assignment_type}
+                  startDate={formData.start_date}
+                  year={formData.start_date ? new Date(formData.start_date).getFullYear() : new Date().getFullYear()}
+                  month={formData.start_date ? new Date(formData.start_date).getMonth() + 1 : new Date().getMonth() + 1}
+                  className="mt-4"
+                />
+              </div>
+
+              {/* Weekly Hours (Read-only) */}
+              <div className="space-y-2">
+                <label htmlFor="weekly_hours" className="text-sm font-medium text-slate-700">
+                  Horas Semanales (Calculadas automáticamente)
+                </label>
                 <Input
+                  id="weekly_hours"
+                  type="number"
+                  value={isNaN(formData.weekly_hours) ? 0 : formData.weekly_hours}
+                  readOnly
+                  className="border-slate-300 bg-slate-50 text-slate-700 font-semibold"
+                  placeholder="0"
+                />
+              </div>
+
+              {/* Start Date */}
+              <div className="space-y-2">
+                <label htmlFor="start_date" className="text-sm font-medium text-slate-700">
+                  Fecha de Inicio *
+                </label>
+                <Input
+                  id="start_date"
                   type="date"
                   value={formData.start_date}
                   onChange={(e) => handleInputChange('start_date', e.target.value)}
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                   required
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-slate-600">Fecha de Fin</label>
+              {/* End Date (Optional) */}
+              <div className="space-y-2">
+                <label htmlFor="end_date" className="text-sm font-medium text-slate-700">
+                  Fecha de Fin (Opcional)
+                </label>
                 <Input
+                  id="end_date"
                   type="date"
                   value={formData.end_date}
                   onChange={(e) => handleInputChange('end_date', e.target.value)}
-                />
-                <p className="text-xs text-slate-500 mt-1">Dejar vacío para asignación indefinida</p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">Horas Semanales *</label>
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  value={formData.weekly_hours}
-                  onChange={(e) => handleInputChange('weekly_hours', parseFloat(e.target.value) || 0)}
-                  required
+                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                  min={formData.start_date}
                 />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Trabajadora Asignada */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <User className="w-5 h-5 mr-2" />
-                Trabajadora Asignada
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600">Nombre Completo</label>
-                <p className="text-slate-900 font-medium">
-                  {assignment.worker_name} {assignment.worker_surname}
-                </p>
-              </div>
+        {/* Weekly Schedule */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+            <CardTitle className="flex items-center">
+              <Clock className="w-5 h-5 mr-2 text-slate-600" />
+              Horario Semanal
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              {orderedDays.map((day) => {
+                const daySchedule = formData.schedule[day]
+                const disabled = isDayDisabled(day)
+                return (
+                  <div key={day} className={`border border-slate-200 rounded-lg p-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={daySchedule.enabled}
+                          onChange={() => toggleDayEnabled(day)}
+                          className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                          disabled={disabled}
+                        />
+                        <span className="font-medium text-slate-700">
+                          {dayNames[day]}
+                        </span>
+                      </label>
+                    </div>
+                    {daySchedule.enabled && !disabled && (
+                      <div className="space-y-2">
+                        {daySchedule.timeSlots.map((slot: TimeSlot, slotIndex: number) => (
+                          <div key={slotIndex} className="flex items-center space-x-2">
+                            <Input
+                              type="time"
+                              value={slot.start}
+                              onChange={(e) => updateTimeSlot(day, slotIndex, 'start', e.target.value)}
+                              className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                            <span className="text-slate-500">a</span>
+                            <Input
+                              type="time"
+                              value={slot.end}
+                              onChange={(e) => updateTimeSlot(day, slotIndex, 'end', e.target.value)}
+                              className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                            />
+                            {daySchedule.timeSlots.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => removeTimeSlot(day, slotIndex)}
+                                className="text-red-600 border-red-300 hover:bg-red-50"
+                              >
+                                <X className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => addTimeSlot(day)}
+                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                        >
+                          <Plus className="w-4 h-4 mr-1" />
+                          Añadir Horario
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
-              <div>
-                <label className="text-sm font-medium text-slate-600">ID de Trabajadora</label>
-                <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                  {assignment.worker_id}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">La trabajadora no se puede cambiar desde aquí</p>
-              </div>
-
-              <div className="pt-4">
-                <Link href={`/admin/workers/${assignment.worker_id}`}>
-                  <Button variant="default" size="sm">
-                    Ver Perfil de Trabajadora
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Usuario Asignado */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Users className="w-5 h-5 mr-2" />
-                Usuario Asignado
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-slate-600">Nombre Completo</label>
-                <p className="text-slate-900 font-medium">
-                  {assignment.user_name} {assignment.user_surname}
-                </p>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-600">ID de Usuario</label>
-                <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                  {assignment.user_id}
-                </p>
-                <p className="text-xs text-slate-500 mt-1">El usuario no se puede cambiar desde aquí</p>
-              </div>
-
-              <div className="pt-4">
-                <Link href={`/admin/users/${assignment.user_id}`}>
-                  <Button variant="default" size="sm">
-                    Ver Perfil de Usuario
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Botones de Acción */}
-        <div className="flex justify-end gap-4 mt-8">
-          <Link href={`/admin/assignments/${assignment.id}`}>
-            <Button variant="default" type="button">
-              Cancelar
-            </Button>
-          </Link>
-          <Button type="submit" disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Guardando...' : 'Guardar Cambios'}
+        {/* Submit Button */}
+        <div className="flex justify-end">
+          <Button
+            type="submit"
+            disabled={saving}
+            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg px-8 py-3"
+          >
+            {saving ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Guardar Cambios
+              </>
+            )}
           </Button>
         </div>
       </form>
+
+      {/* Toast Notification */}
+      <ToastNotification
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   )
 } 
