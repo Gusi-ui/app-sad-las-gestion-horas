@@ -56,6 +56,10 @@ CREATE TABLE workers (
   dni VARCHAR(20) UNIQUE,
   social_security_number VARCHAR(50),
   address TEXT,
+  street_address TEXT,
+  postal_code VARCHAR(10),
+  city VARCHAR(100) DEFAULT 'Mataró',
+  province VARCHAR(100) DEFAULT 'Barcelona',
   hire_date DATE NOT NULL DEFAULT CURRENT_DATE,
   is_active BOOLEAN DEFAULT TRUE,
   
@@ -83,7 +87,12 @@ CREATE TABLE workers (
   notes TEXT,
   created_by UUID REFERENCES admins(id),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  
+  -- Constraints para validación de dirección
+  CONSTRAINT check_postal_code_format CHECK (postal_code IS NULL OR postal_code ~ '^[0-9]{5}$'),
+  CONSTRAINT check_city_not_empty CHECK (city IS NULL OR length(trim(city)) > 0),
+  CONSTRAINT check_province_not_empty CHECK (province IS NULL OR length(trim(province)) > 0)
 );
 
 -- =====================================================

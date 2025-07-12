@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   Copy
 } from 'lucide-react'
+import { getHolidaysForYear } from '@/lib/holidayUtils'
 
 const weekDays: { key: WeekDay; label: string; short: string }[] = [
   { key: 'monday', label: 'Lunes', short: 'L' },
@@ -69,6 +70,8 @@ export default function PlanningCalendar({
   filterWorker,
   filterStatus 
 }: PlanningCalendarProps) {
+  console.log('🎯 [PLANNING] Componente PlanningCalendar renderizado')
+  
   const { assignments, isLoading, deleteAssignment, updateAssignment } = useAssignments()
   const { workers } = useWorkers()
   const { data: users } = useUsers()
@@ -83,6 +86,29 @@ export default function PlanningCalendar({
   const [showSidebar, setShowSidebar] = useState(true)
   const [selectedDay, setSelectedDay] = useState<WeekDay>('monday')
   const [deleteModalAssignment, setDeleteModalAssignment] = useState<CalendarAssignment | null>(null)
+  const [holidays, setHolidays] = useState<string[]>([])
+
+  useEffect(() => {
+    async function loadHolidays() {
+      const year = currentWeek.getFullYear()
+      const holidaysData = await getHolidaysForYear(year)
+      setHolidays(holidaysData.map(h => h.date))
+    }
+    loadHolidays()
+  }, [currentWeek])
+
+  const isHolidayOrWeekend = (date: Date) => {
+    const day = date.getDay()
+    const dateString = date.toISOString().split('T')[0]
+    const result = day === 0 || day === 6 || holidays.includes(dateString)
+    
+    // Log de depuración
+    if (result) {
+      console.log(`🔴 Día marcado como festivo/fin de semana: ${dateString} (${date.toLocaleDateString('es-ES')})`)
+    }
+    
+    return result
+  }
 
   // Get start of week (Monday)
   const getWeekStart = (date: Date) => {
@@ -130,39 +156,85 @@ export default function PlanningCalendar({
   const calendarAssignments = useMemo(() => {
     const processed: CalendarAssignment[] = []
     
+    console.log('🔍 [CALENDAR] Procesando asignaciones:', assignments.length)
+    console.log('🔍 [CALENDAR] Filtros:', { selectedWorkerFilter, selectedUserFilter, filterStatus })
+    
     assignments.forEach((assignment) => {
-      if (assignment.status !== 'active' || !assignment.specific_schedule) return
+      if (assignment.status !== 'active') return
       
       if (selectedWorkerFilter && assignment.worker_id !== selectedWorkerFilter) return
       if (selectedUserFilter && assignment.user_id !== selectedUserFilter) return
       if (filterStatus && assignment.status !== filterStatus) return
       
+      console.log(`🔍 [CALENDAR] Procesando asignación:`, {
+        id: assignment.id,
+        worker_id: assignment.worker_id,
+        assignment_type: assignment.assignment_type,
+        has_schedule: !!assignment.specific_schedule
+      })
+      
       const workerIndex = workers.findIndex(w => w.id === assignment.worker_id)
       const color = workerColors[workerIndex % workerColors.length]
       
-      Object.entries(assignment.specific_schedule).forEach(([day, times]) => {
-        if (times && times.length >= 2 && times[0] && times[1]) {
-          const startTime = times[0]
-          const endTime = times[1]
-          const duration = calculateDuration(startTime, endTime)
-          
-          processed.push({
-            ...assignment,
-            color,
-            dayOfWeek: day as WeekDay,
-            timeSlot: `${startTime}-${endTime}`,
-            duration,
-            startTime,
-            endTime,
-            topPosition: getTimePosition(startTime),
-            height: Math.max(duration * 4 * slotHeight, slotHeight) // 4 slots per hour
-          })
-        }
-      })
+      // Procesar asignaciones con horario específico (laborables)
+      if (assignment.schedule) {
+        console.log(`🔍 [CALENDAR] Procesando horario específico para asignación ${assignment.id}`)
+        Object.entries(assignment.schedule).forEach(([day, daySchedule]) => {
+          if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
+            const timeSlot = daySchedule.timeSlots[0]
+            if (timeSlot.start && timeSlot.end) {
+              const startTime = timeSlot.start
+              const endTime = timeSlot.end
+              const duration = calculateDuration(startTime, endTime)
+              
+              processed.push({
+                ...assignment,
+                color,
+                dayOfWeek: day as WeekDay,
+                timeSlot: `${startTime}-${endTime}`,
+                duration,
+                startTime,
+                endTime,
+                topPosition: getTimePosition(startTime),
+                height: Math.max(duration * 4 * slotHeight, slotHeight) // 4 slots per hour
+              })
+            }
+          }
+        })
+      }
+      
+      // Procesar asignaciones de festivos
+      if (assignment.assignment_type === 'festivos') {
+        console.log(`🔍 [CALENDAR] Procesando asignación de festivos: ${assignment.id}`)
+        // Para asignaciones de festivos, crear entradas para todos los días festivos de la semana
+        weekDates.forEach((date, index) => {
+          if (isHolidayOrWeekend(date)) {
+            const dayOfWeek = weekDays[index].key
+            const startTime = '09:00' // Hora por defecto para festivos
+            const endTime = '12:30'   // Hora por defecto para festivos
+            const duration = calculateDuration(startTime, endTime)
+            
+            console.log(`🔍 [CALENDAR] Agregando festivo para ${dayOfWeek} (${date.toISOString().split('T')[0]})`)
+            
+            processed.push({
+              ...assignment,
+              color,
+              dayOfWeek,
+              timeSlot: `${startTime}-${endTime}`,
+              duration,
+              startTime,
+              endTime,
+              topPosition: getTimePosition(startTime),
+              height: Math.max(duration * 4 * slotHeight, slotHeight)
+            })
+          }
+        })
+      }
     })
     
+    console.log(`🔍 [CALENDAR] Total de asignaciones procesadas: ${processed.length}`)
     return processed
-  }, [assignments, workers, selectedWorkerFilter, selectedUserFilter, filterStatus, timeSlots])
+  }, [assignments, workers, selectedWorkerFilter, selectedUserFilter, filterStatus, timeSlots, weekDates, weekDays])
 
   const getAssignmentsForDay = (day: WeekDay) => {
     return calendarAssignments
@@ -549,7 +621,12 @@ export default function PlanningCalendar({
                     return (
                       <div
                         key={day.key}
-                        className="p-2 sm:p-3 text-center border-r border-slate-200 last:border-r-0"
+                        className={`p-2 sm:p-3 text-center border-r border-slate-200 last:border-r-0 ${
+                          isHolidayOrWeekend(dayDate) 
+                            ? 'bg-red-200 text-red-900 font-bold' 
+                            : ''
+                        }`}
+                        title={isHolidayOrWeekend(dayDate) ? 'Festivo o fin de semana' : ''}
                       >
                         <div className="text-xs sm:text-sm font-medium text-slate-900">
                           {viewMode === 'day' ? day.label : day.short}

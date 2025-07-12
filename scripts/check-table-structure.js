@@ -1,48 +1,86 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js')
+require('dotenv').config({ path: '.env.local' })
 
-const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Error: Variables de entorno no configuradas')
+  process.exit(1)
+}
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function checkTableStructure() {
+  console.log('🔍 Verificando estructura de las tablas...\n')
+
   try {
-    // Verificar si existe la tabla workers
+    // Verificar tabla workers
+    console.log('👥 Verificando tabla workers:')
     const { data: workers, error: workersError } = await supabase
       .from('workers')
       .select('*')
-      .limit(1);
+      .limit(1)
 
     if (workersError) {
-      console.log('Error con tabla workers:', workersError.message);
+      console.error('❌ Error al verificar workers:', workersError)
     } else {
-      console.log('Tabla workers existe y es accesible');
+      console.log('✅ Tabla workers accesible')
+      if (workers && workers.length > 0) {
+        console.log('📋 Campos disponibles:', Object.keys(workers[0]))
+      }
     }
 
-    // Verificar si existe la tabla worker_profiles
-    const { data: workerProfiles, error: workerProfilesError } = await supabase
-      .from('worker_profiles')
+    // Verificar tabla users
+    console.log('\n👤 Verificando tabla users:')
+    const { data: users, error: usersError } = await supabase
+      .from('users')
       .select('*')
-      .limit(1);
+      .limit(1)
 
-    if (workerProfilesError) {
-      console.log('Error con tabla worker_profiles:', workerProfilesError.message);
+    if (usersError) {
+      console.error('❌ Error al verificar users:', usersError)
     } else {
-      console.log('Tabla worker_profiles existe y es accesible');
+      console.log('✅ Tabla users accesible')
+      if (users && users.length > 0) {
+        console.log('📋 Campos disponibles:', Object.keys(users[0]))
+      }
     }
 
-    // Listar todas las tablas disponibles
-    console.log('\nIntentando listar tablas...');
-    const { data: tables, error: tablesError } = await supabase
-      .rpc('get_tables');
+    // Verificar tabla assignments
+    console.log('\n🔗 Verificando tabla assignments:')
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('assignments')
+      .select('*')
+      .limit(1)
 
-    if (tablesError) {
-      console.log('No se pueden listar tablas directamente:', tablesError.message);
+    if (assignmentsError) {
+      console.error('❌ Error al verificar assignments:', assignmentsError)
     } else {
-      console.log('Tablas disponibles:', tables);
+      console.log('✅ Tabla assignments accesible')
+      if (assignments && assignments.length > 0) {
+        console.log('📋 Campos disponibles:', Object.keys(assignments[0]))
+      }
+    }
+
+    // Probar consulta específica que falla
+    console.log('\n🧪 Probando consulta problemática:')
+    const { data: testWorkers, error: testError } = await supabase
+      .from('workers')
+      .select('id, name, surname, email, is_active')
+      .eq('is_active', true)
+      .order('name')
+
+    if (testError) {
+      console.error('❌ Error en consulta de prueba:', testError)
+    } else {
+      console.log('✅ Consulta de prueba exitosa')
+      console.log(`📊 Trabajadoras encontradas: ${testWorkers?.length || 0}`)
     }
 
   } catch (error) {
-    console.error('Error:', error);
+    console.error('❌ Error inesperado:', error)
   }
 }
 
-checkTableStructure(); 
+checkTableStructure() 

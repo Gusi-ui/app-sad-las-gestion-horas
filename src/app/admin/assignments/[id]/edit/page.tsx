@@ -58,6 +58,7 @@ interface WeeklySchedule {
   friday: DaySchedule
   saturday: DaySchedule
   sunday: DaySchedule
+  holiday: DaySchedule // Festivos entre semana
 }
 
 interface FormData {
@@ -82,7 +83,8 @@ const defaultWeeklySchedule: WeeklySchedule = {
   thursday: { ...defaultDaySchedule },
   friday: { ...defaultDaySchedule },
   saturday: { ...defaultDaySchedule },
-  sunday: { ...defaultDaySchedule }
+  sunday: { ...defaultDaySchedule },
+  holiday: { ...defaultDaySchedule } // Festivos entre semana
 }
 
 export default function EditAssignmentPage() {
@@ -129,6 +131,16 @@ export default function EditAssignmentPage() {
   const orderedDays: (keyof WeeklySchedule)[] = [
     'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
   ]
+  const dayNames: Record<keyof WeeklySchedule, string> = {
+    monday: 'Lunes',
+    tuesday: 'Martes',
+    wednesday: 'Miércoles',
+    thursday: 'Jueves',
+    friday: 'Viernes',
+    saturday: 'Sábado',
+    sunday: 'Domingo',
+    holiday: 'Festivos entre semana'
+  }
 
   const [holidays, setHolidays] = useState<string[]>([])
 
@@ -228,7 +240,11 @@ export default function EditAssignmentPage() {
       setUsers(usersData || [])
       
       // Set form data
-      const schedule = assignmentData.schedule || defaultWeeklySchedule
+      let schedule = assignmentData.schedule || defaultWeeklySchedule
+      // Asegurar que holiday existe
+      if (!schedule.holiday) {
+        schedule = { ...schedule, holiday: { ...defaultDaySchedule } }
+      }
       setFormData({
         worker_id: assignmentData.worker_id,
         user_id: assignmentData.user_id,
@@ -502,16 +518,6 @@ export default function EditAssignmentPage() {
     }
   }
 
-  const dayNames = {
-    monday: 'Lunes',
-    tuesday: 'Martes',
-    wednesday: 'Miércoles',
-    thursday: 'Jueves',
-    friday: 'Viernes',
-    saturday: 'Sábado',
-    sunday: 'Domingo'
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -765,6 +771,66 @@ export default function EditAssignmentPage() {
                   </div>
                 )
               })}
+              {formData.assignment_type === 'festivos' && (
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="mb-2 font-semibold text-blue-700">Festivos entre semana</div>
+                  <div className="text-xs text-blue-600 mb-2">Puedes definir un horario especial para los festivos que caen entre lunes y viernes. Este horario se aplicará automáticamente a todos los festivos entre semana.</div>
+                  <div className="flex items-center space-x-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="enable_holiday"
+                      checked={formData.schedule.holiday?.enabled || false}
+                      onChange={() => toggleDayEnabled('holiday')}
+                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="enable_holiday" className="text-sm font-medium text-slate-700">
+                      Habilitar horario para festivos entre semana
+                    </label>
+                  </div>
+                  {formData.schedule.holiday?.enabled && (
+                    <div className="space-y-2">
+                      {formData.schedule.holiday.timeSlots.map((slot, slotIndex) => (
+                        <div key={slotIndex} className="flex items-center space-x-2">
+                          <Input
+                            type="time"
+                            value={slot.start}
+                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'start', e.target.value)}
+                            className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-slate-500">a</span>
+                          <Input
+                            type="time"
+                            value={slot.end}
+                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'end', e.target.value)}
+                            className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                          {formData.schedule.holiday.timeSlots.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => removeTimeSlot('holiday', slotIndex)}
+                              className="text-red-600 border-red-300 hover:bg-red-50"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => addTimeSlot('holiday')}
+                        className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                      >
+                        <Plus className="w-4 h-4 mr-1" />
+                        Añadir Horario
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

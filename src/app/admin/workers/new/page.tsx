@@ -33,8 +33,7 @@ interface WorkerFormData {
   street_address: string
   postal_code: string
   city: string
-  province: string
-  worker_type: 'regular' | 'holidays' | 'weekends' | 'flexible'
+  worker_type: 'laborables' | 'festivos' | 'flexible'
   hourly_rate: number
   hire_date: string
   availability_days: string[]
@@ -50,7 +49,6 @@ export default function NewWorkerPage() {
     street_address?: string
     postal_code?: string
     city?: string
-    province?: string
   }>({})
 
   const [formData, setFormData] = useState<WorkerFormData>({
@@ -62,9 +60,8 @@ export default function NewWorkerPage() {
     dni: '',
     street_address: '',
     postal_code: '',
-    city: 'Mataró',
-    province: 'Barcelona',
-    worker_type: 'regular',
+    city: '',
+    worker_type: 'laborables',
     hourly_rate: 12.50,
     hire_date: new Date().toISOString().split('T')[0],
     availability_days: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
@@ -122,7 +119,6 @@ export default function NewWorkerPage() {
       street_address: formData.street_address,
       postal_code: formData.postal_code,
       city: formData.city,
-      province: formData.province
     })
 
     if (!workerValidation.isValid) {
@@ -139,15 +135,34 @@ export default function NewWorkerPage() {
     }
 
     try {
+      // Preparar datos para inserción
+      const workerData = {
+        employee_code: formData.employee_code,
+        name: formData.name,
+        surname: formData.surname,
+        email: formData.email,
+        phone: formData.phone,
+        dni: formData.dni || null,
+        street_address: formData.street_address || null,
+        postal_code: formData.postal_code || null,
+        city: formData.city || null,
+        worker_type: formData.worker_type,
+        hourly_rate: formData.hourly_rate,
+        hire_date: formData.hire_date,
+        availability_days: formData.availability_days,
+        notes: formData.notes || null
+      }
+
       const { data, error } = await supabase
         .from('workers')
-        .insert([formData])
+        .insert([workerData])
         .select()
         .single()
 
       if (error) {
         console.error('Error al crear trabajadora:', error)
-        showToast(`Error al crear trabajadora: ${error.message}`, 'error')
+        console.error('Datos que se intentaron insertar:', workerData)
+        showToast(`Error al crear trabajadora: ${error.message || 'Error desconocido'}`, 'error')
         return
       }
 
@@ -165,28 +180,35 @@ export default function NewWorkerPage() {
     setFormData(prev => ({ ...prev, [field]: value }))
     
     // Validar en tiempo real para campos con validación
-    if (['dni', 'street_address', 'postal_code', 'city', 'province'].includes(field)) {
+    if (['dni', 'street_address', 'postal_code', 'city'].includes(field)) {
       const newFormData = { ...formData, [field]: value }
       const validation = validateWorker({
         dni: newFormData.dni,
         street_address: newFormData.street_address,
         postal_code: newFormData.postal_code,
         city: newFormData.city,
-        province: newFormData.province
       })
       setValidationErrors(validation.errors)
     }
+    
+    // Actualizar availability_days cuando cambie worker_type
+    if (field === 'worker_type') {
+      const newAvailabilityDays = getAvailabilityDays(value)
+      setFormData(prev => ({ ...prev, availability_days: newAvailabilityDays }))
+    }
   }
 
-  // Auto-detectar provincia por código postal
-  const handlePostalCodeChange = (postalCode: string) => {
-    handleInputChange('postal_code', postalCode)
-    
-    if (postalCode && isValidPostalCodeFormat(postalCode)) {
-      const detectedProvince = getProvinceByPostalCode(postalCode)
-      if (detectedProvince && detectedProvince !== formData.province) {
-        handleInputChange('province', detectedProvince)
-      }
+  // Añadir función para mapear worker_type a availability_days
+  const getAvailabilityDays = (workerType: string): string[] => {
+    switch (workerType) {
+      case 'laborables':
+        return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+      case 'festivos':
+        return ['saturday', 'sunday']
+      case 'flexible':
+        return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+      default:
+        return ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
     }
   }
 
@@ -327,26 +349,18 @@ export default function NewWorkerPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Calle y Número *
+                    Dirección
                   </label>
                   <input
                     type="text"
-                    required
                     value={formData.street_address}
                     onChange={(e) => handleInputChange('street_address', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.street_address 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-slate-300'
-                    }`}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Calle Mayor 123"
                   />
-                  {validationErrors.street_address && (
-                    <p className="text-sm text-red-600 mt-1">{validationErrors.street_address}</p>
-                  )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">
                       Código Postal
@@ -354,75 +368,37 @@ export default function NewWorkerPage() {
                     <input
                       type="text"
                       value={formData.postal_code}
-                      onChange={(e) => handlePostalCodeChange(e.target.value)}
-                                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.postal_code 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-slate-300'
-                    }`}
-                    placeholder="08301"
-                    pattern="[0-9]{5}"
-                    title="Código postal de 5 dígitos"
-                    maxLength={5}
-                  />
-                  {validationErrors.postal_code && (
-                    <p className="text-sm text-red-600 mt-1">{validationErrors.postal_code}</p>
-                  )}
-                  {formData.postal_code && !validationErrors.postal_code && (
-                    <p className="text-sm text-green-600 mt-1">
-                      ✅ Código postal válido para {getProvinceByPostalCode(formData.postal_code) || 'España'}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Ciudad *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.city 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-slate-300'
-                    }`}
-                    placeholder="Mataró"
-                  />
-                  {validationErrors.city && (
-                    <p className="text-sm text-red-600 mt-1">{validationErrors.city}</p>
-                  )}
+                      onChange={(e) => handleInputChange('postal_code', e.target.value)}
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        validationErrors.postal_code 
+                          ? 'border-red-300 bg-red-50' 
+                          : 'border-slate-300'
+                      }`}
+                      placeholder="08302"
+                      maxLength={5}
+                    />
+                    {validationErrors.postal_code && (
+                      <p className="text-sm text-red-600 mt-1">{validationErrors.postal_code}</p>
+                    )}
+                    {/* Validación visual: código postal y ciudad */}
+                    {formData.postal_code && formData.city && !validationErrors.postal_code && (
+                      <p className="text-xs text-green-600 mt-1">
+                        {formData.city === 'Mataró' && formData.postal_code.startsWith('083') ? '✅ Código postal válido para Mataró' : '⚠️ Revisa que el código postal corresponda a la ciudad'}
+                      </p>
+                    )}
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Provincia
-                  </label>
-                  <select
-                    value={formData.province}
-                    onChange={(e) => handleInputChange('province', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.province 
-                        ? 'border-red-300 bg-red-50' 
-                        : 'border-slate-300'
-                    }`}
-                  >
-                    {Object.keys(POSTAL_CODE_RANGES).map(province => (
-                      <option key={province} value={province}>
-                        {province}
-                      </option>
-                    ))}
-                  </select>
-                  {validationErrors.province && (
-                    <p className="text-sm text-red-600 mt-1">{validationErrors.province}</p>
-                  )}
-                  {formData.province && !validationErrors.province && formData.postal_code && (
-                    <p className="text-sm text-blue-600 mt-1">
-                      💡 Sugerencias: {getPostalCodeSuggestions(formData.province).join(', ')}
-                    </p>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">
+                      Ciudad
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.city}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Mataró"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -438,19 +414,26 @@ export default function NewWorkerPage() {
               <CardContent className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
-                    Tipo de Trabajadora *
+                    Tipo de Disponibilidad *
                   </label>
                   <select
                     required
                     value={formData.worker_type}
-                    onChange={(e) => handleInputChange('worker_type', e.target.value)}
+                    onChange={(e) => {
+                      const newType = e.target.value as 'laborables' | 'festivos' | 'flexible'
+                      handleInputChange('worker_type', newType)
+                    }}
                     className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="regular">Laborables</option>
-                    <option value="holidays">Festivos</option>
-                    <option value="weekends">Fines de semana</option>
-                    <option value="flexible">Flexible</option>
+                    <option value="laborables">Laborables (Lunes a Viernes)</option>
+                    <option value="festivos">Festivos (Fines de semana y festivos)</option>
+                    <option value="flexible">Flexible (Cualquier día)</option>
                   </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {formData.worker_type === 'laborables' && 'Disponible de lunes a viernes'}
+                    {formData.worker_type === 'festivos' && 'Disponible fines de semana y festivos'}
+                    {formData.worker_type === 'flexible' && 'Disponible todos los días de la semana'}
+                  </p>
                 </div>
 
                 <div>
@@ -493,90 +476,34 @@ export default function NewWorkerPage() {
                     placeholder="Información adicional sobre la trabajadora..."
                   />
                 </div>
-              </CardContent>
-            </Card>
 
-            {/* Disponibilidad de Días */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-indigo-600" />
-                  <span>Disponibilidad de Días</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-slate-600">
-                  Selecciona los días en los que esta trabajadora estará disponible:
-                </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { key: 'monday', label: 'Lunes', color: 'from-red-50 to-red-100' },
-                    { key: 'tuesday', label: 'Martes', color: 'from-orange-50 to-orange-100' },
-                    { key: 'wednesday', label: 'Miércoles', color: 'from-yellow-50 to-yellow-100' },
-                    { key: 'thursday', label: 'Jueves', color: 'from-green-50 to-green-100' },
-                    { key: 'friday', label: 'Viernes', color: 'from-blue-50 to-blue-100' },
-                    { key: 'saturday', label: 'Sábado', color: 'from-purple-50 to-purple-100' },
-                    { key: 'sunday', label: 'Domingo', color: 'from-pink-50 to-pink-100' }
-                  ].map((day) => (
-                    <label
-                      key={day.key}
-                      className={`relative flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                        formData.availability_days.includes(day.key)
-                          ? `bg-gradient-to-r ${day.color} border-slate-300 shadow-md`
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.availability_days.includes(day.key)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleInputChange('availability_days', [...formData.availability_days, day.key])
-                          } else {
-                            handleInputChange('availability_days', formData.availability_days.filter(d => d !== day.key))
-                          }
-                        }}
-                        className="sr-only"
-                      />
-                      <div className={`w-5 h-5 rounded border-2 mr-3 flex items-center justify-center ${
-                        formData.availability_days.includes(day.key)
-                          ? 'bg-blue-600 border-blue-600'
-                          : 'border-slate-300'
-                      }`}>
-                        {formData.availability_days.includes(day.key) && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
+                {/* Disponibilidad de Días */}
+                <div className="pt-4 border-t border-slate-200">
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">
+                          {formData.worker_type === 'laborables' && '📅 Laborables'}
+                          {formData.worker_type === 'festivos' && '🎉 Festivos'}
+                          {formData.worker_type === 'flexible' && '⭐ Flexible'}
+                        </h4>
+                        <p className="text-sm text-blue-700">
+                          {formData.worker_type === 'laborables' && 'Lunes, Martes, Miércoles, Jueves, Viernes'}
+                          {formData.worker_type === 'festivos' && 'Sábados, Domingos y festivos'}
+                          {formData.worker_type === 'flexible' && 'Todos los días de la semana'}
+                        </p>
                       </div>
-                      <span className={`font-medium ${
-                        formData.availability_days.includes(day.key) ? 'text-slate-900' : 'text-slate-700'
-                      }`}>
-                        {day.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600">
-                    <strong>Días seleccionados:</strong> {formData.availability_days.length > 0 
-                      ? formData.availability_days.map(day => {
-                          const dayNames = {
-                            monday: 'Lunes',
-                            tuesday: 'Martes', 
-                            wednesday: 'Miércoles',
-                            thursday: 'Jueves',
-                            friday: 'Viernes',
-                            saturday: 'Sábado',
-                            sunday: 'Domingo'
-                          }
-                          return dayNames[day as keyof typeof dayNames] || day
-                        }).join(', ')
-                      : 'Ningún día seleccionado'
-                    }
-                  </p>
+                      <div className="text-2xl">
+                        {formData.worker_type === 'laborables' && '🏢'}
+                        {formData.worker_type === 'festivos' && '🎊'}
+                        {formData.worker_type === 'flexible' && '⭐'}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="text-xs text-slate-500 text-center mt-2">
+                    La disponibilidad se configura automáticamente según el tipo seleccionado
+                  </div>
                 </div>
               </CardContent>
             </Card>

@@ -26,7 +26,25 @@ SET
     END
 WHERE address IS NOT NULL AND address != '';
 
--- 3. Verificar el resultado
+-- 3. Añadir constraints para validación
+ALTER TABLE workers 
+ADD CONSTRAINT check_postal_code_format 
+CHECK (postal_code IS NULL OR postal_code ~ '^[0-9]{5}$');
+
+ALTER TABLE workers 
+ADD CONSTRAINT check_city_not_empty 
+CHECK (city IS NULL OR length(trim(city)) > 0);
+
+ALTER TABLE workers 
+ADD CONSTRAINT check_province_not_empty 
+CHECK (province IS NULL OR length(trim(province)) > 0);
+
+-- 4. Crear índices para mejorar rendimiento
+CREATE INDEX IF NOT EXISTS idx_workers_postal_code ON workers(postal_code);
+CREATE INDEX IF NOT EXISTS idx_workers_city ON workers(city);
+CREATE INDEX IF NOT EXISTS idx_workers_province ON workers(province);
+
+-- 5. Verificar el resultado
 SELECT 
     column_name, 
     data_type, 
@@ -37,7 +55,7 @@ WHERE table_name = 'workers'
 AND column_name IN ('street_address', 'postal_code', 'city', 'province')
 ORDER BY column_name;
 
--- 4. Mostrar algunos ejemplos de datos migrados
+-- 6. Mostrar algunos ejemplos de datos migrados
 SELECT 
     id,
     name,

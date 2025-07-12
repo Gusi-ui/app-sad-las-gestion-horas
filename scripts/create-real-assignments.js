@@ -1,139 +1,178 @@
-const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config({ path: '.env.local' });
+const { createClient } = require('@supabase/supabase-js')
+require('dotenv').config({ path: '.env.local' })
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Error: Variables de entorno de Supabase no encontradas');
-  process.exit(1);
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error('❌ Error: Variables de entorno no configuradas')
+  process.exit(1)
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+// Datos de las asignaciones reales
+const realAssignments = [
+  {
+    worker_name: 'Rosa María Robles Muñoz',
+    user_name: 'Jose Martínez Blanquez',
+    assignment_type: 'laborables',
+    start_date: '2025-01-01',
+    end_date: null, // Sin fecha de fin (asignación continua)
+    weekly_hours: 12, // 12 horas semanales (lunes a viernes)
+    schedule: {
+      monday: { enabled: true, timeSlots: [{ start: '09:00', end: '11:00' }] },
+      tuesday: { enabled: true, timeSlots: [{ start: '09:00', end: '11:00' }] },
+      wednesday: { enabled: true, timeSlots: [{ start: '09:00', end: '11:00' }] },
+      thursday: { enabled: true, timeSlots: [{ start: '09:00', end: '11:00' }] },
+      friday: { enabled: true, timeSlots: [{ start: '09:00', end: '11:00' }] },
+      saturday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] },
+      sunday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] }
+    },
+    notes: 'Asignación principal para cuidado de discapacidad. Horario de mañana estable.'
+  },
+  {
+    worker_name: 'Graciela Petri',
+    user_name: 'Maria Caparros',
+    assignment_type: 'flexible',
+    start_date: '2025-01-01',
+    end_date: null,
+    weekly_hours: 7, // 7 horas semanales (martes y jueves)
+    schedule: {
+      monday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] },
+      tuesday: { enabled: true, timeSlots: [{ start: '10:00', end: '13:30' }] },
+      wednesday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] },
+      thursday: { enabled: true, timeSlots: [{ start: '10:00', end: '13:30' }] },
+      friday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] },
+      saturday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] },
+      sunday: { enabled: false, timeSlots: [{ start: '08:00', end: '09:00' }] }
+    },
+    notes: 'Ayuda doméstica para persona con fibromialgia. Horario flexible de mañana.'
+  }
+]
 
 async function createRealAssignments() {
+  console.log('🚀 Creando asignaciones reales entre trabajadoras y usuarios...\n')
+
   try {
-    console.log('📝 Creando asignaciones reales...\n');
-    
-    // 1. Obtener usuarios activos
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id, name, surname, monthly_hours')
-      .eq('is_active', true)
-      .order('name');
-
-    if (usersError) {
-      console.error('Error al obtener usuarios:', usersError);
-      return;
-    }
-
-    console.log(`📊 Usuarios activos encontrados: ${users.length}`);
-
-    // 2. Obtener trabajadoras
+    // Obtener trabajadoras
     const { data: workers, error: workersError } = await supabase
       .from('workers')
-      .select('id, name, surname, email, worker_type')
-      .order('name');
+      .select('id, name, surname, is_active')
+      .eq('is_active', true)
 
     if (workersError) {
-      console.error('Error al obtener trabajadoras:', workersError);
-      return;
+      console.error('❌ Error al obtener trabajadoras:', workersError)
+      return
     }
 
-    console.log(`👥 Trabajadoras encontradas: ${workers.length}`);
-    workers.forEach(worker => {
-      console.log(`   - ${worker.name} ${worker.surname} (${worker.worker_type})`);
-    });
-    console.log('');
+    // Obtener usuarios
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, surname, is_active')
+      .eq('is_active', true)
 
-    // 3. Definir asignaciones reales basándose en la información conocida
-    const realAssignments = [
-      // José Martínez Blánquez - Rosa Robles (laborable)
-      {
-        user_id: '9af4d980-414c-4e9b-8400-3f6021755d45', // José Martínez
-        worker_id: '3f6021755d45-414c-4e9b-8400-9af4d980', // Rosa Robles (ID ficticio, necesitamos el real)
-        assigned_hours_per_week: 17.5, // 3.5h × 5 días
-        specific_schedule: {
-          monday: ['08:00-09:30', '13:00-15:00'],
-          tuesday: ['08:00-09:30', '13:00-15:00'],
-          wednesday: ['08:00-09:30', '13:00-15:00'],
-          thursday: ['08:00-09:30', '13:00-15:00'],
-          friday: ['08:00-09:30', '13:00-15:00']
-        },
-        description: 'Servicio diario de lunes a viernes'
-      },
-      
-      // José Martínez Blánquez - Graciela (festivos y fines de semana)
-      {
-        user_id: '9af4d980-414c-4e9b-8400-3f6021755d45', // José Martínez
-        worker_id: 'graciela-id', // Graciela (ID ficticio, necesitamos el real)
-        assigned_hours_per_week: 4.5, // 1.5h × 3 días (sábado, domingo, festivos)
-        specific_schedule: {
-          saturday: ['08:00-09:30'],
-          sunday: ['08:00-09:30']
-        },
-        description: 'Servicio fines de semana y festivos'
-      },
+    if (usersError) {
+      console.error('❌ Error al obtener usuarios:', usersError)
+      return
+    }
 
-      // María Caparros - Trabajadora asignada
-      {
-        user_id: 'd004a547-9a2f-4a7f-94bd-3ba192306008', // María Caparros
-        worker_id: 'maria-worker-id', // Trabajadora de María (ID ficticio)
-        assigned_hours_per_week: 3.5, // 1h 45min × 2 días (martes y jueves)
-        specific_schedule: {
-          tuesday: ['08:00-09:45'],
-          thursday: ['08:00-09:45']
-        },
-        description: 'Servicio martes y jueves'
-      }
-    ];
-
-    console.log('📋 Asignaciones a crear:');
-    realAssignments.forEach((assignment, index) => {
-      console.log(`   ${index + 1}. Usuario: ${assignment.user_id}`);
-      console.log(`      Worker: ${assignment.worker_id}`);
-      console.log(`      Hours/week: ${assignment.assigned_hours_per_week}h`);
-      console.log(`      Schedule: ${JSON.stringify(assignment.specific_schedule)}`);
-    });
-    console.log('');
-
-    // 4. Verificar que los IDs de trabajadoras existen
-    console.log('🔍 Verificando IDs de trabajadoras...');
-    const workerIds = [...new Set(realAssignments.map(a => a.worker_id))];
+    console.log(`👥 Trabajadoras disponibles: ${workers.length}`)
+    workers.forEach(w => console.log(`   - ${w.name} ${w.surname}`))
     
-    for (const workerId of workerIds) {
-      if (workerId.includes('ficticio') || workerId.includes('-id')) {
-        console.log(`   ⚠️  ID ficticio encontrado: ${workerId}`);
-        console.log(`   Necesitamos el ID real de la trabajadora correspondiente`);
-      } else {
-        const worker = workers.find(w => w.id === workerId);
-        if (worker) {
-          console.log(`   ✅ ${worker.name} ${worker.surname} (${workerId})`);
-        } else {
-          console.log(`   ❌ Trabajadora no encontrada: ${workerId}`);
-        }
+    console.log(`\n👤 Usuarios disponibles: ${users.length}`)
+    users.forEach(u => console.log(`   - ${u.name} ${u.surname}`))
+    
+    console.log('\n' + '─'.repeat(80))
+
+    // Crear cada asignación
+    for (const assignment of realAssignments) {
+      console.log(`\n🔗 Creando asignación: ${assignment.worker_name} → ${assignment.user_name}`)
+      
+      // Encontrar trabajadora
+      const worker = workers.find(w => 
+        `${w.name} ${w.surname}` === assignment.worker_name
+      )
+      
+      if (!worker) {
+        console.error(`   ❌ Trabajadora no encontrada: ${assignment.worker_name}`)
+        continue
       }
+
+      // Encontrar usuario
+      const user = users.find(u => 
+        `${u.name} ${u.surname}` === assignment.user_name
+      )
+      
+      if (!user) {
+        console.error(`   ❌ Usuario no encontrado: ${assignment.user_name}`)
+        continue
+      }
+
+      // Verificar si ya existe la asignación
+      const { data: existingAssignment } = await supabase
+        .from('assignments')
+        .select('id')
+        .eq('worker_id', worker.id)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .single()
+
+      if (existingAssignment) {
+        console.log(`   ⚠️ Asignación ya existe entre ${assignment.worker_name} y ${assignment.user_name}`)
+        continue
+      }
+
+      // Crear la asignación
+      const { data: newAssignment, error: createError } = await supabase
+        .from('assignments')
+        .insert({
+          worker_id: worker.id,
+          user_id: user.id,
+          assignment_type: assignment.assignment_type,
+          start_date: assignment.start_date,
+          end_date: assignment.end_date,
+          weekly_hours: assignment.weekly_hours,
+          schedule: assignment.schedule,
+          status: 'active',
+          priority: 2,
+          notes: assignment.notes
+        })
+        .select()
+        .single()
+
+      if (createError) {
+        console.error(`   ❌ Error al crear asignación:`, createError)
+        continue
+      }
+
+      console.log(`   ✅ Asignación creada correctamente`)
+      console.log(`      📅 Tipo: ${assignment.assignment_type}`)
+      console.log(`      ⏰ Horas semanales: ${assignment.weekly_hours}h`)
+      console.log(`      🗓️ Fecha inicio: ${assignment.start_date}`)
+      console.log(`      📝 Notas: ${assignment.notes}`)
+      
+      // Mostrar horario detallado
+      const enabledDays = Object.entries(assignment.schedule)
+        .filter(([day, config]) => config.enabled)
+        .map(([day, config]) => {
+          const dayNames = {
+            monday: 'Lunes', tuesday: 'Martes', wednesday: 'Miércoles',
+            thursday: 'Jueves', friday: 'Viernes', saturday: 'Sábado', sunday: 'Domingo'
+          }
+          const timeSlots = config.timeSlots.map(slot => `${slot.start}-${slot.end}`).join(', ')
+          return `${dayNames[day]}: ${timeSlots}`
+        })
+      
+      console.log(`      📋 Horario: ${enabledDays.join(', ')}`)
     }
-    console.log('');
 
-    // 5. Mostrar trabajadoras disponibles para asignar
-    console.log('👥 Trabajadoras disponibles:');
-    workers.forEach((worker, index) => {
-      console.log(`   ${index + 1}. ${worker.name} ${worker.surname}`);
-      console.log(`      ID: ${worker.id}`);
-      console.log(`      Email: ${worker.email}`);
-      console.log(`      Type: ${worker.worker_type}`);
-      console.log('');
-    });
+    console.log('\n🎉 Proceso de creación de asignaciones completado!')
+    console.log('💡 Ejecuta "node scripts/check-assignments.js" para verificar los resultados')
 
-    console.log('💡 Para continuar, necesitamos:');
-    console.log('   1. Los IDs reales de las trabajadoras');
-    console.log('   2. Confirmar los horarios exactos de cada asignación');
-    console.log('   3. Verificar que las horas semanales son correctas');
-
-  } catch (err) {
-    console.error('❌ Error inesperado:', err);
+  } catch (error) {
+    console.error('❌ Error inesperado:', error)
   }
 }
 
-createRealAssignments(); 
+createRealAssignments() 

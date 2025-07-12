@@ -57,20 +57,13 @@ export default function HomePage() {
               diseñada específicamente para servicios de ayuda a domicilio.
             </p>
             
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center mb-8 sm:mb-12 px-4">
-              <Link href="/admin/dashboard">
-                <Button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 w-full sm:w-auto">
-                  <User className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Acceso Administración
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </Link>
-              <Link href="/worker/login">
-                <Button variant="secondary" className="border-2 border-green-200 text-green-700 hover:bg-green-50 px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 w-full sm:w-auto">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                  Acceso Trabajadoras
-                  <ArrowRight className="w-4 h-4" />
+            {/* CTA Button */}
+            <div className="flex justify-center items-center mb-8 sm:mb-12 px-4">
+              <Link href="/login">
+                <Button className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-8 sm:px-10 py-4 sm:py-5 text-lg sm:text-xl font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-3 w-full sm:w-auto">
+                  <Shield className="w-5 h-5 sm:w-6 sm:h-6" />
+                  Acceso al Sistema
+                  <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6" />
                 </Button>
               </Link>
             </div>

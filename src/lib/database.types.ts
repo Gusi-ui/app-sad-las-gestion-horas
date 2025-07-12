@@ -56,6 +56,10 @@ export interface Database {
           dni: string | null
           social_security_number: string | null
           address: string | null
+          street_address: string | null
+          postal_code: string | null
+          city: string | null
+          province: string | null
           hire_date: string
           is_active: boolean
           worker_type: string
@@ -86,6 +90,10 @@ export interface Database {
           dni?: string | null
           social_security_number?: string | null
           address?: string | null
+          street_address?: string | null
+          postal_code?: string | null
+          city?: string | null
+          province?: string | null
           hire_date?: string
           is_active?: boolean
           worker_type: string
@@ -116,6 +124,10 @@ export interface Database {
           dni?: string | null
           social_security_number?: string | null
           address?: string | null
+          street_address?: string | null
+          postal_code?: string | null
+          city?: string | null
+          province?: string | null
           hire_date?: string
           is_active?: boolean
           worker_type?: string

@@ -1,63 +1,73 @@
-const { createClient } = require('@supabase/supabase-js')
-require('dotenv').config({ path: '.env.local' })
+const { createClient } = require('@supabase/supabase-js');
+require('dotenv').config({ path: '.env.local' });
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// Configuración de Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('❌ Variables de entorno faltantes')
-  process.exit(1)
+  console.error('❌ Error: Faltan las variables de entorno de Supabase');
+  console.error('Asegúrate de tener un archivo .env.local con:');
+  console.error('- NEXT_PUBLIC_SUPABASE_URL');
+  console.error('- SUPABASE_SERVICE_ROLE_KEY');
+  process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey)
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkAssignmentsStructure() {
-  console.log('🔍 Verificando estructura de la tabla assignments...\n')
-
   try {
-    // Obtener una muestra de datos para ver la estructura
-    const { data, error } = await supabase
+    console.log('🔍 Verificando estructura de la tabla assignments...');
+    
+    // Obtener información de la tabla
+    const { data: tableInfo, error: tableError } = await supabase.rpc('exec_sql', {
+      sql: `
+        SELECT column_name, data_type, is_nullable, column_default
+        FROM information_schema.columns 
+        WHERE table_name = 'assignments' 
+        ORDER BY ordinal_position;
+      `
+    });
+
+    if (tableError) {
+      console.error('❌ Error al obtener estructura de la tabla:', tableError);
+      return;
+    }
+
+    console.log('📋 Estructura actual de la tabla assignments:');
+    console.log('='.repeat(60));
+    tableInfo.forEach(column => {
+      console.log(`  ${column.column_name.padEnd(20)} | ${column.data_type.padEnd(15)} | ${column.is_nullable.padEnd(8)} | ${column.column_default || 'NULL'}`);
+    });
+    console.log('='.repeat(60));
+
+    // Verificar si assignment_type ya existe
+    const hasAssignmentType = tableInfo.some(col => col.column_name === 'assignment_type');
+    console.log(`\n🔍 ¿Existe assignment_type? ${hasAssignmentType ? '✅ Sí' : '❌ No'}`);
+
+    // Mostrar algunas asignaciones de ejemplo
+    console.log('\n📊 Muestra de asignaciones existentes:');
+    const { data: assignments, error: selectError } = await supabase
       .from('assignments')
       .select('*')
-      .limit(1)
+      .limit(3);
 
-    if (error) {
-      console.error('❌ Error al consultar assignments:', error)
-      return
+    if (selectError) {
+      console.error('❌ Error al obtener asignaciones:', selectError);
+      return;
     }
 
-    if (data && data.length > 0) {
-      console.log('📋 Estructura de la tabla assignments:')
-      const assignment = data[0]
-      Object.keys(assignment).forEach(key => {
-        console.log(`   - ${key}: ${typeof assignment[key]} = ${assignment[key]}`)
-      })
-    } else {
-      console.log('📋 La tabla assignments está vacía')
-    }
-
-    // Intentar obtener todas las asignaciones con campos básicos
-    console.log('\n📊 Datos de asignaciones (campos básicos):')
-    const { data: basicData, error: basicError } = await supabase
-      .from('assignments')
-      .select('id, worker_id, user_id, status, created_at')
-      .order('created_at', { ascending: false })
-
-    if (basicError) {
-      console.error('❌ Error al cargar datos básicos:', basicError)
-    } else {
-      console.log(`✅ Total de asignaciones: ${basicData?.length || 0}`)
-      if (basicData && basicData.length > 0) {
-        console.log('📋 Últimas 3 asignaciones:')
-        basicData.slice(0, 3).forEach(assignment => {
-          console.log(`   - ID: ${assignment.id}, Worker: ${assignment.worker_id}, User: ${assignment.user_id}, Status: ${assignment.status}`)
-        })
-      }
-    }
+    assignments.forEach((assignment, index) => {
+      console.log(`\n  Asignación ${index + 1}:`);
+      Object.entries(assignment).forEach(([key, value]) => {
+        console.log(`    ${key}: ${value}`);
+      });
+    });
 
   } catch (error) {
-    console.error('❌ Error inesperado:', error)
+    console.error('❌ Error general:', error);
   }
 }
 
-checkAssignmentsStructure() 
+// Ejecutar la verificación
+checkAssignmentsStructure(); 

@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Edit, Calendar, Clock, User, Users, AlertTriangle, Star } from 'lucide-react'
+import { ArrowLeft, Calendar, Clock, Users, MapPin, Phone, Mail, Edit, Trash2, RotateCcw } from 'lucide-react'
+import ConfirmModal from '@/components/ui/confirm-modal'
+import ToastNotification from '@/components/ui/toast-notification'
 
 interface Assignment {
   id: string
@@ -17,27 +19,43 @@ interface Assignment {
   end_date: string | null
   weekly_hours: number
   status: string
-  priority: number
-  created_at: string
   worker_name: string
   worker_surname: string
+  worker_email: string
+  worker_phone: string
+  worker_address: string
   user_name: string
   user_surname: string
+  user_email: string
+  user_phone: string
+  user_address: string
 }
 
 export default function AssignmentDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const assignmentId = params.id as string
+  
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [loading, setLoading] = useState(true)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string
+    type: 'success' | 'error' | 'warning' | 'info'
+    isVisible: boolean
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  })
 
   useEffect(() => {
-    if (params.id) {
-      fetchAssignment(params.id as string)
+    if (assignmentId) {
+      fetchAssignment()
     }
-  }, [params.id])
+  }, [assignmentId])
 
-  const fetchAssignment = async (assignmentId: string) => {
+  const fetchAssignment = async () => {
     if (!supabase) {
       console.error('Supabase client no disponible')
       setLoading(false)
@@ -48,32 +66,175 @@ export default function AssignmentDetailPage() {
       const { data, error } = await supabase
         .from('assignments')
         .select(`
-          *,
-          workers!inner(name, surname),
-          users!inner(name, surname)
+          id,
+          worker_id,
+          user_id,
+          assignment_type,
+          start_date,
+          end_date,
+          weekly_hours,
+          status,
+          workers!inner(
+            name,
+            surname,
+            email,
+            phone,
+            address
+          ),
+          users!inner(
+            name,
+            surname,
+            email,
+            phone,
+            address
+          )
         `)
         .eq('id', assignmentId)
         .single()
 
       if (error) {
         console.error('Error al cargar asignación:', error)
-        alert('Error al cargar asignación: ' + JSON.stringify(error))
+        setToast({
+          message: 'Error al cargar asignación: ' + error.message,
+          type: 'error',
+          isVisible: true
+        })
       } else {
-        const formattedData = {
-          ...data,
-          worker_name: data.workers?.name || '',
-          worker_surname: data.workers?.surname || '',
-          user_name: data.users?.name || '',
-          user_surname: data.users?.surname || ''
+        const formattedData: Assignment = {
+          id: data.id,
+          worker_id: data.worker_id,
+          user_id: data.user_id,
+          assignment_type: data.assignment_type,
+          start_date: data.start_date,
+          end_date: data.end_date,
+          weekly_hours: data.weekly_hours,
+          status: data.status,
+          worker_name: (data.workers as any)?.name || '',
+          worker_surname: (data.workers as any)?.surname || '',
+          worker_email: (data.workers as any)?.email || '',
+          worker_phone: (data.workers as any)?.phone || '',
+          worker_address: (data.workers as any)?.address || '',
+          user_name: (data.users as any)?.name || '',
+          user_surname: (data.users as any)?.surname || '',
+          user_email: (data.users as any)?.email || '',
+          user_phone: (data.users as any)?.phone || '',
+          user_address: (data.users as any)?.address || ''
         }
+        
         setAssignment(formattedData)
       }
     } catch (error) {
       console.error('Error inesperado:', error)
-      alert('Error inesperado: ' + JSON.stringify(error))
+      setToast({
+        message: 'Error inesperado al cargar asignación',
+        type: 'error',
+        isVisible: true
+      })
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleDeleteAssignment = async () => {
+    if (!supabase || !assignment) return
+    try {
+      const { error } = await supabase.from('assignments').delete().eq('id', assignment.id)
+      if (error) throw error
+      setToast({
+        message: 'Asignación eliminada correctamente',
+        type: 'success',
+        isVisible: true
+      })
+      router.push('/admin/assignments')
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setToast({
+        message: 'Error al eliminar asignación: ' + errorMessage,
+        type: 'error',
+        isVisible: true
+      })
+    }
+  }
+
+  const handleToggleStatus = async () => {
+    if (!supabase || !assignment) {
+      setToast({
+        message: 'Error: Cliente Supabase no disponible',
+        type: 'error',
+        isVisible: true
+      })
+      return
+    }
+    
+    try {
+      const newStatus = assignment.status === 'active' ? 'cancelled' : 'active'
+      
+      const { data, error } = await supabase
+        .from('assignments')
+        .update({ status: newStatus })
+        .eq('id', assignment.id)
+        .select()
+
+      if (error) {
+        throw new Error(`Error de base de datos: ${error.message} (${error.code})`)
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('No se encontró la asignación para actualizar')
+      }
+      
+      setAssignment({ ...assignment, status: newStatus })
+      
+      setToast({
+        message: `Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`,
+        type: 'success',
+        isVisible: true
+      })
+    } catch (error) {
+      console.error('Error completo:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setToast({
+        message: `Error al actualizar estado: ${errorMessage}`,
+        type: 'error',
+        isVisible: true
+      })
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Activa'
+      case 'cancelled':
+        return 'Cancelada'
+      default:
+        return status
+    }
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+      case 'cancelled':
+        return 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+      default:
+        return 'bg-gradient-to-r from-slate-500 to-slate-600 text-white'
+    }
+  }
+
+  const getInitials = (name: string, surname: string) => {
+    const nameInitial = name?.trim()?.charAt(0)?.toUpperCase() || 'A'
+    const surnameInitial = surname?.trim()?.charAt(0)?.toUpperCase() || ''
+    return nameInitial + surnameInitial
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
   }
 
   if (loading) {
@@ -89,14 +250,11 @@ export default function AssignmentDetailPage() {
 
   if (!assignment) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Asignación no encontrada</h1>
-          <p className="text-slate-600 mb-6">La asignación que buscas no existe o ha sido eliminada.</p>
+          <p className="text-slate-600 text-lg">Asignación no encontrada</p>
           <Link href="/admin/assignments">
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
+            <Button className="mt-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700">
               Volver a Asignaciones
             </Button>
           </Link>
@@ -106,203 +264,214 @@ export default function AssignmentDetailPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center space-x-4">
           <Link href="/admin/assignments">
-            <Button variant="default" className="mr-4">
+            <Button className="border border-slate-300 hover:bg-slate-50 bg-white text-slate-700">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Volver
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Asignación #{assignment.id.slice(0, 8)}
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
+              Detalle de Asignación
             </h1>
-            <p className="text-slate-600">Detalles de la asignación</p>
+            <p className="text-slate-600 text-sm sm:text-base">
+              Información completa de la asignación
+            </p>
           </div>
         </div>
-        <Link href={`/admin/assignments/${assignment.id}/edit`}>
-          <Button className="bg-blue-600 hover:bg-blue-700">
-            <Edit className="w-4 h-4 mr-2" />
-            Editar Asignación
+        <div className="flex gap-3">
+          <Link href={`/admin/assignments/${assignment.id}/edit`}>
+            <Button className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg">
+              <Edit className="w-4 h-4 mr-2" />
+              Editar
+            </Button>
+          </Link>
+          <Button
+            onClick={handleToggleStatus}
+            className="bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 shadow-lg"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            {assignment.status === 'active' ? 'Cancelar' : 'Activar'}
           </Button>
-        </Link>
+          <Button
+            onClick={() => setShowDeleteModal(true)}
+            className="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Eliminar
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Información de la Asignación */}
-        <Card>
-          <CardHeader>
+      {/* Assignment Info */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+            Información de la Asignación
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Assignment Details */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-600">Tipo de Asignación:</span>
+                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md">
+                  {assignment.assignment_type}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-600">Estado:</span>
+                <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-bold shadow-md ${getStatusColor(assignment.status)}`}>
+                  {getStatusLabel(assignment.status)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-600">Fecha de Inicio:</span>
+                <span className="text-slate-900 font-medium">{formatDate(assignment.start_date)}</span>
+              </div>
+              {assignment.end_date && (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-slate-600">Fecha de Fin:</span>
+                  <span className="text-slate-900 font-medium">{formatDate(assignment.end_date)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-slate-600">Horas Semanales:</span>
+                <span className="text-slate-900 font-medium">{assignment.weekly_hours} horas</span>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6">
+              <h3 className="text-lg font-semibold text-slate-900 mb-4">Resumen</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Duración:</span>
+                  <span className="text-slate-900 font-medium">
+                    {assignment.end_date ? 
+                      `${Math.ceil((new Date(assignment.end_date).getTime() - new Date(assignment.start_date).getTime()) / (1000 * 60 * 60 * 24 * 7))} semanas` : 
+                      'Sin fecha de fin'
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Total Horas:</span>
+                  <span className="text-slate-900 font-medium">
+                    {assignment.end_date ? 
+                      `${Math.ceil((new Date(assignment.end_date).getTime() - new Date(assignment.start_date).getTime()) / (1000 * 60 * 60 * 24 * 7)) * assignment.weekly_hours} horas` : 
+                      'Indefinido'
+                    }
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Worker and User Information */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Worker Card */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-100 border-b border-blue-200">
             <CardTitle className="flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Información de la Asignación
+              <Users className="w-5 h-5 mr-2 text-blue-600" />
+              Trabajadora
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-600">ID de Asignación</label>
-              <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                {assignment.id}
-              </p>
+          <CardContent className="p-6">
+            <div className="flex items-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4 shadow-lg">
+                {getInitials(assignment.worker_name, assignment.worker_surname)}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {assignment.worker_name} {assignment.worker_surname}
+                </h3>
+                <p className="text-slate-600">Trabajadora asignada</p>
+              </div>
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Tipo de Asignación</label>
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-semibold">
-                {assignment.assignment_type}
-              </span>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Estado</label>
-              <span className={assignment.status === 'active' ? 'bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-semibold' : 'bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-semibold'}>
-                {assignment.status === 'active' ? 'Activa' : 'Inactiva'}
-              </span>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Prioridad</label>
-              <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded text-xs font-semibold">
-                {assignment.priority}
-              </span>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Fecha de Creación</label>
-              <p className="text-slate-900">
-                {new Date(assignment.created_at).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
+            
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <Mail className="w-4 h-4 text-slate-400 mr-3" />
+                <span className="text-slate-700">{assignment.worker_email}</span>
+              </div>
+              <div className="flex items-center">
+                <Phone className="w-4 h-4 text-slate-400 mr-3" />
+                <span className="text-slate-700">{assignment.worker_phone}</span>
+              </div>
+              <div className="flex items-start">
+                <MapPin className="w-4 h-4 text-slate-400 mr-3 mt-1" />
+                <span className="text-slate-700">{assignment.worker_address}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Fechas y Horarios */}
-        <Card>
-          <CardHeader>
+        {/* User Card */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-100 border-b border-green-200">
             <CardTitle className="flex items-center">
-              <Clock className="w-5 h-5 mr-2" />
-              Fechas y Horarios
+              <Users className="w-5 h-5 mr-2 text-green-600" />
+              Usuario
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-600">Fecha de Inicio</label>
-              <p className="text-slate-900">
-                {new Date(assignment.start_date).toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}
-              </p>
+          <CardContent className="p-6">
+            <div className="flex items-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white font-bold text-xl mr-4 shadow-lg">
+                {getInitials(assignment.user_name, assignment.user_surname)}
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {assignment.user_name} {assignment.user_surname}
+                </h3>
+                <p className="text-slate-600">Usuario asignado</p>
+              </div>
             </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Fecha de Fin</label>
-              <p className="text-slate-900">
-                {assignment.end_date 
-                  ? new Date(assignment.end_date).toLocaleDateString('es-ES', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })
-                  : 'Sin fecha de fin (indefinida)'
-                }
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Horas Semanales</label>
-              <p className="text-slate-900 font-semibold text-lg">
-                {assignment.weekly_hours} horas/semana
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">Duración Estimada</label>
-              <p className="text-slate-900">
-                {assignment.end_date 
-                  ? `${Math.ceil((new Date(assignment.end_date).getTime() - new Date(assignment.start_date).getTime()) / (1000 * 60 * 60 * 24 * 7))} semanas`
-                  : 'Duración indefinida'
-                }
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Trabajadora Asignada */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <User className="w-5 h-5 mr-2" />
-              Trabajadora Asignada
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-600">Nombre Completo</label>
-              <p className="text-slate-900 font-medium">
-                {assignment.worker_name} {assignment.worker_surname}
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">ID de Trabajadora</label>
-              <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                {assignment.worker_id}
-              </p>
-            </div>
-
-            <div className="pt-4">
-              <Link href={`/admin/workers/${assignment.worker_id}`}>
-                <Button variant="default" size="sm">
-                  Ver Perfil de Trabajadora
-                </Button>
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Usuario Asignado */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Users className="w-5 h-5 mr-2" />
-              Usuario Asignado
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-slate-600">Nombre Completo</label>
-              <p className="text-slate-900 font-medium">
-                {assignment.user_name} {assignment.user_surname}
-              </p>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-slate-600">ID de Usuario</label>
-              <p className="text-slate-900 font-mono bg-slate-100 px-2 py-1 rounded text-sm">
-                {assignment.user_id}
-              </p>
-            </div>
-
-            <div className="pt-4">
-              <Link href={`/admin/users/${assignment.user_id}`}>
-                <Button variant="default" size="sm">
-                  Ver Perfil de Usuario
-                </Button>
-              </Link>
+            
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <Mail className="w-4 h-4 text-slate-400 mr-3" />
+                <span className="text-slate-700">{assignment.user_email}</span>
+              </div>
+              <div className="flex items-center">
+                <Phone className="w-4 h-4 text-slate-400 mr-3" />
+                <span className="text-slate-700">{assignment.user_phone}</span>
+              </div>
+              <div className="flex items-start">
+                <MapPin className="w-4 h-4 text-slate-400 mr-3 mt-1" />
+                <span className="text-slate-700">{assignment.user_address}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Confirm Delete Modal */}
+      <ConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        onConfirm={handleDeleteAssignment}
+        title="Eliminar Asignación"
+        message="¿Estás seguro de que quieres eliminar esta asignación? Esta acción no se puede deshacer."
+        confirmText="Eliminar"
+        cancelText="Cancelar"
+      />
+
+      {/* Toast Notification */}
+      <ToastNotification
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+      />
     </div>
   )
 } 

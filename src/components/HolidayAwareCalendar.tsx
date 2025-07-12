@@ -65,7 +65,10 @@ export default function HolidayAwareCalendar({
   }
 
   const getFirstDayOfMonth = () => {
-    return new Date(year, month - 1, 1).getDay()
+    // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    const jsDay = new Date(year, month - 1, 1).getDay()
+    // Ajustar para que lunes sea 0, domingo sea 6
+    return jsDay === 0 ? 6 : jsDay - 1
   }
 
   const getDayInfo = (day: number): DayInfo | null => {
@@ -272,7 +275,7 @@ export default function HolidayAwareCalendar({
         <div className="flex flex-wrap gap-2 text-xs">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-gray-50 border border-gray-200 rounded"></div>
-            <span>Laborables</span>
+            <span>Días normales</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-yellow-100 rounded"></div>
@@ -284,7 +287,7 @@ export default function HolidayAwareCalendar({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-red-100 rounded"></div>
-            <span>Bloqueados</span>
+            <span>No disponible para {workerType === 'laborables' ? 'laborables' : workerType === 'festivos' ? 'festivos' : 'este tipo'}</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-500 rounded"></div>
@@ -296,7 +299,7 @@ export default function HolidayAwareCalendar({
         <div className="border rounded-lg p-4">
           {/* Días de la semana */}
           <div className="grid grid-cols-7 gap-1 mb-2">
-            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+            {['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(day => (
               <div key={day} className="text-center text-xs font-medium text-gray-500 p-1">
                 {day}
               </div>

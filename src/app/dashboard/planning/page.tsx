@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -16,9 +16,17 @@ import { addDays, startOfWeek, format, isSameDay } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Modal } from '@/components/ui/modal'
 import { getDaysInMonth } from '@/lib/calendar'
+import { getHolidaysForYear } from '@/lib/holidayUtils'
 
 // Configuración para evitar el prerender estático
 export const dynamic = 'force-dynamic'
+
+// Función para detectar si un día es festivo o fin de semana
+function isHolidayOrWeekend(date: Date, holidays: string[]): boolean {
+  const day = date.getDay()
+  const dateString = date.toISOString().split('T')[0]
+  return day === 0 || day === 6 || holidays.includes(dateString)
+}
 
 function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day: string): string[] | undefined {
   if (!schedule) return undefined;
@@ -121,6 +129,8 @@ function renderScheduleTimes(times: any): string {
 }
 
 export default function PlanningPage() {
+  console.log('🎯 [PLANNING] Componente PlanningPage renderizado')
+  
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -138,9 +148,20 @@ export default function PlanningPage() {
   const [selectedWorker, setSelectedWorker] = useState<Worker | null>(null)
   const [groupBy, setGroupBy] = useState<'none' | 'worker' | 'user'>('none')
   const [monthlyViewType, setMonthlyViewType] = useState<'grid' | 'list'>('list')
+  const [holidays, setHolidays] = useState<string[]>([])
 
   const [weekStart, setWeekStart] = useState(startOfWeek(selectedDate, { weekStartsOn: 1 }))
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
+
+  // Cargar festivos
+  useEffect(() => {
+    async function loadHolidays() {
+      const year = selectedDate.getFullYear()
+      const holidaysData = await getHolidaysForYear(year)
+      setHolidays(holidaysData.map(h => h.date))
+    }
+    loadHolidays()
+  }, [selectedDate])
 
   // Función para obtener el día de la semana correcto (lunes=0, domingo=6)
   const getCorrectDayOfWeek = (date: Date): number => {
@@ -161,20 +182,34 @@ export default function PlanningPage() {
     // Filtro por trabajadora y usuario
     if (filterWorkerId && a.worker_id !== filterWorkerId) return false;
     if (filterUserId && a.user_id !== filterUserId) return false;
-          if (viewMode === 'day') {
-        if (a.specific_schedule) {
-          const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
-          const dayKey = weekDays[getCorrectDayOfWeek(selectedDate)] as WeekDay;
-          const times = getScheduleForDay(a.specific_schedule, dayKey);
-        // Si hay horario para ese día, mostrarla
-        if (times && times.length > 0) return true;
-        // Si no hay horario, pero el start_date coincide, mostrarla también
-        if (a.start_date) {
-          const start = new Date(a.start_date);
-          return isSameDay(start, selectedDate);
-        }
-        return false;
+    
+    console.log(`🔍 [PLANNING] Procesando asignación:`, {
+      id: a.id,
+      worker: a.worker?.name,
+      user: a.user?.name,
+      assignment_type: a.assignment_type,
+      has_schedule: !!a.schedule
+    });
+    
+    if (viewMode === 'day') {
+      // Para asignaciones de festivos, mostrarlas en días festivos y fines de semana
+      if (a.assignment_type === 'festivos') {
+        const isHoliday = isHolidayOrWeekend(selectedDate, holidays);
+        console.log(`🔍 [PLANNING] Asignación de festivos: ${a.worker?.name} - ${isHoliday ? '✅ Mostrar' : '❌ Ocultar'} (${selectedDate.toISOString().split('T')[0]})`);
+        return isHoliday;
       }
+      
+      // Para asignaciones con horario específico (laborables)
+      if (a.schedule) {
+        const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
+        const dayKey = weekDays[getCorrectDayOfWeek(selectedDate)] as WeekDay;
+        const daySchedule = a.schedule[dayKey];
+        if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
+          return true;
+        }
+      }
+      
+      // Si no hay horario, pero el start_date coincide, mostrarla también
       if (a.start_date) {
         const start = new Date(a.start_date);
         return isSameDay(start, selectedDate);
@@ -186,15 +221,21 @@ export default function PlanningPage() {
 
   const assignmentsByDay = weekDays.map(day => {
     return filteredAssignments.filter(a => {
-      if (a.specific_schedule) {
-        const dayKey = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][getCorrectDayOfWeek(day)];
-        const times = getScheduleForDay(a.specific_schedule, dayKey);
-        if (times && times.length > 0) return true;
-        if (a.start_date) {
-          return isSameDay(new Date(a.start_date), day);
-        }
-        return false;
+      // Para asignaciones de festivos, mostrarlas en días festivos y fines de semana
+      if (a.assignment_type === 'festivos') {
+        return isHolidayOrWeekend(day, holidays);
       }
+      
+      // Para asignaciones con horario específico (laborables)
+      if (a.schedule) {
+        const dayKey = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][getCorrectDayOfWeek(day)];
+        const daySchedule = a.schedule[dayKey];
+        if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
+          return true;
+        }
+      }
+      
+      // Si no hay horario, pero el start_date coincide, mostrarla también
       if (a.start_date) {
         return isSameDay(new Date(a.start_date), day);
       }

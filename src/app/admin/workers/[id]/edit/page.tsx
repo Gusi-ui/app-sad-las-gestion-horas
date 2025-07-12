@@ -113,6 +113,31 @@ export default function EditWorkerPage() {
         })
       } else {
         setWorker(data)
+        
+        // Determinar el tipo de disponibilidad basado en los días existentes
+        const existingDays = data.availability_days || []
+        let availabilityDays: string[] = []
+        
+        // Detectar el patrón de días existentes
+        if (existingDays.length === 2 && existingDays.includes('saturday') && existingDays.includes('sunday')) {
+          // Solo fines de semana
+          availabilityDays = ['saturday', 'sunday']
+        } else if (existingDays.length === 7) {
+          // Todos los días
+          availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+        } else if (existingDays.length === 5 && 
+                   existingDays.includes('monday') && 
+                   existingDays.includes('tuesday') && 
+                   existingDays.includes('wednesday') && 
+                   existingDays.includes('thursday') && 
+                   existingDays.includes('friday')) {
+          // Solo laborables
+          availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        } else {
+          // Si no coincide con ningún patrón, usar laborables por defecto
+          availabilityDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+        }
+        
         setFormData({
           name: data.name || '',
           surname: data.surname || '',
@@ -128,7 +153,7 @@ export default function EditWorkerPage() {
           hourly_rate: data.hourly_rate || 0,
           is_active: data.is_active,
           specializations: data.specializations || [],
-          availability_days: data.availability_days || []
+          availability_days: availabilityDays
         })
       }
     } catch (error) {
@@ -280,6 +305,145 @@ export default function EditWorkerPage() {
       </div>
 
       <form onSubmit={handleSubmit}>
+        {/* Sección Destacada - Disponibilidad */}
+        <Card className="mb-8 border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-200">
+            <CardTitle className="flex items-center text-indigo-900">
+              <Calendar className="w-6 h-6 mr-2" />
+              Disponibilidad de Días
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8">
+            <div className="space-y-6">
+              <p className="text-sm text-slate-600 mb-6">
+                Selecciona el tipo de disponibilidad de esta trabajadora:
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { 
+                    key: 'laborables', 
+                    label: 'Laborables', 
+                    description: 'Lunes a Viernes',
+                    color: 'from-blue-50 to-blue-100',
+                    borderColor: 'border-blue-300',
+                    icon: '🏢'
+                  },
+                  { 
+                    key: 'festivos', 
+                    label: 'Festivos', 
+                    description: 'Fines de semana y días festivos',
+                    color: 'from-green-50 to-green-100',
+                    borderColor: 'border-green-300',
+                    icon: '🎉'
+                  },
+                  { 
+                    key: 'flexible', 
+                    label: 'Flexible', 
+                    description: 'Todos los días',
+                    color: 'from-purple-50 to-purple-100',
+                    borderColor: 'border-purple-300',
+                    icon: '⭐'
+                  }
+                ].map((option) => (
+                  <label
+                    key={option.key}
+                    className={`relative flex flex-col items-center p-6 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      (option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                      (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                      (option.key === 'flexible' && formData.availability_days.length === 7)
+                        ? `bg-gradient-to-r ${option.color} ${option.borderColor} shadow-md`
+                        : 'bg-white border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="availability_type"
+                      checked={
+                        (option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                        (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                        (option.key === 'flexible' && formData.availability_days.length === 7)
+                      }
+                      onChange={() => {
+                        // Convertir la selección a días específicos según el tipo
+                        let days: string[] = []
+                        switch (option.key) {
+                          case 'laborables':
+                            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
+                            break
+                          case 'festivos':
+                            days = ['saturday', 'sunday']
+                            break
+                          case 'flexible':
+                            days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                            break
+                        }
+                        handleInputChange('availability_days', days)
+                      }}
+                      className="sr-only"
+                    />
+                    <div className={`w-6 h-6 rounded-full border-2 mb-4 flex items-center justify-center ${
+                      (option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                      (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                      (option.key === 'flexible' && formData.availability_days.length === 7)
+                        ? 'bg-indigo-600 border-indigo-600'
+                        : 'border-slate-300'
+                    }`}>
+                      {((option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                        (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                        (option.key === 'flexible' && formData.availability_days.length === 7)) && (
+                        <div className="w-3 h-3 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                    <div className="text-3xl mb-3">{option.icon}</div>
+                    <div className="text-center">
+                      <span className={`font-semibold text-lg block ${
+                        (option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                        (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                        (option.key === 'flexible' && formData.availability_days.length === 7) ? 'text-slate-900' : 'text-slate-700'
+                      }`}>
+                        {option.label}
+                      </span>
+                      <p className={`text-sm mt-1 ${
+                        (option.key === 'laborables' && formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ||
+                        (option.key === 'festivos' && formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ||
+                        (option.key === 'flexible' && formData.availability_days.length === 7) ? 'text-slate-700' : 'text-slate-500'
+                      }`}>
+                        {option.description}
+                      </p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+                <p className="text-sm text-slate-600">
+                  <strong>Disponibilidad actual:</strong> {
+                    (formData.availability_days.includes('monday') && formData.availability_days.includes('friday') && formData.availability_days.length === 5) ? 'Laborables (Lunes a Viernes)' :
+                    (formData.availability_days.includes('saturday') && formData.availability_days.includes('sunday') && formData.availability_days.length === 2) ? 'Festivos (Fines de semana)' :
+                    (formData.availability_days.length === 7) ? 'Flexible (Todos los días)' :
+                    formData.availability_days.length > 0 ? 
+                      formData.availability_days.map(day => {
+                        const dayNames = {
+                          monday: 'Lunes',
+                          tuesday: 'Martes', 
+                          wednesday: 'Miércoles',
+                          thursday: 'Jueves',
+                          friday: 'Viernes',
+                          saturday: 'Sábado',
+                          sunday: 'Domingo'
+                        }
+                        return dayNames[day as keyof typeof dayNames] || day
+                      }).join(', ')
+                    : 'No especificada'
+                  }
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Grid de Información Personal y Contacto */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Información Personal */}
           <Card className="border-0 shadow-lg">
@@ -491,134 +655,6 @@ export default function EditWorkerPage() {
               </div>
             </CardContent>
           </Card>
-
-          {/* Información Laboral */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-purple-50 to-purple-100 border-b border-purple-200">
-              <CardTitle className="flex items-center text-purple-900">
-                <Clock className="w-5 h-5 mr-2" />
-                Información Laboral
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 p-6">
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Tipo de Trabajadora *</label>
-                <select
-                  value={formData.worker_type}
-                  onChange={(e) => handleInputChange('worker_type', e.target.value)}
-                  className="w-full border border-slate-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                  required
-                >
-                  <option value="regular">Laborables</option>
-                  <option value="holidays">Festivos</option>
-                  <option value="weekends">Fines de semana</option>
-                  <option value="flexible">Flexible</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-slate-700 mb-2 block">Tarifa por Hora (€) *</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.hourly_rate}
-                  onChange={(e) => handleInputChange('hourly_rate', parseFloat(e.target.value) || 0)}
-                  required
-                  className="border-slate-300 focus:border-purple-500 focus:ring-purple-500 transition-colors"
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Disponibilidad de Días */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-200">
-              <CardTitle className="flex items-center text-indigo-900">
-                <Calendar className="w-5 h-5 mr-2" />
-                Disponibilidad de Días
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="space-y-4">
-                <p className="text-sm text-slate-600 mb-4">
-                  Selecciona los días en los que esta trabajadora está disponible para trabajar:
-                </p>
-                
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    { key: 'monday', label: 'Lunes', color: 'from-red-50 to-red-100' },
-                    { key: 'tuesday', label: 'Martes', color: 'from-orange-50 to-orange-100' },
-                    { key: 'wednesday', label: 'Miércoles', color: 'from-yellow-50 to-yellow-100' },
-                    { key: 'thursday', label: 'Jueves', color: 'from-green-50 to-green-100' },
-                    { key: 'friday', label: 'Viernes', color: 'from-blue-50 to-blue-100' },
-                    { key: 'saturday', label: 'Sábado', color: 'from-purple-50 to-purple-100' },
-                    { key: 'sunday', label: 'Domingo', color: 'from-pink-50 to-pink-100' }
-                  ].map((day) => (
-                    <label
-                      key={day.key}
-                      className={`relative flex items-center p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                        formData.availability_days.includes(day.key)
-                          ? `bg-gradient-to-r ${day.color} border-slate-300 shadow-md`
-                          : 'bg-white border-slate-200 hover:border-slate-300'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.availability_days.includes(day.key)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            handleInputChange('availability_days', [...formData.availability_days, day.key])
-                          } else {
-                            handleInputChange('availability_days', formData.availability_days.filter(d => d !== day.key))
-                          }
-                        }}
-                        className="sr-only"
-                      />
-                      <div className={`w-5 h-5 rounded border-2 mr-3 flex items-center justify-center ${
-                        formData.availability_days.includes(day.key)
-                          ? 'bg-blue-600 border-blue-600'
-                          : 'border-slate-300'
-                      }`}>
-                        {formData.availability_days.includes(day.key) && (
-                          <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className={`font-medium ${
-                        formData.availability_days.includes(day.key) ? 'text-slate-900' : 'text-slate-700'
-                      }`}>
-                        {day.label}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-
-                <div className="mt-4 p-3 bg-slate-50 rounded-lg">
-                  <p className="text-sm text-slate-600">
-                    <strong>Días seleccionados:</strong> {formData.availability_days.length > 0 
-                      ? formData.availability_days.map(day => {
-                          const dayNames = {
-                            monday: 'Lunes',
-                            tuesday: 'Martes', 
-                            wednesday: 'Miércoles',
-                            thursday: 'Jueves',
-                            friday: 'Viernes',
-                            saturday: 'Sábado',
-                            sunday: 'Domingo'
-                          }
-                          return dayNames[day as keyof typeof dayNames] || day
-                        }).join(', ')
-                      : 'Ningún día seleccionado'
-                    }
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-
         </div>
 
         {/* Botones de Acción */}

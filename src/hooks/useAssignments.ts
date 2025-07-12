@@ -186,6 +186,8 @@ export function useAssignments() {
 
   const updateAssignment = useCallback(async (id: string, updates: Partial<Assignment>) => {
     try {
+      console.log('🔧 [UPDATE] Iniciando actualización de asignación:', { id, updates })
+      
       const { data, error } = await supabase
         .from('assignments')
         .update(updates)
@@ -197,13 +199,19 @@ export function useAssignments() {
         `)
         .single()
 
-      if (error) throw error
+      console.log('🔧 [UPDATE] Respuesta de Supabase:', { data, error })
 
+      if (error) {
+        console.error('🔧 [UPDATE] Error de Supabase:', error)
+        throw error
+      }
+
+      console.log('🔧 [UPDATE] Actualización exitosa, refrescando lista...')
       // Refresh the list
       await fetchAssignments()
       return { data, error: null }
     } catch (err) {
-      console.error('Error updating assignment:', err)
+      console.error('🔧 [UPDATE] Error updating assignment:', err)
       return { 
         data: null, 
         error: err instanceof Error ? err.message : 'Error al actualizar asignación' 

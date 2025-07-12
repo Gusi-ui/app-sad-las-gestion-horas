@@ -52,46 +52,82 @@ export async function middleware(request: NextRequest) {
     )
     
     if (!isPublicPath) {
-      // Redirigir a login si no está autenticado
+      // Redirigir a login unificado si no está autenticado
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
   }
 
-  // Proteger rutas de admin (requieren rol de admin)
-  if (user && request.nextUrl.pathname.startsWith('/admin/')) {
-    // Verificar si el usuario es admin
-    const { data: adminData } = await supabase
-      .from('admins')
-      .select('id, is_active')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
+  // Si el usuario está autenticado, verificar permisos según la ruta
+  if (user) {
+    const pathname = request.nextUrl.pathname
+    
+    // Si está en login y ya autenticado, redirigir según su rol
+    if (pathname === '/login' || pathname === '/admin/login' || pathname === '/worker/login') {
+      // Verificar si es admin
+      const { data: adminData } = await supabase
+        .from('admins')
+        .select('id, is_active')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
 
-    if (!adminData) {
-      // No es admin, redirigir a login
-      const url = request.nextUrl.clone()
-      url.pathname = '/admin/login'
-      return NextResponse.redirect(url)
+      if (adminData) {
+        // Es admin, redirigir al dashboard de admin
+        const url = request.nextUrl.clone()
+        url.pathname = '/admin/dashboard'
+        return NextResponse.redirect(url)
+      }
+
+      // Verificar si es worker
+      const { data: workerData } = await supabase
+        .from('workers')
+        .select('id, is_active')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
+
+      if (workerData) {
+        // Es worker, redirigir al dashboard de worker
+        const url = request.nextUrl.clone()
+        url.pathname = '/worker/dashboard'
+        return NextResponse.redirect(url)
+      }
     }
-  }
 
-  // Proteger rutas de worker (requieren rol de worker)
-  if (user && request.nextUrl.pathname.startsWith('/worker/')) {
-    // Verificar si el usuario es worker
-    const { data: workerData } = await supabase
-      .from('workers')
-      .select('id, is_active')
-      .eq('email', user.email)
-      .eq('is_active', true)
-      .single()
+    // Proteger rutas de admin (requieren rol de admin)
+    if (pathname.startsWith('/admin/')) {
+      const { data: adminData } = await supabase
+        .from('admins')
+        .select('id, is_active')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
 
-    if (!workerData) {
-      // No es worker, redirigir a login
-      const url = request.nextUrl.clone()
-      url.pathname = '/worker/login'
-      return NextResponse.redirect(url)
+      if (!adminData) {
+        // No es admin, redirigir a login unificado
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // Proteger rutas de worker (requieren rol de worker)
+    if (pathname.startsWith('/worker/')) {
+      const { data: workerData } = await supabase
+        .from('workers')
+        .select('id, is_active')
+        .eq('email', user.email)
+        .eq('is_active', true)
+        .single()
+
+      if (!workerData) {
+        // No es worker, redirigir a login unificado
+        const url = request.nextUrl.clone()
+        url.pathname = '/login'
+        return NextResponse.redirect(url)
+      }
     }
   }
 

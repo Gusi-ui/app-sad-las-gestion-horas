@@ -189,27 +189,31 @@ export default function WorkerDetailPage() {
             <div className="text-xs text-slate-400 mt-1">(Según planning mensual actual)</div>
           </div>
           <div className="flex-1">
-            <div className="mb-2 text-slate-700 font-semibold">Tipo de trabajadora:</div>
+            <div className="mb-2 text-slate-700 font-semibold">Disponibilidad:</div>
             <div className="mb-4">
               <Badge className="text-base px-4 py-2 bg-blue-100 text-blue-800 border border-blue-300 font-semibold">
-                {worker.worker_type === 'regular' ? 'Laborables' : 
+                {(worker.availability_days && worker.availability_days.length === 5 && 
+                  worker.availability_days.includes('monday') && 
+                  worker.availability_days.includes('friday')) ? 'Laborables' :
+                 (worker.availability_days && worker.availability_days.length === 2 && 
+                  worker.availability_days.includes('saturday') && 
+                  worker.availability_days.includes('sunday')) ? 'Festivos' :
+                 (worker.availability_days && worker.availability_days.length === 7) ? 'Flexible' :
+                 worker.worker_type === 'regular' ? 'Laborables' : 
                  worker.worker_type === 'holidays' ? 'Festivos' : 
                  worker.worker_type === 'weekends' ? 'Fines de semana' : 
-                 worker.worker_type === 'flexible' ? 'Flexible' : worker.worker_type}
+                 worker.worker_type === 'flexible' ? 'Flexible' : 'No especificada'}
               </Badge>
             </div>
-            <div className="mb-2 text-slate-700 font-semibold">Días de disponibilidad:</div>
-            <div className="flex flex-wrap gap-2">
-              {(worker.availability_days && worker.availability_days.length > 0)
-                ? [
-                    'monday','tuesday','wednesday','thursday','friday','saturday','sunday'
-                  ].filter(day => worker.availability_days.includes(day)).map(day => (
-                    <Badge key={day} className="text-base px-4 py-2 bg-green-100 text-green-800 border border-green-300 font-semibold">
-                      {getDayName(day)}
-                    </Badge>
-                  ))
-                : <span className="text-slate-400 italic">No hay días asignados</span>
-              }
+            <div className="text-sm text-slate-600">
+              {(worker.availability_days && worker.availability_days.length === 5 && 
+                worker.availability_days.includes('monday') && 
+                worker.availability_days.includes('friday')) ? 'Lunes a Viernes' :
+               (worker.availability_days && worker.availability_days.length === 2 && 
+                worker.availability_days.includes('saturday') && 
+                worker.availability_days.includes('sunday')) ? 'Fines de semana' :
+               (worker.availability_days && worker.availability_days.length === 7) ? 'Todos los días' :
+               'No especificada'}
             </div>
           </div>
         </CardContent>

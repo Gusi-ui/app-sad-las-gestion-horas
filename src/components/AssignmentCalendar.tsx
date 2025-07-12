@@ -23,6 +23,7 @@ interface WeeklySchedule {
   friday: DaySchedule
   saturday: DaySchedule
   sunday: DaySchedule
+  holiday?: DaySchedule // Festivos entre semana (opcional para compatibilidad)
 }
 
 interface AssignmentCalendarProps {
@@ -38,20 +39,33 @@ export default function AssignmentCalendar({
   schedule,
   assignmentType,
   startDate,
-  year,
-  month,
+  year: initialYear,
+  month: initialMonth,
   className = ''
 }: AssignmentCalendarProps) {
+  // Parse startDate
+  const start = startDate ? new Date(startDate) : new Date()
+  const minYear = start.getFullYear()
+  const minMonth = start.getMonth() + 1
+
+  // Estado local para mes/año seleccionados
+  const [selectedYear, setSelectedYear] = useState(initialYear)
+  const [selectedMonth, setSelectedMonth] = useState(initialMonth)
   const [holidays, setHolidays] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setSelectedYear(initialYear)
+    setSelectedMonth(initialMonth)
+  }, [initialYear, initialMonth])
+
+  useEffect(() => {
     loadHolidays()
-  }, [year])
+  }, [selectedYear])
 
   const loadHolidays = async () => {
     try {
-      const holidaysData = await getHolidaysForYear(year)
+      const holidaysData = await getHolidaysForYear(selectedYear)
       const holidayDates = holidaysData.map(h => h.date)
       setHolidays(holidayDates)
     } catch (error) {
@@ -62,50 +76,67 @@ export default function AssignmentCalendar({
   }
 
   const getDaysInMonth = () => {
-    return new Date(year, month, 0).getDate()
+    return new Date(selectedYear, selectedMonth, 0).getDate()
   }
 
   const getFirstDayOfMonth = () => {
     // 0 = domingo, 1 = lunes, ..., 6 = sábado
-    const jsDay = new Date(year, month - 1, 1).getDay()
+    const jsDay = new Date(selectedYear, selectedMonth - 1, 1).getDay()
     // Ajustar para que lunes sea 0, domingo sea 6
     return jsDay === 0 ? 6 : jsDay - 1
   }
 
   const getDayName = (dayOfWeek: number): keyof WeeklySchedule => {
     const dayMap: { [key: number]: keyof WeeklySchedule } = {
-      0: 'monday',    // Lunes
-      1: 'tuesday',   // Martes
-      2: 'wednesday', // Miércoles
-      3: 'thursday',  // Jueves
-      4: 'friday',    // Viernes
-      5: 'saturday',  // Sábado
-      6: 'sunday'     // Domingo
+      0: 'sunday',    // Domingo
+      1: 'monday',    // Lunes
+      2: 'tuesday',   // Martes
+      3: 'wednesday', // Miércoles
+      4: 'thursday',  // Jueves
+      5: 'friday',    // Viernes
+      6: 'saturday'   // Sábado
     }
     return dayMap[dayOfWeek] || 'monday'
   }
 
   const isServiceDay = (day: number): boolean => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(selectedYear, selectedMonth - 1, day)
     const dayOfWeek = date.getDay()
     const dayName = getDayName(dayOfWeek)
-    return schedule[dayName]?.enabled || false
+    const enabled = schedule[dayName]?.enabled || false
+    const holiday = isHoliday(day)
+    const weekend = isWeekend(day)
+    
+    if (assignmentType === 'laborables') {
+      return enabled && !holiday
+    } else if (assignmentType === 'festivos') {
+      // Para festivos, verificar si es fin de semana O si es festivo entre semana con horario específico
+      if (weekend) {
+        return enabled // Usar horario del fin de semana
+      } else if (holiday) {
+        // Si es festivo entre semana, verificar si hay horario específico para festivos
+        return schedule.holiday?.enabled || false
+      }
+      return false
+    } else {
+      return enabled
+    }
   }
 
   const isHoliday = (day: number): boolean => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(selectedYear, selectedMonth - 1, day)
     const dateString = date.toLocaleDateString('en-CA')
     return holidays.includes(dateString)
   }
 
   const isWeekend = (day: number): boolean => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(selectedYear, selectedMonth - 1, day)
     const dayOfWeek = date.getDay()
     return dayOfWeek === 0 || dayOfWeek === 6
   }
 
   const isDayDisabled = (day: number): boolean => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(selectedYear, selectedMonth - 1, day)
     const dayOfWeek = date.getDay()
     const isWeekendDay = dayOfWeek === 0 || dayOfWeek === 6
     const isHolidayDay = isHoliday(day)
@@ -120,28 +151,23 @@ export default function AssignmentCalendar({
 
   const getDayClassName = (day: number): string => {
     const baseClasses = 'w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium transition-colors'
-    
     if (isServiceDay(day)) {
       return `${baseClasses} bg-green-500 text-white hover:bg-green-600 shadow-md`
     }
-    
     if (isDayDisabled(day)) {
       return `${baseClasses} bg-red-100 text-red-600 cursor-not-allowed`
     }
-    
     if (isHoliday(day)) {
       return `${baseClasses} bg-orange-100 text-orange-600 hover:bg-orange-200`
     }
-    
     if (isWeekend(day)) {
       return `${baseClasses} bg-yellow-100 text-yellow-600 hover:bg-yellow-200`
     }
-    
     return `${baseClasses} bg-gray-50 text-gray-700 hover:bg-gray-100`
   }
 
   const getDayTooltip = (day: number): string => {
-    const date = new Date(year, month - 1, day)
+    const date = new Date(selectedYear, selectedMonth - 1, day)
     const dateString = date.toLocaleDateString('es-ES')
     const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
     const dayName = dayNames[date.getDay()]
@@ -150,8 +176,20 @@ export default function AssignmentCalendar({
     
     if (isServiceDay(day)) {
       const dayOfWeek = date.getDay()
-      const scheduleDay = getDayName(dayOfWeek)
-      const timeSlots = schedule[scheduleDay]?.timeSlots || []
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+      const isHolidayDay = isHoliday(day)
+      
+      let timeSlots: TimeSlot[] = []
+      
+      if (assignmentType === 'festivos' && isHolidayDay && !isWeekend) {
+        // Festivo entre semana - usar horario de holiday
+        timeSlots = schedule.holiday?.timeSlots || []
+      } else {
+        // Usar horario del día de la semana correspondiente
+        const scheduleDay = getDayName(dayOfWeek)
+        timeSlots = schedule[scheduleDay]?.timeSlots || []
+      }
+      
       const timeInfo = timeSlots.map(slot => `${slot.start}-${slot.end}`).join(', ')
       tooltip += ` - SERVICIO (${timeInfo})`
     }
@@ -199,17 +237,29 @@ export default function AssignmentCalendar({
 
   const getServiceDaysCount = (): number => {
     let count = 0
-    Object.values(schedule).forEach(day => {
-      if (day.enabled) count++
+    Object.entries(schedule).forEach(([day, daySchedule]) => {
+      if (day === 'holiday') {
+        // Para holiday, solo contar si está habilitado y es tipo festivos
+        if (assignmentType === 'festivos' && daySchedule.enabled) {
+          count++
+        }
+      } else {
+        if (daySchedule.enabled) count++
+      }
     })
     return count
   }
 
   const getTotalServiceHours = (): number => {
     let totalHours = 0
-    Object.values(schedule).forEach(day => {
-      if (day.enabled) {
-        day.timeSlots.forEach(slot => {
+    Object.entries(schedule).forEach(([day, daySchedule]) => {
+      if (daySchedule.enabled) {
+        // Para holiday, solo contar si es tipo festivos
+        if (day === 'holiday' && assignmentType !== 'festivos') {
+          return
+        }
+        
+        daySchedule.timeSlots.forEach((slot: TimeSlot) => {
           try {
             const start = new Date(`2000-01-01T${slot.start}`)
             const end = new Date(`2000-01-01T${slot.end}`)
@@ -224,6 +274,30 @@ export default function AssignmentCalendar({
       }
     })
     return Math.round(totalHours * 100) / 100
+  }
+
+  // Navigation logic
+  const canGoPrev = () => {
+    return (
+      selectedYear > minYear || (selectedYear === minYear && selectedMonth > minMonth)
+    )
+  }
+  const goPrev = () => {
+    if (!canGoPrev()) return
+    if (selectedMonth === 1) {
+      setSelectedYear(y => y - 1)
+      setSelectedMonth(12)
+    } else {
+      setSelectedMonth(m => m - 1)
+    }
+  }
+  const goNext = () => {
+    if (selectedMonth === 12) {
+      setSelectedYear(y => y + 1)
+      setSelectedMonth(1)
+    } else {
+      setSelectedMonth(m => m + 1)
+    }
   }
 
   if (loading) {
@@ -244,6 +318,9 @@ export default function AssignmentCalendar({
     )
   }
 
+  // Month name
+  const monthName = new Date(selectedYear, selectedMonth - 1, 1).toLocaleString('es-ES', { month: 'long', year: 'numeric' })
+
   const serviceDaysCount = getServiceDaysCount()
   const totalHours = getTotalServiceHours()
 
@@ -254,6 +331,11 @@ export default function AssignmentCalendar({
           <Calendar className="w-5 h-5 mr-2" />
           Calendario de Servicios
         </CardTitle>
+        <div className="flex items-center gap-2 mt-2">
+          <button type="button" onClick={goPrev} disabled={!canGoPrev()} className={`px-2 py-1 rounded border ${canGoPrev() ? 'hover:bg-slate-100' : 'opacity-50 cursor-not-allowed'}`}>←</button>
+          <span className="text-base font-semibold text-gray-700 min-w-[120px] text-center capitalize">{monthName}</span>
+          <button type="button" onClick={goNext} className="px-2 py-1 rounded border hover:bg-slate-100">→</button>
+        </div>
         <p className="text-sm text-gray-600">
           Visualización de días con servicio para {assignmentType === 'laborables' ? 'días laborables' : assignmentType === 'festivos' ? 'días festivos' : 'asignación flexible'}
         </p>

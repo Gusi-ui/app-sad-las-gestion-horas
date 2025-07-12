@@ -87,15 +87,21 @@ export interface Assignment {
   id: string
   worker_id: string
   user_id: string
-  assigned_hours_per_week: number
   start_date: string
   end_date?: string
-  specific_schedule?: Record<WeekDay, string[]> // {"monday": ["09:00", "11:00"]}
+  schedule?: Record<WeekDay, {
+    enabled: boolean
+    timeSlots: Array<{
+      start: string
+      end: string
+    }>
+  }>
   priority: AssignmentPriority
   status: AssignmentStatus
   notes?: string
   created_at: string
   updated_at: string
+  assignment_type?: 'laborables' | 'festivos' | 'flexible'
   // Populated fields
   worker?: Worker
   user?: User

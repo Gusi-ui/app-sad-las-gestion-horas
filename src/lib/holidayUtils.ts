@@ -26,6 +26,22 @@ export interface MonthCalendar {
   days: DayInfo[]
 }
 
+export interface DaySchedule {
+  enabled: boolean
+  timeSlots: { start: string; end: string }[]
+}
+
+export interface WeeklySchedule {
+  monday: DaySchedule
+  tuesday: DaySchedule
+  wednesday: DaySchedule
+  thursday: DaySchedule
+  friday: DaySchedule
+  saturday: DaySchedule
+  sunday: DaySchedule
+  holiday?: DaySchedule // Festivos entre semana
+}
+
 /**
  * Obtiene todos los festivos de un año específico
  */

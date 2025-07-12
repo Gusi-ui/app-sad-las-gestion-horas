@@ -48,6 +48,7 @@ interface WeeklySchedule {
   friday: DaySchedule
   saturday: DaySchedule
   sunday: DaySchedule
+  holiday: DaySchedule // Festivos entre semana
 }
 
 interface FormData {
@@ -72,7 +73,8 @@ const defaultWeeklySchedule: WeeklySchedule = {
   thursday: { ...defaultDaySchedule },
   friday: { ...defaultDaySchedule },
   saturday: { ...defaultDaySchedule },
-  sunday: { ...defaultDaySchedule }
+  sunday: { ...defaultDaySchedule },
+  holiday: { ...defaultDaySchedule } // Festivos entre semana
 }
 
 export default function NewAssignmentPage() {
@@ -226,6 +228,7 @@ export default function NewAssignmentPage() {
         newSchedule.friday.enabled = true
         newSchedule.saturday.enabled = false
         newSchedule.sunday.enabled = false
+        newSchedule.holiday.enabled = false // Reset holiday for laborables
       } else if (type === 'festivos') {
         // Solo sábado y domingo, más festivos
         newSchedule.monday.enabled = false
@@ -235,6 +238,7 @@ export default function NewAssignmentPage() {
         newSchedule.friday.enabled = false
         newSchedule.saturday.enabled = true
         newSchedule.sunday.enabled = true
+        newSchedule.holiday.enabled = true // Enable holiday for festivos
       } else if (type === 'flexible') {
         // Todos los días
         newSchedule.monday.enabled = true
@@ -244,6 +248,7 @@ export default function NewAssignmentPage() {
         newSchedule.friday.enabled = true
         newSchedule.saturday.enabled = true
         newSchedule.sunday.enabled = true
+        newSchedule.holiday.enabled = true // Enable holiday for flexible
       }
       
       return { ...prev, assignment_type: type, schedule: newSchedule }
@@ -714,6 +719,62 @@ export default function NewAssignmentPage() {
                   </div>
                 )
               })}
+              {formData.assignment_type === 'festivos' && (
+                <div className="border border-slate-200 rounded-lg p-4">
+                  <div className="mb-2 font-semibold text-blue-700">Festivos entre semana</div>
+                  <div className="text-xs text-blue-600 mb-2">Puedes definir un horario especial para los festivos que caen entre lunes y viernes. Este horario se aplicará automáticamente a todos los festivos entre semana.</div>
+                  <div className="flex items-center space-x-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="enable_holiday"
+                      checked={formData.schedule.holiday?.enabled || false}
+                      onChange={() => toggleDayEnabled('holiday')}
+                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="enable_holiday" className="text-sm font-medium text-slate-700">
+                      Habilitar horario para festivos entre semana
+                    </label>
+                  </div>
+                  {formData.schedule.holiday?.enabled && (
+                    <div className="space-y-2">
+                      {formData.schedule.holiday.timeSlots.map((slot, slotIndex) => (
+                        <div key={slotIndex} className="flex items-center space-x-2">
+                          <Input
+                            type="time"
+                            value={slot.start}
+                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'start', e.target.value)}
+                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                          <span className="text-slate-500">-</span>
+                          <Input
+                            type="time"
+                            value={slot.end}
+                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'end', e.target.value)}
+                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                          />
+                          {formData.schedule.holiday.timeSlots.length > 1 && (
+                            <Button
+                              type="button"
+                              onClick={() => removeTimeSlot('holiday', slotIndex)}
+                              className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        onClick={() => addTimeSlot('holiday')}
+                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Añadir Tramo
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
