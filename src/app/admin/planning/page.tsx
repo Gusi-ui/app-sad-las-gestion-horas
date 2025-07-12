@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button'
 import { Calendar, Clock, Users, BarChart3, Plus, Filter } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getHolidaysForYear } from '@/lib/holidayUtils'
 
 interface Assignment {
   id: string
   worker: {
     name: string
     surname: string
+    worker_type: string
   }
   user: {
     name: string
@@ -22,20 +24,26 @@ interface Assignment {
   status: string
   start_date: string
   end_date?: string
+  assignment_type?: string
 }
 
 export default function PlanningPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [holidays, setHolidays] = useState<string[]>([])
 
   useEffect(() => {
     loadAssignments()
   }, [])
 
+  useEffect(() => {
+    loadHolidays()
+  }, [currentMonth])
+
   const loadAssignments = async () => {
     try {
-      const { data, error } = await supabase
+      const response = await supabase
         ?.from('assignments')
         .select(`
           id,
@@ -43,21 +51,57 @@ export default function PlanningPage() {
           status,
           start_date,
           end_date,
-          worker:workers(name, surname),
-          user:users(name, surname, client_code)
+          worker:workers(name, surname, worker_type),
+          user:users(name, surname, client_code),
+          assignment_type
         `)
         .eq('status', 'active')
 
-      if (error) {
-        console.error('Error al cargar asignaciones:', error)
+      if (response?.error) {
+        console.error('Error al cargar asignaciones:', response.error)
       } else {
-        setAssignments(data || [])
+        // Transformar la respuesta para manejar las relaciones correctamente
+        const transformedData = (response?.data || []).map((item: any) => ({
+          id: item.id,
+          weekly_hours: item.weekly_hours,
+          status: item.status,
+          start_date: item.start_date,
+          end_date: item.end_date,
+          worker: Array.isArray(item.worker) ? item.worker[0] : item.worker,
+          user: Array.isArray(item.user) ? item.user[0] : item.user,
+          assignment_type: item.assignment_type
+        }))
+        setAssignments(transformedData)
       }
     } catch (error) {
       console.error('Error inesperado:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadHolidays = async () => {
+    try {
+      const year = currentMonth.getFullYear()
+      const holidaysData = await getHolidaysForYear(year)
+      const holidayDates = holidaysData.map(h => h.date)
+      setHolidays(holidayDates)
+    } catch (error) {
+      console.error('Error al cargar festivos:', error)
+    }
+  }
+
+  const isHolidayOrWeekend = (day: number | null) => {
+    if (!day) return false
+    
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
+    const dayOfWeek = date.getDay()
+    const dateString = date.toLocaleDateString('en-CA')
+    
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+    const isHoliday = holidays.includes(dateString)
+    
+    return isWeekend || isHoliday
   }
 
   const getMonthName = (date: Date) => {
@@ -68,10 +112,15 @@ export default function PlanningPage() {
     return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
   }
 
+  // Ajustar getFirstDayOfMonth para que el calendario empiece en lunes
   const getFirstDayOfMonth = (date: Date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+    // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    const jsDay = new Date(date.getFullYear(), date.getMonth(), 1).getDay()
+    // Ajustar para que lunes sea 0, domingo sea 6
+    return jsDay === 0 ? 6 : jsDay - 1
   }
 
+  // Cambiar generateCalendarDays para devolver objetos con la fecha real
   const generateCalendarDays = () => {
     const daysInMonth = getDaysInMonth(currentMonth)
     const firstDay = getFirstDayOfMonth(currentMonth)
@@ -79,12 +128,12 @@ export default function PlanningPage() {
 
     // Días vacíos al inicio
     for (let i = 0; i < firstDay; i++) {
-      days.push(null)
+      days.push({ date: null })
     }
 
     // Días del mes
     for (let day = 1; day <= daysInMonth; day++) {
-      days.push(day)
+      days.push({ date: new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day) })
     }
 
     return days
@@ -102,6 +151,16 @@ export default function PlanningPage() {
     })
   }
 
+  // Lógica para holidayUtils (puedes importar si tienes el tipo)
+  function getAssignmentTypeForDay(date: Date, holidays: string[]): 'laborables' | 'festivos' {
+    const dayOfWeek = date.getDay()
+    const dateString = date.toLocaleDateString('en-CA')
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+    const isHoliday = holidays.includes(dateString)
+    if (isWeekend || isHoliday) return 'festivos'
+    return 'laborables'
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -112,6 +171,8 @@ export default function PlanningPage() {
       </div>
     )
   }
+
+  const weekDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -237,45 +298,72 @@ export default function PlanningPage() {
           <CardContent>
             <div className="grid grid-cols-7 gap-1">
               {/* Headers */}
-              {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+              {weekDays.map(day => (
                 <div key={day} className="p-2 text-center text-sm font-medium text-slate-600 bg-slate-50 rounded">
                   {day}
                 </div>
               ))}
 
               {/* Calendar Days */}
-              {generateCalendarDays().map((day, index) => (
-                <div
-                  key={index}
-                  className={`p-2 min-h-[80px] border border-slate-200 ${
-                    day ? 'bg-white' : 'bg-slate-50'
-                  }`}
-                >
-                  {day && (
-                    <>
-                      <div className="text-sm font-medium text-slate-900 mb-1">
-                        {day}
-                      </div>
-                      <div className="space-y-1">
-                        {assignments.slice(0, 2).map(assignment => (
-                          <div
-                            key={assignment.id}
-                            className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate"
-                            title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname}`}
-                          >
-                            {assignment.worker.name} → {assignment.user.name}
-                          </div>
-                        ))}
-                        {assignments.length > 2 && (
-                          <div className="text-xs text-slate-500">
-                            +{assignments.length - 2} más
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
+              {generateCalendarDays().map((cell, index) => {
+                const { date } = cell
+                let isSpecialDay = false
+                let assignmentType: 'laborables' | 'festivos' = 'laborables'
+                let filteredAssignments: Assignment[] = []
+                if (date) {
+                  const dayOfWeek = date.getDay()
+                  const dateString = date.toLocaleDateString('en-CA')
+                  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+                  const isHoliday = holidays.includes(dateString)
+                  isSpecialDay = isWeekend || isHoliday
+                  assignmentType = isSpecialDay ? 'festivos' : 'laborables'
+                  filteredAssignments = assignments.filter(a => {
+                    const start = new Date(a.start_date)
+                    const end = a.end_date ? new Date(a.end_date) : null
+                    const isActive = (!end && date >= start) || (end && date >= start && date <= end)
+                    return a.worker && a.assignment_type === assignmentType && isActive
+                  })
+                }
+                return (
+                  <div
+                    key={index}
+                    className={`p-2 min-h-[80px] border border-slate-200 ${
+                      date ? 'bg-white' : 'bg-slate-50'
+                    } ${isSpecialDay ? '!bg-red-100' : ''}`}
+                    style={isSpecialDay ? { backgroundColor: '#fef2f2' } : {}}
+                  >
+                    {date && (
+                      <>
+                        <div 
+                          className={`text-sm font-medium mb-1 ${isSpecialDay ? '!text-red-900' : 'text-slate-900'}`}
+                          style={isSpecialDay ? { color: '#7f1d1d' } : {}}
+                        >
+                          {date.getDate()}
+                        </div>
+                        <div className="space-y-1">
+                          {filteredAssignments.length === 0 && (
+                            <div className="text-xs text-slate-400">Sin asignación</div>
+                          )}
+                          {filteredAssignments.slice(0, 2).map(assignment => (
+                            <div
+                              key={assignment.id}
+                              className="text-xs p-1 bg-blue-100 text-blue-800 rounded truncate"
+                              title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname}`}
+                            >
+                              {assignment.worker.name} → {assignment.user.name}
+                            </div>
+                          ))}
+                          {filteredAssignments.length > 2 && (
+                            <div className="text-xs text-slate-500">
+                              +{filteredAssignments.length - 2} más
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </CardContent>
         </Card>
