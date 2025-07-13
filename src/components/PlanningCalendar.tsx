@@ -8,7 +8,7 @@ import { useAssignments } from '@/hooks/useAssignments'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import { useToast } from '@/components/ui/toast'
-import { Assignment, WeekDay } from '@/lib/types'
+import { Assignment, WeekDay } from '@/lib/types-new'
 import { 
   Clock, 
   User, 
@@ -170,7 +170,7 @@ export default function PlanningCalendar({
         id: assignment.id,
         worker_id: assignment.worker_id,
         assignment_type: assignment.assignment_type,
-        has_schedule: !!assignment.specific_schedule
+        has_schedule: !!assignment.schedule
       })
       
       const workerIndex = workers.findIndex(w => w.id === assignment.worker_id)
@@ -341,7 +341,7 @@ export default function PlanningCalendar({
       const params = new URLSearchParams({
         worker_id: original.worker_id,
         user_id: original.user_id,
-        assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
+        weekly_hours: original.weekly_hours?.toString() || '',
         hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
         priority: original.priority?.toString() || '',
         notes: original.notes || '',
@@ -378,7 +378,7 @@ export default function PlanningCalendar({
         const params = new URLSearchParams({
           worker_id: original.worker_id,
           user_id: original.user_id,
-          assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
+          weekly_hours: original.weekly_hours?.toString() || '',
           hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
           priority: original.priority?.toString() || '',
           notes: original.notes || '',
@@ -402,7 +402,7 @@ export default function PlanningCalendar({
     const params = new URLSearchParams({
       worker_id: original.worker_id,
       user_id: original.user_id,
-      assigned_hours_per_week: original.assigned_hours_per_week?.toString() || '',
+      weekly_hours: original.weekly_hours?.toString() || '',
       hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
       priority: original.priority?.toString() || '',
       notes: original.notes || '',
@@ -419,28 +419,36 @@ export default function PlanningCalendar({
 
   const confirmDeleteDay = async () => {
     if (!deleteModalAssignment) return
-    // Eliminar solo el día/hora de specific_schedule
-    const { dayOfWeek, startTime, endTime, id, specific_schedule } = deleteModalAssignment
-    if (!specific_schedule || !specific_schedule[dayOfWeek]) return
+    // Eliminar solo el día/hora del schedule
+    const { dayOfWeek, startTime, endTime, id, schedule } = deleteModalAssignment
+    if (!schedule || !schedule[dayOfWeek]) return
     // Si el bloque a eliminar coincide exactamente con el bloque del schedule
-    const times = specific_schedule[dayOfWeek]
-    if (times[0] === startTime && times[1] === endTime) {
-      // Eliminar ese día del schedule
-      const newSchedule = { ...specific_schedule }
-      delete newSchedule[dayOfWeek]
-      // Si no quedan días, eliminar la asignación completa
-      if (Object.keys(newSchedule).length === 0) {
-        await confirmDeleteAssignment()
-        return
-      }
-      // Si quedan días, actualizar la asignación
-      try {
-        await updateAssignment(id, { specific_schedule: newSchedule })
-        showToast('Bloque eliminado correctamente', 'success')
-      } catch (err) {
-        showToast('Error inesperado al eliminar bloque', 'error')
-      } finally {
-        setDeleteModalAssignment(null)
+    const daySchedule = schedule[dayOfWeek]
+    if (daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
+      const timeSlot = daySchedule.timeSlots[0]
+      if (timeSlot.start === startTime && timeSlot.end === endTime) {
+        // Deshabilitar ese día del schedule
+        const newSchedule = { ...schedule }
+        newSchedule[dayOfWeek] = {
+          ...newSchedule[dayOfWeek],
+          enabled: false,
+          timeSlots: []
+        }
+        // Si no quedan días habilitados, eliminar la asignación completa
+        const enabledDays = Object.values(newSchedule).filter(day => day.enabled)
+        if (enabledDays.length === 0) {
+          await confirmDeleteAssignment()
+          return
+        }
+        // Si quedan días, actualizar la asignación
+        try {
+          await updateAssignment(id, { schedule: newSchedule })
+          showToast('Bloque eliminado correctamente', 'success')
+        } catch (err) {
+          showToast('Error inesperado al eliminar bloque', 'error')
+        } finally {
+          setDeleteModalAssignment(null)
+        }
       }
     }
   }

@@ -19,7 +19,10 @@ import {
   Eye,
   EyeOff,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Edit,
+  UserPlus,
+  ArrowRight
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -82,6 +85,17 @@ export default function PlanningPage() {
 
   useEffect(() => {
     loadData()
+    
+    // Verificar si hay parámetro de reasignación exitosa
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('reassigned') === 'true') {
+      // Mostrar notificación de éxito
+      setTimeout(() => {
+        alert('✅ Reasignación completada exitosamente')
+        // Limpiar el parámetro de la URL
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }, 100)
+    }
   }, [])
 
   useEffect(() => {
@@ -284,13 +298,22 @@ export default function PlanningPage() {
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
     const isHoliday = holidays.includes(dateString)
     const isSpecialDay = isWeekend || isHoliday
-    const assignmentType = isSpecialDay ? 'festivos' : 'laborables'
 
     return filteredAssignments.filter(assignment => {
+      // Verificar que la asignación esté activa en esta fecha
       const start = new Date(assignment.start_date)
       const end = assignment.end_date ? new Date(assignment.end_date) : null
       const isActive = (!end && date >= start) || (end && date >= start && date <= end)
-      return assignment.assignment_type === assignmentType && isActive
+      
+      if (!isActive) return false
+
+      // Para días especiales (fines de semana o festivos), mostrar asignaciones de tipo 'festivos'
+      if (isSpecialDay) {
+        return assignment.assignment_type === 'festivos'
+      }
+      
+      // Para días laborables, mostrar asignaciones de tipo 'laborables'
+      return assignment.assignment_type === 'laborables'
     })
   }
 
@@ -628,7 +651,11 @@ export default function PlanningPage() {
                   isSpecialDay = isHolidayOrWeekend(date)
                   dayAssignments = getAssignmentsForDay(date)
                 }
-                
+
+                // Si hay filtro de trabajadora o usuario, mostrar siempre la celda aunque no haya asignación
+                const showAlways = selectedWorker || selectedUser
+                const hasAssignment = dayAssignments.length > 0
+
                 return (
                   <div
                     key={index}
@@ -650,33 +677,31 @@ export default function PlanningPage() {
                             </span>
                           )}
                         </div>
-                        
                         <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                          {dayAssignments.length === 0 ? (
-                            <div className="text-xs text-slate-400 italic">Sin asignación</div>
-                          ) : (
-                            dayAssignments.map(assignment => {
-                              const schedule = getAssignmentScheduleForDay(assignment, date)
-                              return (
-                                <div
-                                  key={assignment.id}
-                                  className={`text-xs p-1 rounded border ${
-                                    assignment.assignment_type === 'festivos'
-                                      ? 'bg-red-100 border-red-300 text-red-800'
-                                      : 'bg-blue-100 border-blue-300 text-blue-800'
-                                  }`}
-                                  title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname} (${assignment.weekly_hours}h)`}
-                                >
-                                  <div className="font-medium truncate">
-                                    {assignment.worker.name} → {assignment.user.name}
-                                  </div>
-                                  <div className="text-xs opacity-75">
-                                    {schedule ? formatTimeSlot(schedule) : `${assignment.weekly_hours}h`}
-                                  </div>
+                          {dayAssignments.map(assignment => {
+                            const schedule = getAssignmentScheduleForDay(assignment, date)
+                            // Solo mostrar si hay un horario específico para este día
+                            if (!schedule) return null
+                            
+                            return (
+                              <div
+                                key={assignment.id}
+                                className={`text-xs p-1 rounded border ${
+                                  assignment.assignment_type === 'festivos'
+                                    ? 'bg-red-100 border-red-300 text-red-800'
+                                    : 'bg-blue-100 border-blue-300 text-blue-800'
+                                }`}
+                                title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname} (${assignment.weekly_hours}h)`}
+                              >
+                                <div className="font-medium truncate">
+                                  {assignment.worker.name} → {assignment.user.name}
                                 </div>
-                              )
-                            })
-                          )}
+                                <div className="text-xs opacity-75">
+                                  {formatTimeSlot(schedule)}
+                                </div>
+                              </div>
+                            )
+                          })}
                         </div>
                       </>
                     )}
@@ -721,6 +746,7 @@ export default function PlanningPage() {
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Inicio</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Fin</th>
                       <th className="text-left py-3 px-4 font-medium text-slate-700">Estado</th>
+                      <th className="text-left py-3 px-4 font-medium text-slate-700">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -773,6 +799,18 @@ export default function PlanningPage() {
                           }`}>
                             {assignment.status === 'active' ? 'Activa' : 'Pausada'}
                           </span>
+                        </td>
+                        <td className="py-3 px-4 flex space-x-2">
+                          <Link href={`/admin/assignments/${assignment.id}/edit`}>
+                            <Button variant="ghost" size="sm">
+                              <Edit className="w-4 h-4 text-blue-600" />
+                            </Button>
+                          </Link>
+                          <Link href={`/admin/assignments/${assignment.id}/reassign`}>
+                            <Button variant="ghost" size="sm">
+                              <UserPlus className="w-4 h-4 text-purple-600" />
+                            </Button>
+                          </Link>
                         </td>
                       </tr>
                     ))}
