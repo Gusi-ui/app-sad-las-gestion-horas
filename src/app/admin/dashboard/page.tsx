@@ -23,6 +23,27 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 
+interface TimeSlot {
+  start: string
+  end: string
+}
+
+interface DaySchedule {
+  enabled: boolean
+  timeSlots: TimeSlot[]
+}
+
+interface WeeklySchedule {
+  monday?: DaySchedule
+  tuesday?: DaySchedule
+  wednesday?: DaySchedule
+  thursday?: DaySchedule
+  friday?: DaySchedule
+  saturday?: DaySchedule
+  sunday?: DaySchedule
+  holiday?: DaySchedule
+}
+
 interface DashboardStats {
   workers: {
     total: number
@@ -131,7 +152,7 @@ export default function AdminDashboard() {
             Object.keys(schedule).forEach(day => {
               const daySchedule = schedule[day]
               if (daySchedule && daySchedule.enabled && daySchedule.timeSlots) {
-                daySchedule.timeSlots.forEach(slot => {
+                daySchedule.timeSlots.forEach((slot: TimeSlot) => {
                   const startTime = new Date(`2000-01-01T${slot.start}`)
                   const endTime = new Date(`2000-01-01T${slot.end}`)
                   const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)

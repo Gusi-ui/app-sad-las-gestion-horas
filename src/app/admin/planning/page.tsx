@@ -294,6 +294,26 @@ export default function PlanningPage() {
     })
   }
 
+  // Función para obtener el horario específico de una asignación para un día
+  const getAssignmentScheduleForDay = (assignment: Assignment, date: Date) => {
+    if (!assignment.schedule) return null
+
+    const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+    const dayName = dayNames[date.getDay()]
+    
+    const daySchedule = assignment.schedule[dayName]
+    if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
+      return daySchedule.timeSlots[0] // Tomamos el primer timeSlot
+    }
+    
+    return null
+  }
+
+  // Función para formatear el horario
+  const formatTimeSlot = (timeSlot: { start: string; end: string }) => {
+    return `${timeSlot.start} - ${timeSlot.end}`
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -631,34 +651,31 @@ export default function PlanningPage() {
                           )}
                         </div>
                         
-                        <div className="space-y-1">
+                        <div className="space-y-1 max-h-[200px] overflow-y-auto">
                           {dayAssignments.length === 0 ? (
                             <div className="text-xs text-slate-400 italic">Sin asignación</div>
                           ) : (
-                            dayAssignments.slice(0, 3).map(assignment => (
-                              <div
-                                key={assignment.id}
-                                className={`text-xs p-1 rounded truncate border ${
-                                  assignment.assignment_type === 'festivos'
-                                    ? 'bg-red-100 border-red-300 text-red-800'
-                                    : 'bg-blue-100 border-blue-300 text-blue-800'
-                                }`}
-                                title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname} (${assignment.weekly_hours}h)`}
-                              >
-                                <div className="font-medium">
-                                  {assignment.worker.name} → {assignment.user.name}
+                            dayAssignments.map(assignment => {
+                              const schedule = getAssignmentScheduleForDay(assignment, date)
+                              return (
+                                <div
+                                  key={assignment.id}
+                                  className={`text-xs p-1 rounded border ${
+                                    assignment.assignment_type === 'festivos'
+                                      ? 'bg-red-100 border-red-300 text-red-800'
+                                      : 'bg-blue-100 border-blue-300 text-blue-800'
+                                  }`}
+                                  title={`${assignment.worker.name} ${assignment.worker.surname} → ${assignment.user.name} ${assignment.user.surname} (${assignment.weekly_hours}h)`}
+                                >
+                                  <div className="font-medium truncate">
+                                    {assignment.worker.name} → {assignment.user.name}
+                                  </div>
+                                  <div className="text-xs opacity-75">
+                                    {schedule ? formatTimeSlot(schedule) : `${assignment.weekly_hours}h`}
+                                  </div>
                                 </div>
-                                <div className="text-xs opacity-75">
-                                  {assignment.weekly_hours}h
-                                </div>
-                              </div>
-                            ))
-                          )}
-                          
-                          {dayAssignments.length > 3 && (
-                            <div className="text-xs text-slate-500 bg-slate-100 p-1 rounded text-center">
-                              +{dayAssignments.length - 3} más
-                            </div>
+                              )
+                            })
                           )}
                         </div>
                       </>
