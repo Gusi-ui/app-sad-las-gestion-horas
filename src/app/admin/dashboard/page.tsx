@@ -110,16 +110,45 @@ export default function AdminDashboard() {
 
       const { data: monthlyHoursData, error: hoursError } = await supabase
         .from('assignments')
-        .select('hours_per_week')
+        .select('weekly_hours, schedule')
         .eq('status', 'active')
+
+      console.log('🔍 Dashboard - Datos de horas mensuales:', monthlyHoursData)
+      console.log('🔍 Dashboard - Error de horas:', hoursError)
 
       let totalMonthlyHours = 0
       if (monthlyHoursData && !hoursError) {
-        // Calcular horas totales mensuales (aproximadamente 4.33 semanas por mes)
+        // Calcular horas totales mensuales considerando el horario semanal
         totalMonthlyHours = monthlyHoursData.reduce((total, assignment) => {
-          return total + (assignment.hours_per_week || 0) * 4.33
+          let weeklyHours = assignment.weekly_hours || 0
+          
+          // Si hay un horario detallado, calcular las horas basadas en el schedule
+          if (assignment.schedule) {
+            const schedule = assignment.schedule
+            let calculatedWeeklyHours = 0
+            
+            // Calcular horas por semana basadas en el horario
+            Object.keys(schedule).forEach(day => {
+              const daySchedule = schedule[day]
+              if (daySchedule && daySchedule.enabled && daySchedule.timeSlots) {
+                daySchedule.timeSlots.forEach(slot => {
+                  const startTime = new Date(`2000-01-01T${slot.start}`)
+                  const endTime = new Date(`2000-01-01T${slot.end}`)
+                  const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
+                  calculatedWeeklyHours += hours
+                })
+              }
+            })
+            
+            // Usar el valor más alto entre el cálculo del horario y el campo weekly_hours
+            weeklyHours = Math.max(weeklyHours, calculatedWeeklyHours)
+          }
+          
+          return total + weeklyHours * 4.33
         }, 0)
       }
+
+      console.log('🔍 Dashboard - Total de horas mensuales calculadas:', totalMonthlyHours)
 
       setStats({
         workers: {
