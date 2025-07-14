@@ -6,8 +6,8 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('Error: Variables de entorno de Supabase no encontradas');
-  console.log('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Definida' : 'No definida');
-  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseKey ? 'Definida' : 'No definida');
+// // console.log('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? 'Definida' : 'No definida');
+// // console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseKey ? 'Definida' : 'No definida');
   process.exit(1);
 }
 
@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkMonthlyHoursTable() {
   try {
-    console.log('🔍 Verificando tabla monthly_hours...');
+// // console.log('🔍 Verificando tabla monthly_hours...');
     
     // Verificar si la tabla existe
     const { data, error } = await supabase
@@ -27,7 +27,7 @@ async function checkMonthlyHoursTable() {
       console.error('❌ Error al acceder a la tabla monthly_hours:', error);
       
       // Verificar qué tablas existen
-      console.log('\n📋 Verificando tablas disponibles...');
+// // console.log('\n📋 Verificando tablas disponibles...');
       const { data: tables, error: tablesError } = await supabase
         .from('information_schema.tables')
         .select('table_name')
@@ -36,14 +36,14 @@ async function checkMonthlyHoursTable() {
       if (tablesError) {
         console.error('Error al obtener lista de tablas:', tablesError);
       } else {
-        console.log('Tablas disponibles:', tables?.map(t => t.table_name) || []);
+// // console.log('Tablas disponibles:', tables?.map(t => t.table_name) || []);
       }
       
       return;
     }
     
-    console.log('✅ Tabla monthly_hours encontrada');
-    console.log('📊 Datos de ejemplo:', data);
+// // console.log('✅ Tabla monthly_hours encontrada');
+// // console.log('📊 Datos de ejemplo:', data);
     
     // Verificar estructura de la tabla
     const { data: structure, error: structureError } = await supabase
@@ -55,9 +55,9 @@ async function checkMonthlyHoursTable() {
     if (structureError) {
       console.error('Error al obtener estructura de la tabla:', structureError);
     } else {
-      console.log('\n🏗️ Estructura de la tabla:');
+// // console.log('\n🏗️ Estructura de la tabla:');
       structure?.forEach(col => {
-        console.log(`  - ${col.column_name}: ${col.data_type} (${col.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
+// // console.log(`  - ${col.column_name}: ${col.data_type} (${col.is_nullable === 'YES' ? 'nullable' : 'not null'})`);
       });
     }
     
@@ -69,7 +69,7 @@ async function checkMonthlyHoursTable() {
     if (countError) {
       console.error('Error al contar registros:', countError);
     } else {
-      console.log(`\n📈 Total de registros: ${count}`);
+// // console.log(`\n📈 Total de registros: ${count}`);
     }
     
   } catch (err) {

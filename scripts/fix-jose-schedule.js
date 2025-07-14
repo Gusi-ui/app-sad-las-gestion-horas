@@ -11,7 +11,7 @@ const supabase = createClient(
 
 async function fixJoseSchedule() {
   try {
-    console.log('🔧 Corrigiendo horario de Jose Martínez\n');
+// // console.log('🔧 Corrigiendo horario de Jose Martínez\n');
 
     const joseUserId = '9af4d980-414c-4e9b-8400-3f6021755d45';
     const rosaWorkerId = '1661b7b6-20d1-4eab-bdd3-462e9603d27a';
@@ -42,22 +42,22 @@ async function fixJoseSchedule() {
       sunday: []
     };
 
-    console.log('📋 Horario correcto a aplicar:');
+// // console.log('📋 Horario correcto a aplicar:');
     Object.entries(correctSchedule).forEach(([day, slots]) => {
       if (slots.length > 0) {
-        console.log(`   ${day}:`);
+// // console.log(`   ${day}:`);
         slots.forEach((slot, index) => {
           const startHour = parseInt(slot.start.split(':')[0]) + parseInt(slot.start.split(':')[1]) / 60;
           const endHour = parseInt(slot.end.split(':')[0]) + parseInt(slot.end.split(':')[1]) / 60;
           const duration = endHour - startHour;
-          console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end} (${duration}h)`);
+// // console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end} (${duration}h)`);
         });
         const totalDayHours = slots.reduce((sum, slot) => {
           const startHour = parseInt(slot.start.split(':')[0]) + parseInt(slot.start.split(':')[1]) / 60;
           const endHour = parseInt(slot.end.split(':')[0]) + parseInt(slot.end.split(':')[1]) / 60;
           return sum + (endHour - startHour);
         }, 0);
-        console.log(`     Total: ${totalDayHours}h`);
+// // console.log(`     Total: ${totalDayHours}h`);
       }
     });
 
@@ -74,7 +74,7 @@ async function fixJoseSchedule() {
       return;
     }
 
-    console.log(`\n🔄 Actualizando asignación ID: ${assignment.id}`);
+// // console.log(`\n🔄 Actualizando asignación ID: ${assignment.id}`);
 
     const { data: updateResult, error: updateError } = await supabase
       .from('assignments')
@@ -90,17 +90,17 @@ async function fixJoseSchedule() {
       return;
     }
 
-    console.log('✅ Horario actualizado correctamente');
-    console.log('Resultado:', updateResult[0]);
+// // console.log('✅ Horario actualizado correctamente');
+// // console.log('Resultado:', updateResult[0]);
 
     // Verificar el resultado
-    console.log('\n🔍 Verificando resultado:');
+// // console.log('\n🔍 Verificando resultado:');
     const updatedSchedule = updateResult[0].specific_schedule;
     Object.entries(updatedSchedule).forEach(([day, slots]) => {
       if (Array.isArray(slots) && slots.length > 0) {
-        console.log(`   ${day}:`);
+// // console.log(`   ${day}:`);
         slots.forEach((slot, index) => {
-          console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end}`);
+// // console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end}`);
         });
         
         // Calcular horas totales del día
@@ -109,7 +109,7 @@ async function fixJoseSchedule() {
           const endHour = parseInt(slot.end.split(':')[0]) + parseInt(slot.end.split(':')[1]) / 60;
           return sum + (endHour - startHour);
         }, 0);
-        console.log(`     Total horas: ${totalDayHours}h`);
+// // console.log(`     Total horas: ${totalDayHours}h`);
       }
     });
 

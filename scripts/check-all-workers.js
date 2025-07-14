@@ -16,15 +16,15 @@ async function checkAllWorkers() {
       return;
     }
 
-    console.log('Todas las trabajadoras:');
-    console.log('=======================');
+// // console.log('Todas las trabajadoras:');
+// // console.log('=======================');
     if (workers.length === 0) {
-      console.log('No hay trabajadoras en la base de datos.');
+// // console.log('No hay trabajadoras en la base de datos.');
     } else {
       workers.forEach((worker, index) => {
         const status = worker.is_active ? 'ACTIVA' : 'INACTIVA';
-        console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ${status} - ID: ${worker.id}`);
-        console.log(`   Email: ${worker.email}`);
+// // console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ${status} - ID: ${worker.id}`);
+// // console.log(`   Email: ${worker.email}`);
       });
     }
 

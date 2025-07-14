@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkWorkersSchema() {
   try {
-    console.log('🔍 Verificando estructura de la tabla workers...\n');
+// // console.log('🔍 Verificando estructura de la tabla workers...\n');
     
     // Intentar obtener información de la tabla
     const { data: workers, error: workersError } = await supabase
@@ -27,17 +27,17 @@ async function checkWorkersSchema() {
     }
 
     if (workers && workers.length > 0) {
-      console.log('📋 Estructura de la tabla workers (basada en datos existentes):');
+// // console.log('📋 Estructura de la tabla workers (basada en datos existentes):');
       const firstWorker = workers[0];
       Object.keys(firstWorker).forEach(field => {
-        console.log(`   - ${field}: ${typeof firstWorker[field]} = ${firstWorker[field]}`);
+// // console.log(`   - ${field}: ${typeof firstWorker[field]} = ${firstWorker[field]}`);
       });
     } else {
-      console.log('📋 Tabla workers está vacía');
+// // console.log('📋 Tabla workers está vacía');
     }
 
     // Intentar crear una trabajadora con campos mínimos
-    console.log('\n🧪 Probando inserción con campos mínimos...');
+// // console.log('\n🧪 Probando inserción con campos mínimos...');
     
     const testWorker = {
       name: 'Test',
@@ -55,7 +55,7 @@ async function checkWorkersSchema() {
       console.error('❌ Error con campos mínimos:', testError);
       
       // Intentar con solo campos básicos
-      console.log('\n🧪 Probando con solo campos básicos...');
+// // console.log('\n🧪 Probando con solo campos básicos...');
       const basicWorker = {
         name: 'Test',
         surname: 'Worker'
@@ -69,12 +69,12 @@ async function checkWorkersSchema() {
       if (basicError) {
         console.error('❌ Error con campos básicos:', basicError);
       } else {
-        console.log('✅ Inserción básica exitosa');
-        console.log('📋 Campos que funcionan:', Object.keys(basicWorker));
+// // console.log('✅ Inserción básica exitosa');
+// // console.log('📋 Campos que funcionan:', Object.keys(basicWorker));
       }
     } else {
-      console.log('✅ Inserción mínima exitosa');
-      console.log('📋 Campos que funcionan:', Object.keys(testWorker));
+// // console.log('✅ Inserción mínima exitosa');
+// // console.log('📋 Campos que funcionan:', Object.keys(testWorker));
       
       // Limpiar el registro de prueba
       if (testResult && testResult.length > 0) {
@@ -82,7 +82,7 @@ async function checkWorkersSchema() {
           .from('workers')
           .delete()
           .eq('id', testResult[0].id);
-        console.log('🧹 Registro de prueba eliminado');
+// // console.log('🧹 Registro de prueba eliminado');
       }
     }
 

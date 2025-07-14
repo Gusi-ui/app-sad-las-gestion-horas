@@ -16,17 +16,17 @@ async function checkWorkerProfiles() {
       return;
     }
 
-    console.log('Trabajadoras en worker_profiles:');
-    console.log('=================================');
+// // console.log('Trabajadoras en worker_profiles:');
+// // console.log('=================================');
     if (workerProfiles.length === 0) {
-      console.log('No hay trabajadoras en worker_profiles.');
+// // console.log('No hay trabajadoras en worker_profiles.');
     } else {
       workerProfiles.forEach((worker, index) => {
-        console.log(`${index + 1}. ${worker.name} ${worker.surname} - Email: ${worker.email}`);
+// // console.log(`${index + 1}. ${worker.name} ${worker.surname} - Email: ${worker.email}`);
       });
     }
 
-    console.log('\n' + '='.repeat(50) + '\n');
+// // console.log('\n' + '='.repeat(50) + '\n');
 
     // Verificar workers
     const { data: workers, error: workersError } = await supabase
@@ -39,13 +39,13 @@ async function checkWorkerProfiles() {
       return;
     }
 
-    console.log('Trabajadoras en workers:');
-    console.log('========================');
+// // console.log('Trabajadoras en workers:');
+// // console.log('========================');
     if (workers.length === 0) {
-      console.log('No hay trabajadoras en workers.');
+// // console.log('No hay trabajadoras en workers.');
     } else {
       workers.forEach((worker, index) => {
-        console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ${worker.is_active ? 'ACTIVA' : 'INACTIVA'}`);
+// // console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ${worker.is_active ? 'ACTIVA' : 'INACTIVA'}`);
       });
     }
 

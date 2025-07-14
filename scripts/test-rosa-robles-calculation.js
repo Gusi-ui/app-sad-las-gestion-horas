@@ -16,20 +16,20 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PU
 
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ Error: Variables de entorno de Supabase no configuradas');
-  console.log('Asegúrate de tener NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local');
-  console.log('URL actual:', supabaseUrl ? '✅ Configurada' : '❌ Faltante');
-  console.log('KEY actual:', supabaseKey ? '✅ Configurada' : '❌ Faltante');
+// // // console.log('Asegúrate de tener NEXT_PUBLIC_SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY en .env.local');
+// // // console.log('URL actual:', supabaseUrl ? '✅ Configurada' : '❌ Faltante');
+// // // console.log('KEY actual:', supabaseKey ? '✅ Configurada' : '❌ Faltante');
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testRosaRoblesCalculation() {
-  console.log('🧮 Probando cálculo de Rosa Robles - Julio 2025\n');
+// // // console.log('🧮 Probando cálculo de Rosa Robles - Julio 2025\n');
 
   try {
     // 1. Buscar a Rosa Robles
-    console.log('1. Buscando a Rosa Robles...');
+// // // console.log('1. Buscando a Rosa Robles...');
     const { data: rosaWorker, error: workerError } = await supabase
       .from('workers')
       .select('*')
@@ -42,11 +42,11 @@ async function testRosaRoblesCalculation() {
       return;
     }
 
-    console.log(`✅ Encontrada: ${rosaWorker.name} ${rosaWorker.surname} (ID: ${rosaWorker.id})`);
+// // // console.log(`✅ Encontrada: ${rosaWorker.name} ${rosaWorker.surname} (ID: ${rosaWorker.id})`);
 
     // 2. Buscar a José Martínez por ID proporcionado
     const joseUserId = '9af4d980-414c-4e9b-8400-3f6021755d45';
-    console.log(`\n2. Usando ID de José Martínez proporcionado: ${joseUserId}`);
+// // // console.log(`\n2. Usando ID de José Martínez proporcionado: ${joseUserId}`);
     const { data: joseUser, error: userError } = await supabase
       .from('users')
       .select('*')
@@ -58,10 +58,10 @@ async function testRosaRoblesCalculation() {
       return;
     }
 
-    console.log(`✅ Encontrado: ${joseUser.name} ${joseUser.surname} (ID: ${joseUser.id})`);
+// // // console.log(`✅ Encontrado: ${joseUser.name} ${joseUser.surname} (ID: ${joseUser.id})`);
 
     // 3. Obtener asignaciones de José Martínez
-    console.log('\n3. Obteniendo asignaciones de José Martínez...');
+// // // console.log('\n3. Obteniendo asignaciones de José Martínez...');
     const { data: assignments, error: assignmentsError } = await supabase
       .from('assignments')
       .select(`
@@ -87,13 +87,13 @@ async function testRosaRoblesCalculation() {
       return;
     }
 
-    console.log(`✅ Encontradas ${assignments.length} asignaciones activas`);
+// // // console.log(`✅ Encontradas ${assignments.length} asignaciones activas`);
     assignments.forEach(a => {
-      console.log(`   - ${a.workers?.name} ${a.workers?.surname} (${a.workers?.worker_type || 'sin tipo'})`);
+// // // console.log(`   - ${a.workers?.name} ${a.workers?.surname} (${a.workers?.worker_type || 'sin tipo'})`);
     });
 
     // 4. Obtener festivos de julio 2025
-    console.log('\n4. Obteniendo festivos de julio 2025...');
+// // // console.log('\n4. Obteniendo festivos de julio 2025...');
     const { data: holidays, error: holidaysError } = await supabase
       .from('local_holidays')
       .select('*')
@@ -105,11 +105,11 @@ async function testRosaRoblesCalculation() {
       return;
     }
 
-    console.log(`✅ Encontrados ${holidays.length} festivos en julio 2025:`);
-    holidays.forEach(h => console.log(`   - ${h.day}/${h.month}: ${h.name}`));
+// // // console.log(`✅ Encontrados ${holidays.length} festivos en julio 2025:`);
+    holidays.forEach(h => // // console.log(`   - ${h.day}/${h.month}: ${h.name}`));
 
     // 5. Simular cálculo manual
-    console.log('\n5. Calculando horas manualmente...');
+// // // console.log('\n5. Calculando horas manualmente...');
     
     const month = 7;
     const year = 2025;
@@ -157,41 +157,41 @@ async function testRosaRoblesCalculation() {
         if (isHoliday || isWeekend) {
           holidayDays++;
           holidayHours += 1.5; // Horas fijas para festivos/fines de semana
-          console.log(`   Día ${day}: ${isHoliday ? 'FESTIVO' : 'FIN DE SEMANA'} - ${workerName} - 1.5h (reasignado)`);
+// // // console.log(`   Día ${day}: ${isHoliday ? 'FESTIVO' : 'FIN DE SEMANA'} - ${workerName} - 1.5h (reasignado)`);
         } else {
           laborableDays++;
           laborableHours += serviceHours; // Horas reales del servicio
-          console.log(`   Día ${day}: LABORABLE - ${workerName} - ${serviceHours.toFixed(1)}h`);
+// // // console.log(`   Día ${day}: LABORABLE - ${workerName} - ${serviceHours.toFixed(1)}h`);
         }
       }
     }
 
-    console.log('\n📊 RESULTADO DEL CÁLCULO MANUAL:');
-    console.log(`   Días laborables: ${laborableDays} días, ${laborableHours.toFixed(1)} horas`);
-    console.log(`   Días festivos/fines de semana: ${holidayDays} días, ${holidayHours.toFixed(1)} horas`);
-    console.log(`   TOTAL: ${(laborableDays + holidayDays)} días, ${(laborableHours + holidayHours).toFixed(1)} horas`);
+// // // console.log('\n📊 RESULTADO DEL CÁLCULO MANUAL:');
+// // // console.log(`   Días laborables: ${laborableDays} días, ${laborableHours.toFixed(1)} horas`);
+// // // console.log(`   Días festivos/fines de semana: ${holidayDays} días, ${holidayHours.toFixed(1)} horas`);
+// // // console.log(`   TOTAL: ${(laborableDays + holidayDays)} días, ${(laborableHours + holidayHours).toFixed(1)} horas`);
 
     // 6. Comparar con el resultado esperado
-    console.log('\n🎯 COMPARACIÓN CON RESULTADO ESPERADO:');
-    console.log(`   Esperado: 22 días laborables (77h) + 9 días festivos (13.5h) = 90.5h total`);
-    console.log(`   Calculado: ${laborableDays} días laborables (${laborableHours.toFixed(1)}h) + ${holidayDays} días festivos (${holidayHours.toFixed(1)}h) = ${(laborableHours + holidayHours).toFixed(1)}h total`);
+// // // console.log('\n🎯 COMPARACIÓN CON RESULTADO ESPERADO:');
+// // // console.log(`   Esperado: 22 días laborables (77h) + 9 días festivos (13.5h) = 90.5h total`);
+// // // console.log(`   Calculado: ${laborableDays} días laborables (${laborableHours.toFixed(1)}h) + ${holidayDays} días festivos (${holidayHours.toFixed(1)}h) = ${(laborableHours + holidayHours).toFixed(1)}h total`);
     
     const expectedTotal = 90.5;
     const calculatedTotal = laborableHours + holidayHours;
     const difference = Math.abs(expectedTotal - calculatedTotal);
     
     if (difference < 0.1) {
-      console.log('✅ ¡CÁLCULO CORRECTO! La diferencia es menor a 0.1 horas');
+// // // console.log('✅ ¡CÁLCULO CORRECTO! La diferencia es menor a 0.1 horas');
     } else {
-      console.log(`❌ CÁLCULO INCORRECTO. Diferencia: ${difference.toFixed(1)} horas`);
-      console.log('\n🔍 Posibles causas:');
-      console.log('   - Horarios de servicios no coinciden con lo esperado');
-      console.log('   - Festivos no detectados correctamente');
-      console.log('   - Lógica de reasignación no aplicada');
+// // // console.log(`❌ CÁLCULO INCORRECTO. Diferencia: ${difference.toFixed(1)} horas`);
+// // // console.log('\n🔍 Posibles causas:');
+// // // console.log('   - Horarios de servicios no coinciden con lo esperado');
+// // // console.log('   - Festivos no detectados correctamente');
+// // // console.log('   - Lógica de reasignación no aplicada');
     }
 
     // 7. Probar la nueva lógica de reasignación
-    console.log('\n🔄 Probando nueva lógica de reasignación...');
+// // // console.log('\n🔄 Probando nueva lógica de reasignación...');
     try {
       const { generateMonthlyPlanningWithHolidayReassignment } = require('../src/lib/holidayReassignment');
       
@@ -203,21 +203,21 @@ async function testRosaRoblesCalculation() {
       );
 
       const totalPlanningHours = planningResult.planning.reduce((sum, day) => sum + day.hours, 0);
-      console.log(`   Horas totales con reasignación: ${totalPlanningHours.toFixed(1)}h`);
-      console.log(`   Reasignaciones detectadas: ${planningResult.reassignments.length}`);
+// // // console.log(`   Horas totales con reasignación: ${totalPlanningHours.toFixed(1)}h`);
+// // // console.log(`   Reasignaciones detectadas: ${planningResult.reassignments.length}`);
       
       if (planningResult.reassignments.length > 0) {
-        console.log('   Detalles de reasignaciones:');
+// // // console.log('   Detalles de reasignaciones:');
         planningResult.reassignments.forEach(r => {
-          console.log(`     ${r.date}: ${r.originalWorkerName} → ${r.reassignedWorkerName} (${r.originalHours}h → ${r.reassignedHours}h)`);
+// // // console.log(`     ${r.date}: ${r.originalWorkerName} → ${r.reassignedWorkerName} (${r.originalHours}h → ${r.reassignedHours}h)`);
         });
       }
 
       const planningDifference = Math.abs(expectedTotal - totalPlanningHours);
       if (planningDifference < 0.1) {
-        console.log('✅ ¡LÓGICA DE REASIGNACIÓN CORRECTA!');
+// // // console.log('✅ ¡LÓGICA DE REASIGNACIÓN CORRECTA!');
       } else {
-        console.log(`❌ LÓGICA DE REASIGNACIÓN INCORRECTA. Diferencia: ${planningDifference.toFixed(1)}h`);
+// // // console.log(`❌ LÓGICA DE REASIGNACIÓN INCORRECTA. Diferencia: ${planningDifference.toFixed(1)}h`);
       }
 
     } catch (error) {

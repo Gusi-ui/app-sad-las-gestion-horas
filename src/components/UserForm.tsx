@@ -35,12 +35,12 @@ export interface UserFormData {
   monthly_hours: number
 }
 
-export function UserForm({ 
-  user, 
-  isEditing = false, 
-  onSubmit, 
-  onCancel, 
-  loading = false 
+export function UserForm({
+  user,
+  isEditing = false,
+  onSubmit,
+  onCancel,
+  loading = false
 }: UserFormProps) {
   const [formData, setFormData] = useState<UserFormData>({
     name: '',
@@ -104,9 +104,8 @@ export function UserForm({
       newErrors.monthly_hours = 'Las horas deben ser mayor que 0'
     }
 
-    // console.log('🔍 Validation result:', { 
-    //   hasErrors: Object.values(newErrors).some(e => e !== ''),
-    //   errors: newErrors 
+    // .some(e => e !== ''),
+    //   errors: newErrors
     // })
 
     setErrors(newErrors)
@@ -158,18 +157,12 @@ export function UserForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    // console.log('🔍 Form submission started')
-    // console.log('📝 Form data:', formData)
-    
-    if (!validateForm()) {
-      // console.log('❌ Form validation failed')
-      // console.log('🚨 Errors:', errors)
-      return
+
+    // // if (!validateForm()) {
+      // // return
     }
 
-    // console.log('✅ Form validation passed, calling onSubmit')
-    await onSubmit(formData)
+    // await onSubmit(formData)
   }
 
   return (
@@ -191,7 +184,7 @@ export function UserForm({
                   {isEditing ? 'Editar' : 'Nuevo'} Usuario
                 </h1>
                 <p className="text-sm sm:text-base text-slate-600">
-                  {isEditing 
+                  {isEditing
                     ? `Configurando datos de ${user?.name} ${user?.surname}`
                     : 'Creando nuevo usuario'
                   }
@@ -199,19 +192,19 @@ export function UserForm({
               </div>
             </div>
           </div>
-          
+
           {/* Bottom row - Action buttons */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
-            <Button 
-              variant="secondary" 
+            <Button
+              variant="secondary"
               onClick={onCancel}
               className="w-full sm:w-auto order-2 sm:order-1"
             >
               <X className="w-4 h-4 mr-2" />
               Cancelar
             </Button>
-            <Button 
-              onClick={handleSubmit} 
+            <Button
+              onClick={handleSubmit}
               disabled={loading}
               className="w-full sm:w-auto order-1 sm:order-2"
             >
@@ -316,7 +309,7 @@ export function UserForm({
                   <label className="block text-lg font-bold text-primary mb-3 text-center">
                     Horas Mensuales Asignadas *
                   </label>
-                  
+
                   <div className="relative mb-4">
                     <input
                       type="number"
@@ -327,8 +320,8 @@ export function UserForm({
                       onChange={(e) => handleMonthlyHoursChange(e.target.value)}
                       placeholder="0.5"
                       className={`w-full text-center text-3xl font-bold py-4 pr-12 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                        errors.monthly_hours 
-                          ? 'border-danger bg-danger/10' 
+                        errors.monthly_hours
+                          ? 'border-danger bg-danger/10'
                           : 'border-primary/30 bg-white'
                       }`}
                     />
@@ -374,8 +367,8 @@ export function UserForm({
                     <div>
                       <div className="font-bold text-success">Usuario Activo</div>
                       <div className="text-sm text-success/80">
-                        {formData.is_active 
-                          ? 'El usuario puede recibir asignaciones' 
+                        {formData.is_active
+                          ? 'El usuario puede recibir asignaciones'
                           : 'El usuario está inactivo y no recibirá asignaciones'
                         }
                       </div>

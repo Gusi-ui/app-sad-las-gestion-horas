@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { 
-  Users, 
-  UserCheck, 
-  Calendar, 
-  AlertTriangle, 
-  TrendingUp, 
+import {
+  Users,
+  UserCheck,
+  Calendar,
+  TrendingUp,
   Clock,
   Plus,
-  Settings,
   BarChart3,
   ArrowRight,
   Activity,
@@ -22,6 +20,8 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
+import { useMonthlyBalances } from '@/hooks/useMonthlyBalances'
+import { Badge } from '@/components/ui/badge'
 
 interface TimeSlot {
   start: string
@@ -31,17 +31,6 @@ interface TimeSlot {
 interface DaySchedule {
   enabled: boolean
   timeSlots: TimeSlot[]
-}
-
-interface WeeklySchedule {
-  monday?: DaySchedule
-  tuesday?: DaySchedule
-  wednesday?: DaySchedule
-  thursday?: DaySchedule
-  friday?: DaySchedule
-  saturday?: DaySchedule
-  sunday?: DaySchedule
-  holiday?: DaySchedule
 }
 
 interface DashboardStats {
@@ -81,17 +70,204 @@ export default function AdminDashboard() {
   })
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
 
+  // Hook para balances mensuales del mes actual
+  const { balances, loading: loadingBalances, error: errorBalances } = useMonthlyBalances({ year: new Date().getFullYear(), month: new Date().getMonth() + 1 })
+
+  // Estado para mapear user_id a nombre completo
+  const [userMap, setUserMap] = useState<Record<string, string>>({})
   useEffect(() => {
-    fetchDashboardStats()
-    fetchRecentActivity()
+    async function fetchUsers() {
+      if (!supabase) return;
+      const { data, error } = await supabase.from('users').select('id, name, surname')
+      if (!error && Array.isArray(data)) {
+        const map: Record<string, string> = {};
+        data.forEach((u) => { map[u.id] = `${u.name} ${u.surname}` });
+        setUserMap(map);
+      } else {
+        if (error) {
+          console.error('Error al consultar usuarios:', error);
+        } else {
+          console.error('La respuesta de usuarios no es un array:', data);
+        }
+      }
+    }
+    fetchUsers()
   }, [])
 
-  const fetchDashboardStats = async () => {
-    if (!supabase) {
-      console.error('Supabase client no disponible')
-      setLoading(false)
-      return
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (error) {
+        console.error('Error obteniendo usuario:', error);
+      }
+    });
+  }, []);
+
+  const fetchRecentActivity = async () => {
+    if (!supabase) return;
+
+    try {
+      const activities: RecentActivity[] = []
+
+      // 1. Obtener trabajadoras recientes (creadas y actualizadas)
+      const { data: recentWorkers, error: workersError } = await supabase
+        .from('workers')
+        .select('id, name, surname, created_at, updated_at, is_active')
+        .order('updated_at', { ascending: false })
+        .limit(10)
+
+      if (!workersError && recentWorkers) {
+        recentWorkers.forEach(worker => {
+          const isRecentlyCreated = new Date(worker.created_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+          const isRecentlyUpdated = new Date(worker.updated_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+
+          if (isRecentlyCreated) {
+            activities.push({
+              id: `worker-created-${worker.id}`,
+              type: 'worker',
+              message: `Trabajadora ${worker.name} ${worker.surname} registrada`,
+              time: formatTimeAgo(worker.created_at),
+              icon: <UserCheck className="w-4 h-4" />,
+              created_at: worker.created_at
+            })
+          } else if (isRecentlyUpdated && worker.updated_at !== worker.created_at) {
+            activities.push({
+              id: `worker-updated-${worker.id}`,
+              type: 'worker',
+              message: `Datos de ${worker.name} ${worker.surname} actualizados`,
+              time: formatTimeAgo(worker.updated_at),
+              icon: <UserCheck className="w-4 h-4" />,
+              created_at: worker.updated_at
+            })
+          }
+        })
+      }
+
+      // 2. Obtener usuarios recientes (creados y actualizados)
+      const { data: recentUsers, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, surname, created_at, updated_at, is_active')
+        .order('updated_at', { ascending: false })
+        .limit(10)
+
+      if (!usersError && recentUsers) {
+        recentUsers.forEach(user => {
+          const isRecentlyCreated = new Date(user.created_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+          const isRecentlyUpdated = new Date(user.updated_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+
+          if (isRecentlyCreated) {
+            activities.push({
+              id: `user-created-${user.id}`,
+              type: 'user',
+              message: `Usuario ${user.name} ${user.surname} agregado`,
+              time: formatTimeAgo(user.created_at),
+              icon: <Users className="w-4 h-4" />,
+              created_at: user.created_at
+            })
+          } else if (isRecentlyUpdated && user.updated_at !== user.created_at) {
+            activities.push({
+              id: `user-updated-${user.id}`,
+              type: 'user',
+              message: `Datos de ${user.name} ${user.surname} actualizados`,
+              time: formatTimeAgo(user.updated_at),
+              icon: <Users className="w-4 h-4" />,
+              created_at: user.updated_at
+            })
+          }
+        })
+      }
+
+      // 3. Obtener asignaciones recientes (creadas y actualizadas)
+      const { data: recentAssignments, error: assignmentsError } = await supabase
+        .from('assignments')
+        .select(`
+          id,
+          created_at,
+          updated_at,
+          status,
+          assignment_type,
+          workers(name, surname),
+          users(name, surname)
+        `)
+        .order('updated_at', { ascending: false })
+        .limit(10)
+
+      if (!assignmentsError && recentAssignments) {
+        recentAssignments.forEach(assignment => {
+          const isRecentlyCreated = new Date(assignment.created_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+          const isRecentlyUpdated = new Date(assignment.updated_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+
+          const workerName = assignment.workers ? `${assignment.workers.name} ${assignment.workers.surname}` : 'Trabajadora'
+          const userName = assignment.users ? `${assignment.users.name} ${assignment.users.surname}` : 'Usuario'
+
+          if (isRecentlyCreated) {
+            activities.push({
+              id: `assignment-created-${assignment.id}`,
+              type: 'assignment',
+              message: `Asignación creada: ${workerName} → ${userName}`,
+              time: formatTimeAgo(assignment.created_at),
+              icon: <Calendar className="w-4 h-4" />,
+              created_at: assignment.created_at
+            })
+          } else if (isRecentlyUpdated && assignment.updated_at !== assignment.created_at) {
+            activities.push({
+              id: `assignment-updated-${assignment.id}`,
+              type: 'assignment',
+              message: `Asignación actualizada: ${workerName} → ${userName}`,
+              time: formatTimeAgo(assignment.updated_at),
+              icon: <Calendar className="w-4 h-4" />,
+              created_at: assignment.updated_at
+            })
+          }
+        })
+      }
+
+      // 4. Obtener balances mensuales recientes
+      const { data: recentBalances, error: balancesError } = await supabase
+        .from('monthly_balances')
+        .select('id, created_at, user_id')
+        .order('created_at', { ascending: false })
+        .limit(5)
+
+      if (!balancesError && recentBalances) {
+        recentBalances.forEach(balance => {
+          const isRecentlyCreated = new Date(balance.created_at).getTime() > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).getTime()
+
+          if (isRecentlyCreated) {
+            activities.push({
+              id: `balance-created-${balance.id}`,
+              type: 'monthly_plan',
+              message: `Balance mensual generado para usuario ${balance.user_id}`,
+              time: formatTimeAgo(balance.created_at),
+              icon: <BarChart3 className="w-4 h-4" />,
+              created_at: balance.created_at
+            })
+          }
+        })
+      }
+
+      // Ordenar todas las actividades por fecha de creación (más recientes primero)
+      activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+      // Tomar solo las 15 más recientes
+      setRecentActivity(activities.slice(0, 15))
+
+    } catch (error) {
+      // Puedes dejar el error, pero sin console.log
     }
+  }
+
+  useEffect(() => {
+    fetchDashboardStats();
+    fetchRecentActivity();
+    const activityInterval = setInterval(() => {
+      fetchRecentActivity();
+    }, 30000);
+    return () => clearInterval(activityInterval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Solo se ejecuta una vez al montar
+
+  const fetchDashboardStats = async () => {
+    if (!supabase) return;
 
     try {
       // Obtener estadísticas de trabajadoras
@@ -134,20 +310,17 @@ export default function AdminDashboard() {
         .select('weekly_hours, schedule')
         .eq('status', 'active')
 
-      console.log('🔍 Dashboard - Datos de horas mensuales:', monthlyHoursData)
-      console.log('🔍 Dashboard - Error de horas:', hoursError)
-
       let totalMonthlyHours = 0
       if (monthlyHoursData && !hoursError) {
         // Calcular horas totales mensuales considerando el horario semanal
         totalMonthlyHours = monthlyHoursData.reduce((total, assignment) => {
           let weeklyHours = assignment.weekly_hours || 0
-          
+
           // Si hay un horario detallado, calcular las horas basadas en el schedule
           if (assignment.schedule) {
             const schedule = assignment.schedule
             let calculatedWeeklyHours = 0
-            
+
             // Calcular horas por semana basadas en el horario
             Object.keys(schedule).forEach(day => {
               const daySchedule = schedule[day]
@@ -160,16 +333,14 @@ export default function AdminDashboard() {
                 })
               }
             })
-            
+
             // Usar el valor más alto entre el cálculo del horario y el campo weekly_hours
             weeklyHours = Math.max(weeklyHours, calculatedWeeklyHours)
           }
-          
+
           return total + weeklyHours * 4.33
         }, 0)
       }
-
-      console.log('🔍 Dashboard - Total de horas mensuales calculadas:', totalMonthlyHours)
 
       setStats({
         workers: {
@@ -188,69 +359,9 @@ export default function AdminDashboard() {
       })
 
     } catch (error) {
-      console.error('Error al cargar estadísticas:', error)
+      // Puedes dejar el error, pero sin console.log
     } finally {
       setLoading(false)
-    }
-  }
-
-  const fetchRecentActivity = async () => {
-    if (!supabase) {
-      console.error('Supabase client no disponible')
-      return
-    }
-
-    try {
-      const activities: RecentActivity[] = []
-
-      // Obtener trabajadoras recientes
-      const { data: recentWorkers, error: workersError } = await supabase
-        .from('workers')
-        .select('id, name, surname, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      if (!workersError && recentWorkers) {
-        recentWorkers.forEach(worker => {
-          activities.push({
-            id: worker.id,
-            type: 'worker',
-            message: `Trabajadora ${worker.name} ${worker.surname} registrada`,
-            time: formatTimeAgo(worker.created_at),
-            icon: <UserCheck className="w-4 h-4" />,
-            created_at: worker.created_at
-          })
-        })
-      }
-
-      // Obtener usuarios recientes
-      const { data: recentUsers, error: usersError } = await supabase
-        .from('users')
-        .select('id, name, surname, created_at')
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      if (!usersError && recentUsers) {
-        recentUsers.forEach(user => {
-          activities.push({
-            id: user.id,
-            type: 'user',
-            message: `Usuario ${user.name} ${user.surname} agregado`,
-            time: formatTimeAgo(user.created_at),
-            icon: <Users className="w-4 h-4" />,
-            created_at: user.created_at
-          })
-        })
-      }
-
-      // Ordenar todas las actividades por fecha de creación (más recientes primero)
-      activities.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-
-      // Tomar solo las 10 más recientes
-      setRecentActivity(activities.slice(0, 10))
-
-    } catch (error) {
-      console.error('Error al cargar actividad reciente:', error)
     }
   }
 
@@ -330,6 +441,18 @@ export default function AdminDashboard() {
     )
   }
 
+  // Antes del renderizado de la tabla, filtra balances para dejar solo uno por usuario (el más reciente)
+  const uniqueBalances = Array.from(
+    balances
+      .sort((a, b) => {
+        const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return dateB - dateA;
+      }) // más reciente primero
+      .reduce((map, b) => map.set(b.user_id, b), new Map())
+      .values()
+  );
+
   return (
     <div className="space-y-6 max-w-full overflow-x-hidden">
       {/* Welcome Section */}
@@ -382,25 +505,90 @@ export default function AdminDashboard() {
 
       {/* Recent Activity */}
       <div className="max-w-full">
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-6 flex items-center">
-          <Activity className="w-5 h-5 sm:w-6 sm:h-6 mr-3 text-blue-600 flex-shrink-0" />
-          Actividad Reciente
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center">
+            <Activity className="w-5 h-5 sm:w-6 sm:h-6 mr-3 text-blue-600 flex-shrink-0" />
+            Actividad Reciente
+          </h2>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => fetchRecentActivity()}
+            className="text-xs"
+          >
+            Actualizar
+          </Button>
+        </div>
         <Card className="border-0 shadow-lg">
           <CardContent className="p-4 sm:p-6">
-            <div className="space-y-3 sm:space-y-4">
-              {recentActivity.slice(0, 10).map((activity, index) => (
-                <div key={index} className="flex items-center space-x-3 sm:space-x-4 p-3 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="p-2 bg-blue-100 rounded-lg text-blue-600 flex-shrink-0">
-                    {activity.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-slate-900 truncate">{activity.message}</p>
-                    <p className="text-xs text-slate-500">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8">
+                <Activity className="w-12 h-12 text-slate-300 mx-auto mb-4" />
+                <p className="text-slate-500">No hay actividad reciente</p>
+                <p className="text-sm text-slate-400 mt-1">Las actividades aparecerán aquí automáticamente</p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {recentActivity.slice(0, 12).map((activity, index) => {
+                  // Determinar el color según el tipo de actividad
+                  const getActivityColor = (type: string) => {
+                    switch (type) {
+                      case 'worker':
+                        return 'bg-blue-100 text-blue-600 border-blue-200'
+                      case 'user':
+                        return 'bg-green-100 text-green-600 border-green-200'
+                      case 'assignment':
+                        return 'bg-purple-100 text-purple-600 border-purple-200'
+                      case 'monthly_plan':
+                        return 'bg-orange-100 text-orange-600 border-orange-200'
+                      default:
+                        return 'bg-slate-100 text-slate-600 border-slate-200'
+                    }
+                  }
+
+                  const getActivityBadge = (type: string) => {
+                    switch (type) {
+                      case 'worker':
+                        return 'Trabajadora'
+                      case 'user':
+                        return 'Usuario'
+                      case 'assignment':
+                        return 'Asignación'
+                      case 'monthly_plan':
+                        return 'Balance'
+                      default:
+                        return 'Actividad'
+                    }
+                  }
+
+                  return (
+                    <div key={activity.id} className="flex items-start space-x-3 sm:space-x-4 p-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-200">
+                      <div className={`p-2 rounded-lg flex-shrink-0 border ${getActivityColor(activity.type)}`}>
+                        {activity.icon}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center space-x-2 mb-1">
+                          <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
+                            {getActivityBadge(activity.type)}
+                          </span>
+                          <span className="text-xs text-slate-400">•</span>
+                          <span className="text-xs text-slate-400">{activity.time}</span>
+                        </div>
+                        <p className="text-sm font-medium text-slate-900 leading-relaxed">{activity.message}</p>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {recentActivity.length > 12 && (
+              <div className="mt-4 pt-4 border-t border-slate-200 text-center">
+                <p className="text-xs text-slate-500">
+                  Mostrando las 12 actividades más recientes de {recentActivity.length} total
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -413,7 +601,7 @@ export default function AdminDashboard() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {/* Tarjeta Trabajadoras Activas - Interactiva */}
-          <Card 
+          <Card
             className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
             onClick={() => navigateToFilteredPage('/admin/workers', 'active')}
           >
@@ -433,7 +621,7 @@ export default function AdminDashboard() {
                 de {stats.workers.total} total
               </p>
               <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-blue-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${stats.workers.total > 0 ? (stats.workers.active / stats.workers.total) * 100 : 0}%` }}
                 ></div>
@@ -446,7 +634,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Tarjeta Usuarios Activos - Interactiva */}
-          <Card 
+          <Card
             className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
             onClick={() => navigateToFilteredPage('/admin/users', 'active')}
           >
@@ -466,7 +654,7 @@ export default function AdminDashboard() {
                 de {stats.users.total} total
               </p>
               <div className="mt-2 w-full bg-green-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-green-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${stats.users.total > 0 ? (stats.users.active / stats.users.total) * 100 : 0}%` }}
                 ></div>
@@ -479,7 +667,7 @@ export default function AdminDashboard() {
           </Card>
 
           {/* Tarjeta Asignaciones Activas - Interactiva */}
-          <Card 
+          <Card
             className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-purple-100 hover:shadow-xl transition-all duration-300 cursor-pointer group hover:-translate-y-1"
             onClick={() => navigateToFilteredPage('/admin/assignments', 'active')}
           >
@@ -499,7 +687,7 @@ export default function AdminDashboard() {
                 de {stats.assignments.total} total
               </p>
               <div className="mt-2 w-full bg-purple-200 rounded-full h-2">
-                <div 
+                <div
                   className="bg-purple-500 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${stats.assignments.total > 0 ? (stats.assignments.active / stats.assignments.total) * 100 : 0}%` }}
                 ></div>
@@ -538,6 +726,57 @@ export default function AdminDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* NUEVA SECCIÓN: Balances mensuales */}
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Balances mensuales de usuarios ({new Date().getMonth() + 1}/{new Date().getFullYear()})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {loadingBalances ? (
+            <div className="py-8 text-center text-muted-foreground">Cargando balances mensuales...</div>
+          ) : errorBalances ? (
+            <div className="py-8 text-center text-destructive">{errorBalances}</div>
+          ) : uniqueBalances.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground">No hay balances generados para este mes.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm border">
+                <thead>
+                  <tr className="bg-slate-100">
+                    <th className="px-3 py-2 text-left">Usuario</th>
+                    <th className="px-3 py-2 text-left">Horas asignadas</th>
+                    <th className="px-3 py-2 text-left">Horas reales</th>
+                    <th className="px-3 py-2 text-left">Diferencia</th>
+                    <th className="px-3 py-2 text-left">Estado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {uniqueBalances.map((b) => {
+                    let estado: 'perfect' | 'excess' | 'deficit' = 'perfect'
+                    if (Math.abs(b.balance) < 0.1) estado = 'perfect'
+                    else if (b.balance > 0) estado = 'excess'
+                    else estado = 'deficit'
+                    return (
+                      <tr key={b.id} className="border-b">
+                        <td className="px-3 py-2">{userMap[b.user_id] || b.user_id}</td>
+                        <td className="px-3 py-2">{typeof b.assigned_hours === 'number' ? b.assigned_hours.toFixed(2) : '-'}</td>
+                        <td className="px-3 py-2">{typeof b.scheduled_hours === 'number' ? b.scheduled_hours.toFixed(2) : '-'}</td>
+                        <td className="px-3 py-2">{typeof b.balance === 'number' ? b.balance.toFixed(2) : '-'}</td>
+                        <td className="px-3 py-2">
+                          {estado === 'perfect' && <span className="text-green-600 bg-green-100 px-2 py-1 rounded text-xs">Perfecto</span>}
+                          {estado === 'excess' && <span className="text-orange-600 bg-orange-100 px-2 py-1 rounded text-xs">Exceso</span>}
+                          {estado === 'deficit' && <span className="text-red-600 bg-red-100 px-2 py-1 rounded text-xs">Defecto</span>}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
-} 
+}

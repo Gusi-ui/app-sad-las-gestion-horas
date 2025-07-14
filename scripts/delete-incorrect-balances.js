@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function deleteIncorrectBalances() {
   try {
-    console.log('🗑️ Eliminando balances incorrectos de julio 2025...\n');
+// // console.log('🗑️ Eliminando balances incorrectos de julio 2025...\n');
     
     // Obtener balances a eliminar
     const { data: balances, error: fetchError } = await supabase
@@ -28,22 +28,22 @@ async function deleteIncorrectBalances() {
     }
 
     if (!balances || balances.length === 0) {
-      console.log('✅ No hay balances de julio 2025 para eliminar');
+// // console.log('✅ No hay balances de julio 2025 para eliminar');
       return;
     }
 
-    console.log(`📊 Encontrados ${balances.length} balances de julio 2025:`);
+// // console.log(`📊 Encontrados ${balances.length} balances de julio 2025:`);
     balances.forEach(balance => {
-      console.log(`   - ID: ${balance.id}, User: ${balance.user_id}, Total: ${balance.total_hours}h`);
+// // console.log(`   - ID: ${balance.id}, User: ${balance.user_id}, Total: ${balance.total_hours}h`);
     });
 
     // Confirmar eliminación
-    console.log('\n⚠️  ¿Estás seguro de que quieres eliminar estos balances?');
-    console.log('   Estos balances fueron generados sin asignaciones reales y son incorrectos.');
-    console.log('   Presiona Ctrl+C para cancelar o cualquier tecla para continuar...');
+// // console.log('\n⚠️  ¿Estás seguro de que quieres eliminar estos balances?');
+// // console.log('   Estos balances fueron generados sin asignaciones reales y son incorrectos.');
+// // console.log('   Presiona Ctrl+C para cancelar o cualquier tecla para continuar...');
     
     // Esperar confirmación (simplificado para script)
-    console.log('   Procediendo con la eliminación...\n');
+// // console.log('   Procediendo con la eliminación...\n');
 
     // Eliminar balances
     const { error: deleteError } = await supabase
@@ -57,8 +57,8 @@ async function deleteIncorrectBalances() {
       return;
     }
 
-    console.log('✅ Balances de julio 2025 eliminados correctamente');
-    console.log('💡 Ahora puedes crear las asignaciones reales y regenerar los balances');
+// // console.log('✅ Balances de julio 2025 eliminados correctamente');
+// // console.log('💡 Ahora puedes crear las asignaciones reales y regenerar los balances');
 
   } catch (err) {
     console.error('❌ Error inesperado:', err);

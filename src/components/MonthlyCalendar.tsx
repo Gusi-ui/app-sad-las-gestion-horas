@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar, ChevronLeft, ChevronRight, Clock, TrendingUp, TrendingDown, CheckCircle } from 'lucide-react'
 import { ServiceCard, ServiceDay } from '@/lib/types'
 import { calculateMonthlyHours, getHolidaysForMonth, formatDateToISO, isWeekend, getMonthName, getDayName } from '@/lib/calendar'
+import { useAssignments } from '@/hooks/useAssignments'
 
 interface MonthlyCalendarProps {
   serviceCard: ServiceCard & { service_days: ServiceDay[] }
@@ -18,6 +19,10 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
     year: serviceCard.year
   })
 
+  // Obtener asignaciones del usuario para determinar correctamente los días de servicio
+  const { assignments } = useAssignments()
+  const userAssignments = assignments.filter(a => a.user_id === serviceCard.user_id && a.status === 'active')
+
   const monthData = useMemo(() => {
     // Convertir service_days a formato que entiende la función
     const weeklySchedule: { [key: number]: number } = {}
@@ -29,25 +34,24 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       viewingMonth.year,
       viewingMonth.month,
       weeklySchedule,
-      serviceCard.worker_type === 'holidays',
-      serviceCard.worker_type === 'weekends'
+      serviceCard.worker_type === 'holiday_weekend',
+      serviceCard.worker_type === 'holiday_weekend'
     )
 
     const holidays = getHolidaysForMonth(viewingMonth.year, viewingMonth.month)
     const daysInMonth = new Date(viewingMonth.year, viewingMonth.month, 0).getDate()
     const firstDay = new Date(viewingMonth.year, viewingMonth.month - 1, 1).getDay()
-    
+
     const days = []
-    
+
     // Días vacíos al principio - Ajustar para que la semana empiece en lunes
     const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1 // Convertir domingo (0) a 6, y el resto restar 1
     for (let i = 0; i < adjustedFirstDay; i++) {
       days.push(null)
     }
-    
+
     // Días del mes
     for (let day = 1; day <= daysInMonth; day++) {
-      // Crear fecha en UTC para evitar problemas de zona horaria
       const date = new Date(viewingMonth.year, viewingMonth.month - 1, day, 12, 0, 0)
       const dayOfWeek = date.getDay()
       const dateStr = formatDateToISO(date)
@@ -57,27 +61,52 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const isPastDay = date < today && viewingMonth.month === today.getMonth() + 1 && viewingMonth.year === today.getFullYear()
-      
-      // Verificar si hay servicio ese día
+
       let serviceHours = 0
       let shouldWork = false
-      const serviceDayConfig = serviceCard.service_days.find(sd => sd.day_of_week === dayOfWeek)
-      
-      if (serviceDayConfig) {
-        serviceHours = serviceDayConfig.hours
-        shouldWork = true
-        
-        // Verificar si se trabaja según configuración
-        if (isWeekendDay && serviceCard.worker_type !== 'weekends') {
-          shouldWork = false
-          serviceHours = 0
+      let serviceTimeSlot: { start: string, end: string } | null = null
+      let serviceWorkerName: string | null = null
+      let serviceWorkerId: string | null = null
+
+      // NUEVA LÓGICA: festivos entre semana
+      if (isHolidayDay) {
+        // Buscar asignación de festivos con holiday.enabled
+        const festivoAssignment = userAssignments.find(a => a.assignment_type === 'festivos' && a.schedule && (a.schedule as any).holiday && (a.schedule as any).holiday.enabled)
+        if (festivoAssignment) {
+          shouldWork = true
+          const holidaySchedule = (festivoAssignment.schedule as any).holiday
+          if (holidaySchedule.timeSlots && holidaySchedule.timeSlots.length > 0) {
+            serviceTimeSlot = holidaySchedule.timeSlots[0]
+            // Calcular horas
+            const start = serviceTimeSlot.start
+            const end = serviceTimeSlot.end
+            const [startH, startM] = start.split(':').map(Number)
+            const [endH, endM] = end.split(':').map(Number)
+            serviceHours = ((endH * 60 + endM) - (startH * 60 + startM)) / 60
+          } else {
+            serviceHours = 0
+          }
+          serviceWorkerName = festivoAssignment.worker?.name || null
+          serviceWorkerId = festivoAssignment.worker_id
         }
-        if (isHolidayDay && serviceCard.worker_type !== 'holidays') {
-          shouldWork = false
-          serviceHours = 0
+      } else {
+        // Lógica previa para fines de semana y laborables
+        const serviceDayConfig = serviceCard.service_days.find(sd => sd.day_of_week === dayOfWeek)
+        const hasHolidayAssignment = userAssignments.some(a => a.assignment_type === 'festivos')
+        const hasLaborableAssignment = userAssignments.some(a => a.assignment_type === 'laborables')
+        if (serviceDayConfig) {
+          serviceHours = serviceDayConfig.hours
+          shouldWork = true
+          if (isWeekendDay) {
+            shouldWork = hasHolidayAssignment
+            if (!shouldWork) serviceHours = 0
+          } else {
+            shouldWork = hasLaborableAssignment
+            if (!shouldWork) serviceHours = 0
+          }
         }
       }
-      
+
       days.push({
         day,
         date,
@@ -87,21 +116,30 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
         isWeekend: isWeekendDay,
         serviceHours,
         shouldWork,
-        isPastDay
+        isPastDay,
+        serviceTimeSlot,
+        serviceWorkerName,
+        serviceWorkerId
       })
     }
-    
+
     return {
       calculation,
       holidays,
       days,
       daysInMonth
     }
-  }, [serviceCard, viewingMonth])
+  }, [serviceCard, viewingMonth, userAssignments])
+
+  // Nuevo useEffect para logs de depuración en cliente
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      // // }
+  }, [userAssignments, monthData.days])
 
   const progressPercentage = (serviceCard.used_hours / serviceCard.total_hours) * 100
   const remainingHours = serviceCard.total_hours - serviceCard.used_hours
-  
+
   const canGoToPreviousMonth = viewingMonth.month > 1 || viewingMonth.year > 2024
   const canGoToNextMonth = viewingMonth.month < 12 || viewingMonth.year < 2026
 
@@ -172,7 +210,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
             const difference = scheduledHours - assignedHours
             const isExcess = difference > 0
             const isDifferenceSignificant = Math.abs(difference) >= 1
-            
+
             if (!isDifferenceSignificant) {
               return (
                 <div className="bg-emerald-50 border-l-4 border-emerald-400 p-4 rounded-r-lg">
@@ -190,7 +228,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                 </div>
               )
             }
-            
+
             return (
               <div className={`${isExcess ? 'bg-amber-50 border-amber-400' : 'bg-red-50 border-red-400'} border-l-4 p-4 rounded-r-lg`}>
                 <div className="flex items-center">
@@ -205,7 +243,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                     </h4>
                     <p className={`${isExcess ? 'text-amber-700' : 'text-red-700'} text-sm`}>
                       Programadas: {scheduledHours}h • Asignadas: {assignedHours}h
-                      {isExcess 
+                      {isExcess
                         ? ` • Tienes ${Math.abs(difference).toFixed(1)}h de más programadas`
                         : ` • Necesitas programar ${Math.abs(difference).toFixed(1)}h más`
                       }
@@ -227,14 +265,14 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                 </span>
               </div>
             </div>
-            
+
             <div className="w-full bg-slate-200 rounded-full h-3">
-              <div 
+              <div
                 className={`h-3 rounded-full transition-all duration-500 ${getProgressColor()}`}
                 style={{ width: `${Math.min(progressPercentage, 100)}%` }}
               ></div>
             </div>
-            
+
             <div className="flex justify-between text-xs text-slate-600">
               <span>Usadas: {serviceCard.used_hours}h</span>
               <span className={remainingHours >= 0 ? 'text-emerald-600' : 'text-red-600'}>
@@ -273,12 +311,12 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                 </div>
               ))}
             </div>
-            
+
             {/* Días del mes */}
             <div className="grid grid-cols-7">
               {monthData.days.map((dayData, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className={`min-h-[50px] p-1 border-r border-b text-xs ${
                     !dayData ? 'bg-slate-25' : ''
                   }`}
@@ -286,30 +324,30 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
                   {dayData && (
                     <div className="h-full">
                       <div className={`font-medium mb-1 ${
-                        dayData.isWeekend ? 'text-slate-400' : 
+                        dayData.isWeekend ? 'text-slate-400' :
                         dayData.isPastDay ? 'text-slate-600' : 'text-slate-900'
                       }`}>
                         {dayData.day}
                       </div>
-                      
+
                       {/* Indicador de festivo */}
                       {dayData.isHoliday && (
                         <div className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0.5 rounded mb-1">
                           Festivo
                         </div>
                       )}
-                      
+
                       {/* Horas de servicio */}
                       {dayData.shouldWork && dayData.serviceHours > 0 && (
                         <div className={`text-[10px] px-1 py-0.5 rounded font-medium ${
-                          dayData.isPastDay 
-                            ? 'bg-emerald-100 text-emerald-800' 
+                          dayData.isPastDay
+                            ? 'bg-emerald-100 text-emerald-800'
                             : 'bg-primary-100 text-primary-800'
                         }`}>
                           {dayData.serviceHours}h
                         </div>
                       )}
-                      
+
                       {/* Día sin servicio pero programado */}
                       {!dayData.shouldWork && dayData.serviceHours > 0 && (
                         <div className="text-[10px] bg-slate-100 text-slate-600 px-1 py-0.5 rounded">
@@ -385,4 +423,4 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       </Card>
     </div>
   )
-} 
+}

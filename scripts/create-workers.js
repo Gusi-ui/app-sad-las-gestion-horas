@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function createWorkers() {
   try {
-    console.log('👥 Creando trabajadoras en la base de datos...\n');
+// // console.log('👥 Creando trabajadoras en la base de datos...\n');
     
     // Definir las trabajadoras conocidas
     const workers = [
@@ -40,14 +40,14 @@ async function createWorkers() {
       }
     ];
 
-    console.log('📋 Trabajadoras a crear:');
+// // console.log('📋 Trabajadoras a crear:');
     workers.forEach((worker, index) => {
-      console.log(`   ${index + 1}. ${worker.name} ${worker.surname}`);
-      console.log(`      Email: ${worker.email}`);
-      console.log(`      Tipo: ${worker.worker_type}`);
-      console.log(`      Descripción: ${worker.description}`);
+// // console.log(`   ${index + 1}. ${worker.name} ${worker.surname}`);
+// // console.log(`      Email: ${worker.email}`);
+// // console.log(`      Tipo: ${worker.worker_type}`);
+// // console.log(`      Descripción: ${worker.description}`);
     });
-    console.log('');
+// // console.log('');
 
     // Crear las trabajadoras
     const { data: createdWorkers, error: createError } = await supabase
@@ -60,13 +60,13 @@ async function createWorkers() {
       return;
     }
 
-    console.log('✅ Trabajadoras creadas correctamente:');
+// // console.log('✅ Trabajadoras creadas correctamente:');
     createdWorkers.forEach(worker => {
-      console.log(`   - ${worker.name} ${worker.surname} (ID: ${worker.id})`);
-      console.log(`     Email: ${worker.email}`);
-      console.log(`     Tipo: ${worker.worker_type}`);
+// // console.log(`   - ${worker.name} ${worker.surname} (ID: ${worker.id})`);
+// // console.log(`     Email: ${worker.email}`);
+// // console.log(`     Tipo: ${worker.worker_type}`);
     });
-    console.log('');
+// // console.log('');
 
     // Verificar que se crearon correctamente
     const { data: allWorkers, error: fetchError } = await supabase
@@ -79,8 +79,8 @@ async function createWorkers() {
       return;
     }
 
-    console.log(`📊 Total trabajadoras en la base de datos: ${allWorkers.length}`);
-    console.log('💡 Ahora puedes crear las asignaciones entre usuarios y trabajadoras');
+// // console.log(`📊 Total trabajadoras en la base de datos: ${allWorkers.length}`);
+// // console.log('💡 Ahora puedes crear las asignaciones entre usuarios y trabajadoras');
 
   } catch (err) {
     console.error('❌ Error inesperado:', err);

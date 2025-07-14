@@ -22,7 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Save, User, Mail, Clock, Calendar } from 'lucide-react'
-import ToastNotification from '@/components/ui/toast-notification'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
 interface Worker {
   id: string
@@ -47,6 +47,8 @@ interface Worker {
 export default function EditWorkerPage() {
   const params = useParams()
   const router = useRouter()
+  const { success, error: showError, warning, info } = useNotificationHelpers()
+  
   const [worker, setWorker] = useState<Worker | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -57,15 +59,6 @@ export default function EditWorkerPage() {
     city?: string
     province?: string
   }>({})
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
-  })
   const [formData, setFormData] = useState({
     name: '',
     surname: '',
@@ -106,11 +99,7 @@ export default function EditWorkerPage() {
 
       if (error) {
         console.error('Error al cargar trabajadora:', error)
-        setToast({
-          message: 'Error al cargar trabajadora: ' + error.message,
-          type: 'error',
-          isVisible: true
-        })
+        showError('Error al cargar trabajadora: ' + error.message)
       } else {
         setWorker(data)
         
@@ -159,11 +148,7 @@ export default function EditWorkerPage() {
     } catch (error) {
       console.error('Error inesperado:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error inesperado: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error inesperado: ' + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -216,11 +201,7 @@ export default function EditWorkerPage() {
 
     if (!workerValidation.isValid) {
       setValidationErrors(workerValidation.errors)
-      setToast({
-        message: 'Por favor, corrige los errores en el formulario',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Por favor, corrige los errores en el formulario')
       return
     }
 
@@ -235,21 +216,13 @@ export default function EditWorkerPage() {
         throw error
       }
 
-      setToast({
-        message: 'Trabajadora actualizada correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Trabajadora actualizada correctamente')
       setTimeout(() => {
         router.push('/admin/workers')
       }, 1500)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error al actualizar trabajadora: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error al actualizar trabajadora: ' + errorMessage)
     } finally {
       setSaving(false)
     }
@@ -672,12 +645,7 @@ export default function EditWorkerPage() {
       </form>
 
       {/* Toast Notification */}
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
-      />
+      {/* The ToastNotification component is no longer used, but the hooks are kept */}
     </div>
   )
 } 

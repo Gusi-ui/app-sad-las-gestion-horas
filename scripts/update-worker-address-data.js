@@ -14,11 +14,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function updateWorkerAddressData() {
-  console.log('🚀 Actualizando datos de dirección de trabajadoras...')
+// // console.log('🚀 Actualizando datos de dirección de trabajadoras...')
   
   try {
     // 1. Obtener trabajadoras con dirección existente
-    console.log('\n📋 Obteniendo trabajadoras con dirección...')
+// // console.log('\n📋 Obteniendo trabajadoras con dirección...')
     const { data: workersWithAddress, error: fetchError } = await supabase
       .from('workers')
       .select('id, name, surname, address')
@@ -30,11 +30,11 @@ async function updateWorkerAddressData() {
       return
     }
 
-    console.log(`📊 Encontradas ${workersWithAddress.length} trabajadoras con dirección`)
+// // console.log(`📊 Encontradas ${workersWithAddress.length} trabajadoras con dirección`)
 
     // 2. Actualizar datos de dirección
     for (const worker of workersWithAddress) {
-      console.log(`🔄 Actualizando dirección de ${worker.name} ${worker.surname}...`)
+// // console.log(`🔄 Actualizando dirección de ${worker.name} ${worker.surname}...`)
       
       // Extraer información de la dirección existente
       let streetAddress = worker.address
@@ -72,12 +72,12 @@ async function updateWorkerAddressData() {
       if (updateError) {
         console.error(`❌ Error al actualizar ${worker.id}:`, updateError)
       } else {
-        console.log(`✅ Actualizado: ${streetAddress}, ${postalCode || 'sin CP'}, ${city}`)
+// // console.log(`✅ Actualizado: ${streetAddress}, ${postalCode || 'sin CP'}, ${city}`)
       }
     }
 
     // 3. Verificar resultado final
-    console.log('\n📋 Verificando resultado final...')
+// // console.log('\n📋 Verificando resultado final...')
     const { data: finalCheck, error: finalError } = await supabase
       .from('workers')
       .select('id, name, surname, address, street_address, postal_code, city, province')
@@ -88,16 +88,16 @@ async function updateWorkerAddressData() {
       return
     }
 
-    console.log('\n✅ Actualización completada exitosamente!')
-    console.log('\n📊 Ejemplo de datos actualizados:')
+// // console.log('\n✅ Actualización completada exitosamente!')
+// // console.log('\n📊 Ejemplo de datos actualizados:')
     finalCheck.forEach(worker => {
-      console.log(`  ${worker.name} ${worker.surname}:`)
-      console.log(`    Dirección antigua: ${worker.address || 'N/A'}`)
-      console.log(`    Calle: ${worker.street_address || 'N/A'}`)
-      console.log(`    Código postal: ${worker.postal_code || 'N/A'}`)
-      console.log(`    Ciudad: ${worker.city || 'N/A'}`)
-      console.log(`    Provincia: ${worker.province || 'N/A'}`)
-      console.log('')
+// // console.log(`  ${worker.name} ${worker.surname}:`)
+// // console.log(`    Dirección antigua: ${worker.address || 'N/A'}`)
+// // console.log(`    Calle: ${worker.street_address || 'N/A'}`)
+// // console.log(`    Código postal: ${worker.postal_code || 'N/A'}`)
+// // console.log(`    Ciudad: ${worker.city || 'N/A'}`)
+// // console.log(`    Provincia: ${worker.province || 'N/A'}`)
+// // console.log('')
     })
 
   } catch (error) {

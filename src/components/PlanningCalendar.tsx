@@ -9,10 +9,10 @@ import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import { useToast } from '@/components/ui/toast'
 import { Assignment, WeekDay } from '@/lib/types-new'
-import { 
-  Clock, 
-  User, 
-  Phone, 
+import {
+  Clock,
+  User,
+  Phone,
   ChevronLeft,
   ChevronRight,
   Calendar,
@@ -64,20 +64,18 @@ interface CalendarAssignment extends Assignment {
   height: number
 }
 
-export default function PlanningCalendar({ 
-  selectedDate = new Date(), 
+export default function PlanningCalendar({
+  selectedDate = new Date(),
   onDateChange,
   filterWorker,
-  filterStatus 
+  filterStatus
 }: PlanningCalendarProps) {
-  console.log('🎯 [PLANNING] Componente PlanningCalendar renderizado')
-  
-  const { assignments, isLoading, deleteAssignment, updateAssignment } = useAssignments()
+  // const { assignments, isLoading, deleteAssignment, updateAssignment } = useAssignments()
   const { workers } = useWorkers()
   const { data: users } = useUsers()
   const { showToast, ToastComponent } = useToast()
   const router = useRouter()
-  
+
   const [currentWeek, setCurrentWeek] = useState(selectedDate)
   const [selectedAssignment, setSelectedAssignment] = useState<CalendarAssignment | null>(null)
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
@@ -101,12 +99,12 @@ export default function PlanningCalendar({
     const day = date.getDay()
     const dateString = date.toISOString().split('T')[0]
     const result = day === 0 || day === 6 || holidays.includes(dateString)
-    
+
     // Log de depuración
     if (result) {
-      console.log(`🔴 Día marcado como festivo/fin de semana: ${dateString} (${date.toLocaleDateString('es-ES')})`)
+      // })`)
     }
-    
+
     return result
   }
 
@@ -155,38 +153,27 @@ export default function PlanningCalendar({
   // Process assignments for calendar view
   const calendarAssignments = useMemo(() => {
     const processed: CalendarAssignment[] = []
-    
-    console.log('🔍 [CALENDAR] Procesando asignaciones:', assignments.length)
-    console.log('🔍 [CALENDAR] Filtros:', { selectedWorkerFilter, selectedUserFilter, filterStatus })
-    
-    assignments.forEach((assignment) => {
+
+    // // assignments.forEach((assignment) => {
       if (assignment.status !== 'active') return
-      
+
       if (selectedWorkerFilter && assignment.worker_id !== selectedWorkerFilter) return
       if (selectedUserFilter && assignment.user_id !== selectedUserFilter) return
       if (filterStatus && assignment.status !== filterStatus) return
-      
-      console.log(`🔍 [CALENDAR] Procesando asignación:`, {
-        id: assignment.id,
-        worker_id: assignment.worker_id,
-        assignment_type: assignment.assignment_type,
-        has_schedule: !!assignment.schedule
-      })
-      
-      const workerIndex = workers.findIndex(w => w.id === assignment.worker_id)
+
+      // const workerIndex = workers.findIndex(w => w.id === assignment.worker_id)
       const color = workerColors[workerIndex % workerColors.length]
-      
+
       // Procesar asignaciones con horario específico (laborables)
       if (assignment.schedule) {
-        console.log(`🔍 [CALENDAR] Procesando horario específico para asignación ${assignment.id}`)
-        Object.entries(assignment.schedule).forEach(([day, daySchedule]) => {
+        // Object.entries(assignment.schedule).forEach(([day, daySchedule]) => {
           if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
             const timeSlot = daySchedule.timeSlots[0]
             if (timeSlot.start && timeSlot.end) {
               const startTime = timeSlot.start
               const endTime = timeSlot.end
               const duration = calculateDuration(startTime, endTime)
-              
+
               processed.push({
                 ...assignment,
                 color,
@@ -202,20 +189,19 @@ export default function PlanningCalendar({
           }
         })
       }
-      
+
       // Procesar asignaciones de festivos
       if (assignment.assignment_type === 'festivos') {
-        console.log(`🔍 [CALENDAR] Procesando asignación de festivos: ${assignment.id}`)
-        // Para asignaciones de festivos, crear entradas para todos los días festivos de la semana
+        // // Para asignaciones de festivos, crear entradas para todos los días festivos de la semana
         weekDates.forEach((date, index) => {
           if (isHolidayOrWeekend(date)) {
             const dayOfWeek = weekDays[index].key
             const startTime = '09:00' // Hora por defecto para festivos
             const endTime = '12:30'   // Hora por defecto para festivos
             const duration = calculateDuration(startTime, endTime)
-            
-            console.log(`🔍 [CALENDAR] Agregando festivo para ${dayOfWeek} (${date.toISOString().split('T')[0]})`)
-            
+
+            // .split('T')[0]})`)
+
             processed.push({
               ...assignment,
               color,
@@ -231,9 +217,8 @@ export default function PlanningCalendar({
         })
       }
     })
-    
-    console.log(`🔍 [CALENDAR] Total de asignaciones procesadas: ${processed.length}`)
-    return processed
+
+    // return processed
   }, [assignments, workers, selectedWorkerFilter, selectedUserFilter, filterStatus, timeSlots, weekDates, weekDays])
 
   const getAssignmentsForDay = (day: WeekDay) => {
@@ -245,12 +230,12 @@ export default function PlanningCalendar({
   const detectConflicts = (day: WeekDay) => {
     const dayAssignments = getAssignmentsForDay(day)
     const conflicts: CalendarAssignment[] = []
-    
+
     for (let i = 0; i < dayAssignments.length; i++) {
       for (let j = i + 1; j < dayAssignments.length; j++) {
         const a1 = dayAssignments[i]
         const a2 = dayAssignments[j]
-        
+
         if (a1.worker_id === a2.worker_id) {
           if (a1.startTime < a2.endTime && a2.startTime < a1.endTime) {
             conflicts.push(a1, a2)
@@ -258,7 +243,7 @@ export default function PlanningCalendar({
         }
       }
     }
-    
+
     return conflicts
   }
 
@@ -272,8 +257,8 @@ export default function PlanningCalendar({
   const navigateDay = (direction: 'prev' | 'next') => {
     if (viewMode === 'day') {
       const currentDayIndex = weekDays.findIndex(d => d.key === selectedDay)
-      const newDayIndex = direction === 'next' 
-        ? (currentDayIndex + 1) % 7 
+      const newDayIndex = direction === 'next'
+        ? (currentDayIndex + 1) % 7
         : (currentDayIndex - 1 + 7) % 7
       setSelectedDay(weekDays[newDayIndex].key)
     } else {
@@ -284,18 +269,18 @@ export default function PlanningCalendar({
   const formatWeekRange = () => {
     const endDate = new Date(weekStart)
     endDate.setDate(weekStart.getDate() + 6)
-    
+
     return `${weekStart.getDate()} ${weekStart.toLocaleDateString('es-ES', { month: 'short' })} - ${endDate.getDate()} ${endDate.toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}`
   }
 
   const formatDayRange = () => {
     const dayIndex = weekDays.findIndex(d => d.key === selectedDay)
     const dayDate = weekDates[dayIndex]
-    return `${dayDate?.toLocaleDateString('es-ES', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return `${dayDate?.toLocaleDateString('es-ES', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     })}`
   }
 
@@ -305,10 +290,8 @@ export default function PlanningCalendar({
   }
 
   const handleEditAssignment = (assignment: CalendarAssignment) => {
-    // console.log('Editar: selectedAssignment', assignment)
-    const original = assignments.find(a => a.id === assignment.id)
-    // console.log('Editar: original assignment', original)
-    if (!original || !original.id) {
+    // const original = assignments.find(a => a.id === assignment.id)
+    // if (!original || !original.id) {
       showToast('Error: No se encontró la asignación original para editar', 'error')
       return
     }
@@ -316,29 +299,20 @@ export default function PlanningCalendar({
   }
 
   const handleDuplicateAssignment = async (assignment: CalendarAssignment) => {
-    // console.log('Duplicar: selectedAssignment', assignment)
-    const original = assignments.find(a => a.id === assignment.id)
-    // console.log('Duplicar: original assignment', original)
-    // console.log('Duplicar: original.start_date', original?.start_date)
-    // console.log('Duplicar: assignment.start_date', assignment.start_date)
-    
-    if (!original) {
+    // const original = assignments.find(a => a.id === assignment.id)
+    // // // if (!original) {
       showToast('Error: No se encontró la asignación original para duplicar', 'error')
       return
     }
-    
+
     // Use the assignment's start_date if available, otherwise use original's
     const baseStartDate = assignment.start_date || original.start_date
-    // console.log('Duplicar: baseStartDate', baseStartDate)
-    
-    if (!baseStartDate) {
+    // if (!baseStartDate) {
       // If no start_date is available, use tomorrow as base
       const tomorrow = new Date()
       tomorrow.setDate(tomorrow.getDate() + 1)
       const fallbackBaseDate = tomorrow.toISOString().split('T')[0]
-      // console.log('Duplicar: usando fecha de mañana como base:', fallbackBaseDate)
-      
-      const params = new URLSearchParams({
+      // const params = new URLSearchParams({
         worker_id: original.worker_id,
         user_id: original.user_id,
         weekly_hours: original.weekly_hours?.toString() || '',
@@ -347,35 +321,31 @@ export default function PlanningCalendar({
         notes: original.notes || '',
         start_date: fallbackBaseDate
       })
-      
+
       showToast(`Duplicando asignación con fecha de inicio: ${fallbackBaseDate} (mañana)`, 'success')
       router.push(`/dashboard/assignments/new?${params.toString()}`)
       return
     }
-    
+
     // Find an available start date by checking existing assignments
     const originalStartDate = new Date(baseStartDate)
-    // console.log('Duplicar: originalStartDate', originalStartDate)
-    const suggestedStartDate = new Date(originalStartDate)
+    // const suggestedStartDate = new Date(originalStartDate)
     let attempts = 0
     const maxAttempts = 30 // Try up to 30 days ahead
-    
+
     while (attempts < maxAttempts) {
       suggestedStartDate.setDate(originalStartDate.getDate() + attempts + 1)
       const newStartDate = suggestedStartDate.toISOString().split('T')[0]
-      // console.log(`Duplicar: intento ${attempts + 1}, fecha sugerida: ${newStartDate}`)
-      
-      // Check if this date is available for this worker and user combination
-      const existingAssignment = assignments.find(a => 
-        a.worker_id === original.worker_id && 
-        a.user_id === original.user_id && 
+      // // Check if this date is available for this worker and user combination
+      const existingAssignment = assignments.find(a =>
+        a.worker_id === original.worker_id &&
+        a.user_id === original.user_id &&
         a.start_date === newStartDate
       )
-      
+
       if (!existingAssignment) {
         // This date is available, use it
-        // console.log(`Duplicar: fecha disponible encontrada: ${newStartDate}`)
-        const params = new URLSearchParams({
+        // const params = new URLSearchParams({
           worker_id: original.worker_id,
           user_id: original.user_id,
           weekly_hours: original.weekly_hours?.toString() || '',
@@ -384,22 +354,20 @@ export default function PlanningCalendar({
           notes: original.notes || '',
           start_date: newStartDate
         })
-        
+
         showToast(`Duplicando asignación con fecha de inicio: ${newStartDate}`, 'success')
         router.push(`/dashboard/assignments/new?${params.toString()}`)
         return
       }
-      
+
       attempts++
     }
-    
+
     // If we couldn't find an available date, use a date far in the future
     const farFutureDate = new Date(originalStartDate)
     farFutureDate.setDate(originalStartDate.getDate() + 365) // One year later
     const fallbackDate = farFutureDate.toISOString().split('T')[0]
-    // console.log(`Duplicar: usando fecha de fallback: ${fallbackDate}`)
-    
-    const params = new URLSearchParams({
+    // const params = new URLSearchParams({
       worker_id: original.worker_id,
       user_id: original.user_id,
       weekly_hours: original.weekly_hours?.toString() || '',
@@ -408,7 +376,7 @@ export default function PlanningCalendar({
       notes: original.notes || '',
       start_date: fallbackDate
     })
-    
+
     showToast(`Duplicando asignación con fecha de inicio: ${fallbackDate} (fecha futura)`, 'warning')
     router.push(`/dashboard/assignments/new?${params.toString()}`)
   }
@@ -505,7 +473,7 @@ export default function PlanningCalendar({
                 </Button>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Button
                 variant="secondary"
@@ -532,7 +500,7 @@ export default function PlanningCalendar({
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Sidebar */}
@@ -625,13 +593,13 @@ export default function PlanningCalendar({
                     const conflicts = detectConflicts(day.key)
                     const dayAssignments = getAssignmentsForDay(day.key)
                     const dayDate = weekDates[weekDays.findIndex(d => d.key === day.key)]
-                    
+
                     return (
                       <div
                         key={day.key}
                         className={`p-2 sm:p-3 text-center border-r border-slate-200 last:border-r-0 ${
-                          isHolidayOrWeekend(dayDate) 
-                            ? 'bg-red-200 text-red-900 font-bold' 
+                          isHolidayOrWeekend(dayDate)
+                            ? 'bg-red-200 text-red-900 font-bold'
                             : ''
                         }`}
                         title={isHolidayOrWeekend(dayDate) ? 'Festivo o fin de semana' : ''}
@@ -661,7 +629,7 @@ export default function PlanningCalendar({
                       <div
                         key={timeSlot}
                         className="absolute p-1 text-xs text-slate-500 border-r border-slate-200 bg-slate-50 w-full"
-                        style={{ 
+                        style={{
                           top: `${index * slotHeight}px`,
                           height: `${slotHeight}px`
                         }}
@@ -676,7 +644,7 @@ export default function PlanningCalendar({
                     <div
                       key={day.key}
                       className="absolute border-r border-slate-200 last:border-r-0"
-                      style={{ 
+                      style={{
                         left: `${(dayIndex + 1) * (100 / (viewMode === 'day' ? 2 : 8))}%`,
                         width: `${100 / (viewMode === 'day' ? 2 : 8)}%`,
                         height: '100%'
@@ -759,59 +727,58 @@ export default function PlanningCalendar({
           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold">Detalles de Asignación</h3>
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 size="sm"
                 onClick={() => setSelectedAssignment(null)}
               >
                 ✕
               </Button>
             </div>
-            
+
             <div className="space-y-3">
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 <span className="font-medium">Trabajadora:</span>
                 <span className="truncate">{selectedAssignment.worker?.name} {selectedAssignment.worker?.surname}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <User className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 <span className="font-medium">Usuario:</span>
                 <span className="truncate">{selectedAssignment.user?.name} {selectedAssignment.user?.surname}</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Clock className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 <span className="font-medium">Horario:</span>
                 <span>{selectedAssignment.timeSlot} ({selectedAssignment.duration}h)</span>
               </div>
-              
+
               <div className="flex items-center space-x-2">
                 <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
                 <span className="font-medium">Teléfono:</span>
                 <span className="truncate">{selectedAssignment.user?.phone}</span>
               </div>
-              
+
               {selectedAssignment.notes && (
                         <div className="p-3 bg-primary-50 rounded-lg">
           <p className="text-sm font-medium text-primary-900 mb-1">Notas:</p>
           <p className="text-sm text-primary-700">{selectedAssignment.notes}</p>
         </div>
               )}
-              
+
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-3">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="flex-1"
                   onClick={() => {
                     setSelectedAssignment(null)
                     setTimeout(() => {
                       if (selectedAssignment && selectedAssignment.id) {
-                        // console.log('Navegando a editar asignación:', selectedAssignment.id)
-                        handleEditAssignment(selectedAssignment)
+                        // handleEditAssignment(selectedAssignment)
                       } else {
-                        console.error('No se encontró el ID de la asignación para editar', selectedAssignment)
+                        // console.error('No se encontró el ID de la asignación para editar', selectedAssignment)
                         showToast('Error: No se encontró el ID de la asignación para editar', 'error')
                       }
                     }, 100)
@@ -820,9 +787,9 @@ export default function PlanningCalendar({
                   <Edit className="w-4 h-4 mr-2" />
                   Editar
                 </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm" 
+                <Button
+                  variant="secondary"
+                  size="sm"
                   className="flex-1"
                   onClick={async () => {
                     await handleDuplicateAssignment(selectedAssignment)
@@ -832,9 +799,9 @@ export default function PlanningCalendar({
                   <Copy className="w-4 h-4 mr-2" />
                   Duplicar
                 </Button>
-                <Button 
-                  variant="danger" 
-                  size="sm" 
+                <Button
+                  variant="danger"
+                  size="sm"
                   className="flex-1"
                   onClick={() => {
                     handleDeleteAssignment(selectedAssignment)
@@ -880,4 +847,4 @@ export default function PlanningCalendar({
       {ToastComponent}
     </div>
   )
-} 
+}

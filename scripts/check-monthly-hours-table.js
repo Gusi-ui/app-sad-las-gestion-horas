@@ -14,10 +14,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkMonthlyHoursTable() {
   try {
-    console.log('🔍 Verificando tabla monthly_hours...\n');
+// // console.log('🔍 Verificando tabla monthly_hours...\n');
 
     // 1. Verificar si la tabla existe usando SQL directo
-    console.log('1. Verificando existencia de la tabla...');
+// // console.log('1. Verificando existencia de la tabla...');
     const { data: tableExists, error: tableError } = await supabase
       .rpc('check_table_exists', { table_name: 'monthly_hours' });
 
@@ -30,26 +30,26 @@ async function checkMonthlyHoursTable() {
           .limit(1);
         
         if (error && error.message.includes('does not exist')) {
-          console.log('❌ La tabla monthly_hours NO existe');
-          console.log('💡 Necesitas crear la tabla primero');
+// // console.log('❌ La tabla monthly_hours NO existe');
+// // console.log('💡 Necesitas crear la tabla primero');
           return;
         } else if (error) {
-          console.log('❌ Error al verificar tabla:', error.message);
+// // console.log('❌ Error al verificar tabla:', error.message);
           return;
         } else {
-          console.log('✅ La tabla monthly_hours existe');
+// // console.log('✅ La tabla monthly_hours existe');
         }
       } catch (err) {
-        console.log('❌ La tabla monthly_hours NO existe');
-        console.log('💡 Necesitas crear la tabla primero');
+// // console.log('❌ La tabla monthly_hours NO existe');
+// // console.log('💡 Necesitas crear la tabla primero');
         return;
       }
     } else {
-      console.log('✅ La tabla monthly_hours existe');
+// // console.log('✅ La tabla monthly_hours existe');
     }
 
     // 2. Verificar estructura de la tabla
-    console.log('\n2. Verificando estructura de la tabla...');
+// // console.log('\n2. Verificando estructura de la tabla...');
     const { data: columns, error: columnsError } = await supabase
       .rpc('get_table_columns', { table_name: 'monthly_hours' });
 
@@ -62,47 +62,47 @@ async function checkMonthlyHoursTable() {
           .limit(1);
 
         if (sampleError) {
-          console.log('❌ Error al consultar tabla:', sampleError.message);
+// // console.log('❌ Error al consultar tabla:', sampleError.message);
           return;
         }
 
-        console.log('📋 Estructura de la tabla (basada en datos de muestra):');
+// // console.log('📋 Estructura de la tabla (basada en datos de muestra):');
         if (sampleData && sampleData.length > 0) {
           Object.keys(sampleData[0]).forEach(key => {
-            console.log(`   - ${key}: ${typeof sampleData[0][key]}`);
+// // console.log(`   - ${key}: ${typeof sampleData[0][key]}`);
           });
         }
       } catch (err) {
-        console.log('❌ Error al verificar estructura:', err.message);
+// // console.log('❌ Error al verificar estructura:', err.message);
         return;
       }
     } else {
-      console.log('📋 Columnas de la tabla monthly_hours:');
+// // console.log('📋 Columnas de la tabla monthly_hours:');
       columns.forEach(col => {
-        console.log(`   - ${col.column_name}: ${col.data_type}`);
+// // console.log(`   - ${col.column_name}: ${col.data_type}`);
       });
     }
 
     // 3. Verificar datos existentes
-    console.log('\n3. Verificando datos existentes...');
+// // console.log('\n3. Verificando datos existentes...');
     const { data: existingData, error: dataError } = await supabase
       .from('monthly_hours')
       .select('*')
       .limit(5);
 
     if (dataError) {
-      console.log('❌ Error al consultar datos:', dataError.message);
+// // console.log('❌ Error al consultar datos:', dataError.message);
       return;
     }
 
-    console.log(`📊 Datos existentes: ${existingData?.length || 0} registros`);
+// // console.log(`📊 Datos existentes: ${existingData?.length || 0} registros`);
     if (existingData && existingData.length > 0) {
-      console.log('Ejemplo de registro:');
-      console.log(JSON.stringify(existingData[0], null, 2));
+// // console.log('Ejemplo de registro:');
+// // console.log(JSON.stringify(existingData[0], null, 2));
     }
 
     // 4. Probar inserción de un registro de prueba
-    console.log('\n4. Probando inserción de registro de prueba...');
+// // console.log('\n4. Probando inserción de registro de prueba...');
     const testData = {
       user_id: 'test-user-id',
       month: 7,
@@ -135,11 +135,11 @@ async function checkMonthlyHoursTable() {
       .select();
 
     if (insertError) {
-      console.log('❌ Error al insertar registro de prueba:', insertError.message);
-      console.log('Detalles del error:', insertError.details);
-      console.log('Hint:', insertError.hint);
+// // console.log('❌ Error al insertar registro de prueba:', insertError.message);
+// // console.log('Detalles del error:', insertError.details);
+// // console.log('Hint:', insertError.hint);
     } else {
-      console.log('✅ Inserción de prueba exitosa');
+// // console.log('✅ Inserción de prueba exitosa');
       
       // Limpiar el registro de prueba
       if (insertResult && insertResult.length > 0) {
@@ -147,7 +147,7 @@ async function checkMonthlyHoursTable() {
           .from('monthly_hours')
           .delete()
           .eq('id', insertResult[0].id);
-        console.log('🧹 Registro de prueba eliminado');
+// // console.log('🧹 Registro de prueba eliminado');
       }
     }
 

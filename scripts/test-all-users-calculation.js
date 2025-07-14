@@ -11,7 +11,7 @@ const supabase = createClient(
 
 async function testAllUsersCalculation() {
   try {
-    console.log('🔍 Verificando cálculo para todos los usuarios - Julio 2025\n');
+// // console.log('🔍 Verificando cálculo para todos los usuarios - Julio 2025\n');
 
     // 1. Obtener todos los usuarios
     const { data: users, error: usersError } = await supabase
@@ -24,7 +24,7 @@ async function testAllUsersCalculation() {
       return;
     }
 
-    console.log(`✅ Encontrados ${users.length} usuarios\n`);
+// // console.log(`✅ Encontrados ${users.length} usuarios\n`);
 
     // 2. Obtener festivos de julio 2025
     const { data: holidays, error: holidaysError } = await supabase
@@ -38,13 +38,13 @@ async function testAllUsersCalculation() {
       return;
     }
 
-    console.log('✅ Festivos de julio 2025:', holidays.map(h => `${h.day}/${h.month}: ${h.name}`));
+// // console.log('✅ Festivos de julio 2025:', holidays.map(h => `${h.day}/${h.month}: ${h.name}`));
 
     // 3. Procesar cada usuario
     for (const user of users) {
-      console.log(`\n📋 === USUARIO: ${user.name} ${user.surname} ===`);
-      console.log(`   Dirección: ${user.address || 'No especificada'}`);
-      console.log(`   ID: ${user.id}`);
+// // console.log(`\n📋 === USUARIO: ${user.name} ${user.surname} ===`);
+// // console.log(`   Dirección: ${user.address || 'No especificada'}`);
+// // console.log(`   ID: ${user.id}`);
 
       // Obtener asignaciones del usuario
       const { data: assignments, error: assignmentsError } = await supabase
@@ -58,19 +58,19 @@ async function testAllUsersCalculation() {
       }
 
       if (assignments.length === 0) {
-        console.log('   ⚠️  No tiene asignaciones');
+// // console.log('   ⚠️  No tiene asignaciones');
         continue;
       }
 
-      console.log(`   📝 Asignaciones encontradas: ${assignments.length}`);
+// // console.log(`   📝 Asignaciones encontradas: ${assignments.length}`);
       assignments.forEach(assignment => {
-        console.log(`      - ${assignment.workers.name} ${assignment.workers.surname} (${assignment.workers.worker_type || 'No definido'})`);
+// // console.log(`      - ${assignment.workers.name} ${assignment.workers.surname} (${assignment.workers.worker_type || 'No definido'})`);
         if (assignment.specific_schedule) {
           const scheduleInfo = Object.entries(assignment.specific_schedule)
             .filter(([day, slots]) => slots && Array.isArray(slots) && slots.length > 0)
             .map(([day, slots]) => `${day}: ${slots.length} tramo(s)`)
             .join(', ');
-          console.log(`        Horario: ${scheduleInfo || 'No configurado'}`);
+// // console.log(`        Horario: ${scheduleInfo || 'No configurado'}`);
         }
       });
 
@@ -80,7 +80,7 @@ async function testAllUsersCalculation() {
         return worker.worker_type === 'holiday_weekend' || worker.worker_type === 'both';
       });
 
-      console.log(`   🔍 ¿Tiene servicios festivos/fines de semana?: ${hasWeekendHolidayServices ? 'SÍ' : 'NO'}`);
+// // console.log(`   🔍 ¿Tiene servicios festivos/fines de semana?: ${hasWeekendHolidayServices ? 'SÍ' : 'NO'}`);
 
       // Calcular días y horas
       const year = 2025;
@@ -110,7 +110,7 @@ async function testAllUsersCalculation() {
         }
       }
 
-      console.log(`   📊 Días: ${laborableDays} laborables, ${laborableHolidayDays} festivos laborables, ${holidayWeekendDays} festivos/fines de semana`);
+// // console.log(`   📊 Días: ${laborableDays} laborables, ${laborableHolidayDays} festivos laborables, ${holidayWeekendDays} festivos/fines de semana`);
 
       // Calcular horas por trabajadora
       const workerHours = new Map();
@@ -146,36 +146,36 @@ async function testAllUsersCalculation() {
       }
 
       // Mostrar resultados
-      console.log(`   ⏰ Cálculo de horas:`);
+// // console.log(`   ⏰ Cálculo de horas:`);
       let totalHours = 0;
       for (const [workerName, data] of workerHours) {
-        console.log(`      - ${workerName} (${data.type}): ${data.days} días × ${data.type === 'holiday_weekend' ? '1.5h' : getHoursPerDay(assignments.find(a => a.workers.name + ' ' + a.workers.surname === workerName)) + 'h'} = ${data.hours}h`);
+// // console.log(`      - ${workerName} (${data.type}): ${data.days} días × ${data.type === 'holiday_weekend' ? '1.5h' : getHoursPerDay(assignments.find(a => a.workers.name + ' ' + a.workers.surname === workerName)) + 'h'} = ${data.hours}h`);
         totalHours += data.hours;
       }
 
-      console.log(`   🎯 TOTAL: ${Math.round(totalHours * 10) / 10}h`);
+// // console.log(`   🎯 TOTAL: ${Math.round(totalHours * 10) / 10}h`);
 
       // Detalle de reasignaciones
       if (laborableHolidayDays > 0) {
-        console.log(`   🔄 Reasignaciones:`);
+// // console.log(`   🔄 Reasignaciones:`);
         if (hasWeekendHolidayServices) {
-          console.log(`      - ${laborableHolidayDays} día(s) festivo(s) laborable(s) se reasignan a trabajadora de festivos`);
+// // console.log(`      - ${laborableHolidayDays} día(s) festivo(s) laborable(s) se reasignan a trabajadora de festivos`);
           holidayDates.forEach(day => {
             const date = new Date(year, month - 1, day);
             const dayOfWeek = date.getDay();
             if (dayOfWeek !== 0 && dayOfWeek !== 6) {
               const originalHours = getHoursPerDay(assignments.find(a => a.workers.worker_type === 'laborable'));
-              console.log(`        • ${day}/7: ${originalHours}h → 1.5h`);
+// // console.log(`        • ${day}/7: ${originalHours}h → 1.5h`);
             }
           });
         } else {
-          console.log(`      - ${laborableHolidayDays} día(s) festivo(s) laborable(s) NO se realizan`);
+// // console.log(`      - ${laborableHolidayDays} día(s) festivo(s) laborable(s) NO se realizan`);
           holidayDates.forEach(day => {
             const date = new Date(year, month - 1, day);
             const dayOfWeek = date.getDay();
             if (dayOfWeek !== 0 && dayOfWeek !== 6) {
               const originalHours = getHoursPerDay(assignments.find(a => a.workers.worker_type === 'laborable'));
-              console.log(`        • ${day}/7: ${originalHours}h → 0h`);
+// // console.log(`        • ${day}/7: ${originalHours}h → 0h`);
             }
           });
         }

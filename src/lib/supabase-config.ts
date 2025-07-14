@@ -17,9 +17,7 @@ export const getSupabaseConfig = () => {
   }
 
   // Verificar que la URL sea la correcta del nuevo proyecto
-  if (url === 'https://zvvbyasukzedsrpqpzrv.supabase.co') {
-    console.log('✅ Usando nueva base de datos SAD LAS V2')
-  }
+  // // console.log('✅ Usando nueva base de datos SAD LAS V2')
 
   return { url, anonKey }
 }

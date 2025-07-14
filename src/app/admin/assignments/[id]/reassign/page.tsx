@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
 interface Assignment {
   id: string
@@ -57,6 +58,7 @@ export default function ReassignAssignmentPage() {
   const router = useRouter()
   const params = useParams()
   const assignmentId = params.id as string
+  const { success, error: showError, warning } = useNotificationHelpers()
 
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [availableWorkers, setAvailableWorkers] = useState<Worker[]>([])
@@ -64,6 +66,7 @@ export default function ReassignAssignmentPage() {
   const [loading, setLoading] = useState(true)
   const [reassigning, setReassigning] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [changeReason, setChangeReason] = useState('')
 
   useEffect(() => {
     loadAssignment()
@@ -146,26 +149,34 @@ export default function ReassignAssignmentPage() {
 
       if (updateError) throw updateError
 
-      // 2. Registrar la reasignación en el historial (opcional)
-      // const { error: historyError } = await supabase
-      //   .from('assignment_history')
-      //   .insert({
-      //     assignment_id: assignmentId,
-      //     previous_worker_id: assignment.worker_id,
-      //     new_worker_id: selectedWorkerId,
-      //     action: 'reassigned',
-      //     notes: `Reasignación de ${assignment.worker.name} ${assignment.worker.surname} a ${availableWorkers.find(w => w.id === selectedWorkerId)?.name} ${availableWorkers.find(w => w.id === selectedWorkerId)?.surname}`
-      //   })
+      // 2. Registrar la reasignación en el historial
+      const { error: historyError } = await supabase
+        .from('assignment_history')
+        .insert({
+          assignment_id: assignmentId,
+          previous_worker_id: assignment.worker_id,
+          new_worker_id: selectedWorkerId,
+          changed_by: (await supabase.auth.getUser()).data.user?.id || '',
+          change_reason: changeReason || 'Reasignación de trabajadora'
+        })
 
-      // if (historyError) {
-      //   console.warn('Error al registrar historial:', historyError)
-      // }
+      if (historyError) {
+        console.warn('Error al registrar historial:', historyError)
+        warning('Reasignación exitosa', 'No se pudo registrar en el historial')
+      } else {
+        success(
+          'Reasignación exitosa', 
+          `Asignación reasignada de ${assignment.worker.name} ${assignment.worker.surname} a ${availableWorkers.find(w => w.id === selectedWorkerId)?.name} ${availableWorkers.find(w => w.id === selectedWorkerId)?.surname}`
+        )
+      }
 
       // 3. Redirigir al planning
-      router.push('/admin/planning?reassigned=true')
+      setTimeout(() => {
+        router.push('/admin/planning?reassigned=true')
+      }, 1500)
     } catch (error) {
       console.error('Error al reasignar:', error)
-      alert('Error al reasignar la asignación')
+      showError('Error al reasignar', 'No se pudo completar la reasignación')
     } finally {
       setReassigning(false)
     }
@@ -369,6 +380,17 @@ export default function ReassignAssignmentPage() {
                     <span className="font-medium text-slate-900">
                       Trabajadora seleccionada: {selectedWorker.name} {selectedWorker.surname}
                     </span>
+                  </div>
+                  
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                      Motivo del cambio (opcional)
+                    </label>
+                    <Input
+                      placeholder="Ej: Disponibilidad, preferencia del usuario, etc."
+                      value={changeReason}
+                      onChange={(e) => setChangeReason(e.target.value)}
+                    />
                   </div>
                   
                   <Button

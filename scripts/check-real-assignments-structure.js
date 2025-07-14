@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkRealStructure() {
   try {
-    console.log('🔍 Verificando estructura real de la tabla assignments...');
+// // console.log('🔍 Verificando estructura real de la tabla assignments...');
     
     // Intentar obtener una asignación con todos los campos básicos
     const { data: basicAssignment, error: basicError } = await supabase
@@ -27,8 +27,8 @@ async function checkRealStructure() {
       return;
     }
 
-    console.log('✅ Campos básicos accesibles');
-    console.log('📋 Asignación de ejemplo:', basicAssignment[0]);
+// // console.log('✅ Campos básicos accesibles');
+// // console.log('📋 Asignación de ejemplo:', basicAssignment[0]);
 
     // Intentar diferentes campos para ver cuáles existen
     const fieldsToTest = [
@@ -42,7 +42,7 @@ async function checkRealStructure() {
       'notes'
     ];
 
-    console.log('\n🔍 Probando campos individuales:');
+// // console.log('\n🔍 Probando campos individuales:');
     
     for (const field of fieldsToTest) {
       try {
@@ -52,20 +52,20 @@ async function checkRealStructure() {
           .limit(1);
         
         if (error) {
-          console.log(`  ❌ ${field}: NO existe (${error.message})`);
+// // console.log(`  ❌ ${field}: NO existe (${error.message})`);
         } else {
-          console.log(`  ✅ ${field}: SÍ existe`);
+// // console.log(`  ✅ ${field}: SÍ existe`);
           if (data && data[0]) {
-            console.log(`     Valor: ${JSON.stringify(data[0][field])}`);
+// // console.log(`     Valor: ${JSON.stringify(data[0][field])}`);
           }
         }
       } catch (err) {
-        console.log(`  ❌ ${field}: Error al probar`);
+// // console.log(`  ❌ ${field}: Error al probar`);
       }
     }
 
     // Verificar todas las asignaciones con assignment_type
-    console.log('\n📊 Estado de assignment_type en todas las asignaciones:');
+// // console.log('\n📊 Estado de assignment_type en todas las asignaciones:');
     const { data: allAssignments, error: allError } = await supabase
       .from('assignments')
       .select('id, assignment_type, worker_id, user_id')
@@ -77,7 +77,7 @@ async function checkRealStructure() {
     }
 
     allAssignments.forEach(assignment => {
-      console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type || 'NULL'}`);
+// // console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type || 'NULL'}`);
     });
 
   } catch (error) {

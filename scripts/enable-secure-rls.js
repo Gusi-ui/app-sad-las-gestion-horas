@@ -12,11 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function enableSecureRLS() {
-  console.log('🔒 Habilitando políticas RLS seguras para producción...\n')
+// // console.log('🔒 Habilitando políticas RLS seguras para producción...\n')
 
   try {
     // Habilitar RLS en todas las tablas
-    console.log('📋 Habilitando RLS en todas las tablas...')
+// // console.log('📋 Habilitando RLS en todas las tablas...')
     
     const tables = [
       'admins',
@@ -38,14 +38,14 @@ async function enableSecureRLS() {
         if (error) {
           console.warn(`⚠️ No se pudo habilitar RLS en ${table}:`, error.message)
         } else {
-          console.log(`✅ RLS habilitado en ${table}`)
+// // console.log(`✅ RLS habilitado en ${table}`)
         }
       } catch (err) {
         console.warn(`⚠️ Error procesando ${table}:`, err.message)
       }
     }
 
-    console.log('\n📋 Creando políticas seguras...')
+// // console.log('\n📋 Creando políticas seguras...')
 
     // Políticas para Super Admin (acceso total)
     const superAdminPolicies = [
@@ -81,14 +81,14 @@ async function enableSecureRLS() {
     ]
 
     // Aplicar políticas de Super Admin
-    console.log('🔑 Aplicando políticas de Super Admin...')
+// // console.log('🔑 Aplicando políticas de Super Admin...')
     for (const policy of superAdminPolicies) {
       try {
         const { error } = await supabase.rpc('exec_sql', { sql: policy })
         if (error) {
           console.warn(`⚠️ Error en política Super Admin:`, error.message)
         } else {
-          console.log(`✅ Política Super Admin creada`)
+// // console.log(`✅ Política Super Admin creada`)
         }
       } catch (err) {
         console.warn(`⚠️ Error aplicando política:`, err.message)
@@ -96,14 +96,14 @@ async function enableSecureRLS() {
     }
 
     // Aplicar políticas de Administradores
-    console.log('👨‍💼 Aplicando políticas de Administradores...')
+// // console.log('👨‍💼 Aplicando políticas de Administradores...')
     for (const policy of adminPolicies) {
       try {
         const { error } = await supabase.rpc('exec_sql', { sql: policy })
         if (error) {
           console.warn(`⚠️ Error en política Admin:`, error.message)
         } else {
-          console.log(`✅ Política Admin creada`)
+// // console.log(`✅ Política Admin creada`)
         }
       } catch (err) {
         console.warn(`⚠️ Error aplicando política:`, err.message)
@@ -111,30 +111,30 @@ async function enableSecureRLS() {
     }
 
     // Aplicar políticas de Trabajadoras
-    console.log('👩‍💼 Aplicando políticas de Trabajadoras...')
+// // console.log('👩‍💼 Aplicando políticas de Trabajadoras...')
     for (const policy of workerPolicies) {
       try {
         const { error } = await supabase.rpc('exec_sql', { sql: policy })
         if (error) {
           console.warn(`⚠️ Error en política Worker:`, error.message)
         } else {
-          console.log(`✅ Política Worker creada`)
+// // console.log(`✅ Política Worker creada`)
         }
       } catch (err) {
         console.warn(`⚠️ Error aplicando política:`, err.message)
       }
     }
 
-    console.log('\n✅ Políticas RLS seguras habilitadas')
-    console.log('\n🔒 Niveles de acceso configurados:')
-    console.log('• Super Admin: Acceso total a todas las tablas')
-    console.log('• Admin: Acceso a workers, users, assignments, etc.')
-    console.log('• Worker: Solo su perfil y asignaciones')
+// // console.log('\n✅ Políticas RLS seguras habilitadas')
+// // console.log('\n🔒 Niveles de acceso configurados:')
+// // console.log('• Super Admin: Acceso total a todas las tablas')
+// // console.log('• Admin: Acceso a workers, users, assignments, etc.')
+// // console.log('• Worker: Solo su perfil y asignaciones')
     
-    console.log('\n⚠️ IMPORTANTE:')
-    console.log('• Las políticas están configuradas para máxima seguridad')
-    console.log('• Solo usuarios autenticados con roles apropiados pueden acceder')
-    console.log('• Verifica que los usuarios tengan los roles correctos asignados')
+// // console.log('\n⚠️ IMPORTANTE:')
+// // console.log('• Las políticas están configuradas para máxima seguridad')
+// // console.log('• Solo usuarios autenticados con roles apropiados pueden acceder')
+// // console.log('• Verifica que los usuarios tengan los roles correctos asignados')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function cleanDuplicates() {
   try {
-    console.log('🧹 Limpiando duplicados de balances mensuales...\n');
+// // console.log('🧹 Limpiando duplicados de balances mensuales...\n');
     
     // Obtener todos los balances
     const { data: balances, error } = await supabase
@@ -28,7 +28,7 @@ async function cleanDuplicates() {
       return;
     }
 
-    console.log(`📊 Total de balances encontrados: ${balances.length}\n`);
+// // console.log(`📊 Total de balances encontrados: ${balances.length}\n`);
 
     // Agrupar por usuario y mes/año
     const groupedBalances = {};
@@ -44,11 +44,11 @@ async function cleanDuplicates() {
     const duplicates = Object.entries(groupedBalances).filter(([key, balances]) => balances.length > 1);
     
     if (duplicates.length === 0) {
-      console.log('✅ No se encontraron duplicados para limpiar');
+// // console.log('✅ No se encontraron duplicados para limpiar');
       return;
     }
 
-    console.log(`⚠️  Encontrados ${duplicates.length} grupos con duplicados\n`);
+// // console.log(`⚠️  Encontrados ${duplicates.length} grupos con duplicados\n`);
 
     // Obtener información de usuarios
     const { data: users, error: usersError } = await supabase
@@ -67,23 +67,23 @@ async function cleanDuplicates() {
       const user = users.find(u => u.id === userId);
       const userName = user ? `${user.name} ${user.surname}` : `Usuario ${userId}`;
       
-      console.log(`👤 ${userName} | Mes: ${month}/${year}`);
-      console.log(`   Manteniendo el registro más reciente: ${balances[0].id}`);
+// // console.log(`👤 ${userName} | Mes: ${month}/${year}`);
+// // console.log(`   Manteniendo el registro más reciente: ${balances[0].id}`);
       
       // Mantener el primer registro (más reciente) y eliminar el resto
       for (let i = 1; i < balances.length; i++) {
         idsToDelete.push(balances[i].id);
-        console.log(`   Eliminando: ${balances[i].id}`);
+// // console.log(`   Eliminando: ${balances[i].id}`);
       }
-      console.log('');
+// // console.log('');
     });
 
     if (idsToDelete.length === 0) {
-      console.log('✅ No hay registros para eliminar');
+// // console.log('✅ No hay registros para eliminar');
       return;
     }
 
-    console.log(`🗑️  Eliminando ${idsToDelete.length} registros duplicados...\n`);
+// // console.log(`🗑️  Eliminando ${idsToDelete.length} registros duplicados...\n`);
 
     // Eliminar los duplicados
     const { error: deleteError } = await supabase
@@ -96,7 +96,7 @@ async function cleanDuplicates() {
       return;
     }
 
-    console.log('✅ Duplicados eliminados correctamente\n');
+// // console.log('✅ Duplicados eliminados correctamente\n');
 
     // Verificar resultado
     const { data: remainingBalances, error: remainingError } = await supabase
@@ -110,7 +110,7 @@ async function cleanDuplicates() {
       return;
     }
 
-    console.log(`📊 Balances restantes: ${remainingBalances.length}\n`);
+// // console.log(`📊 Balances restantes: ${remainingBalances.length}\n`);
 
     // Mostrar resumen final
     const finalGrouped = {};
@@ -125,9 +125,9 @@ async function cleanDuplicates() {
     const finalDuplicates = Object.entries(finalGrouped).filter(([key, balances]) => balances.length > 1);
     
     if (finalDuplicates.length === 0) {
-      console.log('✅ Verificación completada: No quedan duplicados');
+// // console.log('✅ Verificación completada: No quedan duplicados');
     } else {
-      console.log(`⚠️  Aún quedan ${finalDuplicates.length} grupos con duplicados`);
+// // console.log(`⚠️  Aún quedan ${finalDuplicates.length} grupos con duplicados`);
     }
 
   } catch (err) {

@@ -61,19 +61,19 @@ function timeToMinutes(time: string): number {
 // Función para obtener la hora de inicio de un horario
 function getStartTime(times: any): string | null {
   if (!times) return null;
-  
+
   // Caso: array de strings (antiguo)
   if (Array.isArray(times) && typeof times[0] === 'string') {
     return times[0];
   }
-  
+
   // Caso: array de objetos {start, end}
   if (Array.isArray(times) && typeof times[0] === 'object' && times[0] !== null) {
     const firstTime = times[0];
     if (typeof firstTime === 'string') return firstTime;
     if (firstTime.start) return firstTime.start;
   }
-  
+
   return null;
 }
 
@@ -88,19 +88,19 @@ function sortAssignmentsByTime(assignments: Assignment[], dayKey: WeekDay): Assi
   return [...assignments].sort((a, b) => {
     const timesA = getScheduleForDay(a.specific_schedule, dayKey);
     const timesB = getScheduleForDay(b.specific_schedule, dayKey);
-    
+
     const startTimeA = getStartTime(timesA);
     const startTimeB = getStartTime(timesB);
-    
+
     // Si ambos tienen horario, ordenar por hora
     if (startTimeA && startTimeB) {
       return timeToMinutes(startTimeA) - timeToMinutes(startTimeB);
     }
-    
+
     // Si solo uno tiene horario, el que tiene horario va primero
     if (startTimeA && !startTimeB) return -1;
     if (!startTimeA && startTimeB) return 1;
-    
+
     // Si ninguno tiene horario, mantener orden original
     return 0;
   });
@@ -129,14 +129,11 @@ function renderScheduleTimes(times: any): string {
 }
 
 export default function PlanningPage() {
-  console.log('🎯 [PLANNING] Componente PlanningPage renderizado')
-  
-  const router = useRouter()
+  // const router = useRouter()
   const { showToast, ToastComponent } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const { assignments, isLoading, createAssignment, deleteAssignment, updateAssignment } = useAssignments()
-  // console.log('ASSIGNMENTS', assignments);
-  const { workers } = useWorkers()
+  // const { workers } = useWorkers()
   const { data: users } = useUsers()
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
@@ -182,23 +179,15 @@ export default function PlanningPage() {
     // Filtro por trabajadora y usuario
     if (filterWorkerId && a.worker_id !== filterWorkerId) return false;
     if (filterUserId && a.user_id !== filterUserId) return false;
-    
-    console.log(`🔍 [PLANNING] Procesando asignación:`, {
-      id: a.id,
-      worker: a.worker?.name,
-      user: a.user?.name,
-      assignment_type: a.assignment_type,
-      has_schedule: !!a.schedule
-    });
-    
-    if (viewMode === 'day') {
+
+    // if (viewMode === 'day') {
       // Para asignaciones de festivos, mostrarlas en días festivos y fines de semana
       if (a.assignment_type === 'festivos') {
         const isHoliday = isHolidayOrWeekend(selectedDate, holidays);
-        console.log(`🔍 [PLANNING] Asignación de festivos: ${a.worker?.name} - ${isHoliday ? '✅ Mostrar' : '❌ Ocultar'} (${selectedDate.toISOString().split('T')[0]})`);
+        // .split('T')[0]})`);
         return isHoliday;
       }
-      
+
       // Para asignaciones con horario específico (laborables)
       if (a.schedule) {
         const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
@@ -208,7 +197,7 @@ export default function PlanningPage() {
           return true;
         }
       }
-      
+
       // Si no hay horario, pero el start_date coincide, mostrarla también
       if (a.start_date) {
         const start = new Date(a.start_date);
@@ -225,7 +214,7 @@ export default function PlanningPage() {
       if (a.assignment_type === 'festivos') {
         return isHolidayOrWeekend(day, holidays);
       }
-      
+
       // Para asignaciones con horario específico (laborables)
       if (a.schedule) {
         const dayKey = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'][getCorrectDayOfWeek(day)];
@@ -234,7 +223,7 @@ export default function PlanningPage() {
           return true;
         }
       }
-      
+
       // Si no hay horario, pero el start_date coincide, mostrarla también
       if (a.start_date) {
         return isSameDay(new Date(a.start_date), day);
@@ -272,10 +261,10 @@ export default function PlanningPage() {
     const startOfWeek = new Date(weekStart)
     const endOfWeek = new Date(weekStart)
     endOfWeek.setDate(endOfWeek.getDate() + 6)
-    
+
     const startFormatted = startOfWeek.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })
     const endFormatted = endOfWeek.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
-    
+
     return `${startFormatted} - ${endFormatted}`
   }
 
@@ -390,15 +379,13 @@ export default function PlanningPage() {
   const [reassignState, setReassignState] = useState<{ assignmentId: string | null, workerId: string, loading: boolean }>({ assignmentId: null, workerId: '', loading: false })
 
   // Debug temporal para Dolores
-  assignments.forEach(a => {
-    if (a.user?.name === 'Dolores') {
-      // console.log('DOLORES ASSIGNMENT:', a);
-      const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
-      const dayKey = weekDays[getCorrectDayOfWeek(selectedDate)] as WeekDay;
-      const times = getScheduleForDay(a.specific_schedule, dayKey);
-      // console.log('DOLORES TIMES FOR TODAY:', times);
-    }
-  });
+  // assignments.forEach(a => {
+  //   if (a.user?.name === 'Dolores') {
+  //     // //     const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
+  //     const dayKey = weekDays[getCorrectDayOfWeek(selectedDate)] as WeekDay;
+  //     const times = getScheduleForDay(a.specific_schedule, dayKey);
+  //     // //   }
+  // });
 
   const year = selectedDate.getFullYear();
   const month = selectedDate.getMonth() + 1; // 1-indexed
@@ -418,7 +405,7 @@ export default function PlanningPage() {
                 Vista diaria de asignaciones
               </p>
             </div>
-            
+
             <div className="hidden md:flex items-center space-x-2">
               <Link href="/dashboard">
                 <Button variant="secondary" size="sm">
@@ -451,9 +438,9 @@ export default function PlanningPage() {
             </div>
 
             <div className="md:hidden relative">
-              <Button 
-                variant="secondary" 
-                size="sm" 
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => setShowMobileMenu(!showMobileMenu)}
                 aria-label="Abrir menú de navegación"
                 aria-expanded={showMobileMenu}
@@ -486,8 +473,8 @@ export default function PlanningPage() {
 
       {/* Menú contextual móvil unificado */}
       <div className={`md:hidden transition-all duration-300 ease-in-out ${
-        showMobileMenu 
-          ? 'max-h-96 opacity-100 visible' 
+        showMobileMenu
+          ? 'max-h-96 opacity-100 visible'
           : 'max-h-0 opacity-0 invisible'
       }`}>
         <div className="py-4 border-t border-slate-200 bg-white shadow-lg">
@@ -522,13 +509,13 @@ export default function PlanningPage() {
                 Asignaciones
               </Button>
             </Link>
-            <Button 
-              variant="secondary" 
-              size="sm" 
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => {
                 handleLogout()
                 setShowMobileMenu(false)
-              }} 
+              }}
               className="w-full justify-start"
             >
               <LogOut className="w-4 h-4 mr-2" />
@@ -539,7 +526,7 @@ export default function PlanningPage() {
       </div>
 
       <main className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 py-6 sm:py-8">
-        
+
         {/* ACCIONES RÁPIDAS */}
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
           <Link href="/dashboard/assignments/new">
@@ -1493,4 +1480,4 @@ export default function PlanningPage() {
       </main>
     </div>
   )
-} 
+}

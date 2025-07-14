@@ -1,76 +1,90 @@
-export type PlanningDay = { 
-  date: string; 
-  hours: number; 
-  isHoliday?: boolean;
-};
+import { assignments as assignmentsApi } from "@/lib/supabase-new";
+import { getHolidaysFromDatabase } from "@/lib/calendar";
+import { createClient } from "@/lib/supabase-server";
 
-export type MonthlyBalanceResult = {
-  assigned_hours: number;
-  scheduled_hours: number;
-  balance: number;
-  status: "perfect" | "excess" | "deficit";
-  message: string;
-  planning: PlanningDay[];
-  // Información detallada sobre festivos
-  holidayInfo: {
-    totalHolidays: number;
-    holidayHours: number;
-    workingDays: number;
-    workingHours: number;
-  };
-};
+// Utilidades
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate();
+}
+function isWeekend(date: Date) {
+  return date.getDay() === 0 || date.getDay() === 6;
+}
+function getWeekDayName(date: Date): string {
+  return ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][date.getDay()];
+}
+function timeDiffInHours(start: string, end: string): number {
+  const [sh, sm] = start.split(":").map(Number);
+  const [eh, em] = end.split(":").map(Number);
+  return (eh * 60 + em - (sh * 60 + sm)) / 60;
+}
 
 /**
- * Calcula el balance mensual de horas para un usuario y su planning.
- * @param planning Array de días y horas programadas para el mes
- * @param assigned_hours Horas asignadas al usuario ese mes (límite)
- * @returns Balance mensual, estado y mensaje para la trabajadora
+ * Calcula y guarda el balance mensual de todos los usuarios activos.
+ * @param year Año (ej: 2025)
+ * @param month Mes (1-12)
  */
-export function calculateMonthlyBalance(
-  planning: PlanningDay[],
-  assigned_hours: number
-): MonthlyBalanceResult {
-  // 1. Sumar todas las horas programadas para el mes
-  const scheduled_hours = planning.reduce((sum, day) => sum + (day.hours || 0), 0);
+export async function calculateAndStoreMonthlyBalances(year: number, month: number) {
+  const supabase = await createClient();
+  // 1. Obtener todos los usuarios activos
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, monthly_hours')
+    .eq('is_active', true);
+  if (usersError) throw usersError;
 
-  // 2. Calcular el balance
-  const balance = assigned_hours - scheduled_hours;
+  // 2. Obtener festivos reales del mes
+  const holidays = await getHolidaysFromDatabase(year, month);
+  const holidayDates = new Set(holidays.map(h => h.date));
 
-  // 3. Determinar el estado y el mensaje
-  let status: "perfect" | "excess" | "deficit";
-  let message: string;
-
-  if (Math.abs(balance) < 0.1) {
-    status = "perfect";
-    message = "Las horas asignadas coinciden exactamente con las que se van a consumir este mes.";
-  } else if (balance > 0) {
-    status = "excess";
-    message = `Este usuario tendrá ${Math.abs(balance).toFixed(1)}h de más. Tendrás ${Math.abs(balance).toFixed(1)}h libres.`;
-  } else {
-    status = "deficit";
-    message = `Este usuario tendrá ${Math.abs(balance).toFixed(1)}h de menos. Tendrás que realizar ${Math.abs(balance).toFixed(1)}h adicionales.`;
+  for (const user of users) {
+    // 3. Obtener todas las asignaciones activas del usuario para el mes
+    const userAssignments = await assignmentsApi.getAll({
+      user_id: user.id,
+      status: "active"
+    });
+    let realHours = 0;
+    const daysInMonth = getDaysInMonth(year, month);
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = new Date(year, month - 1, day);
+      const dateStr = date.toISOString().slice(0, 10);
+      const isHoliday = holidayDates.has(dateStr);
+      const weekend = isWeekend(date);
+      const weekDay = getWeekDayName(date);
+      // Buscar asignaciones activas ese día
+      const activeAssignments = userAssignments.filter(a => {
+        const start = new Date(a.start_date);
+        const end = a.end_date ? new Date(a.end_date) : null;
+        return date >= start && (!end || date <= end);
+      });
+      for (const a of activeAssignments) {
+        let applies = false;
+        if (isHoliday && a.assignment_type === "holidays") applies = true;
+        else if (weekend && a.assignment_type === "weekends") applies = true;
+        else if (!isHoliday && !weekend && (a.assignment_type === "regular" || a.assignment_type === "laborables")) applies = true;
+        if (!applies) continue;
+        const schedule = a.schedule as any;
+        if (schedule && schedule[weekDay] && schedule[weekDay].enabled) {
+          const timeSlots = schedule[weekDay].timeSlots || [];
+          for (const slot of timeSlots) {
+            realHours += timeDiffInHours(slot.start, slot.end);
+          }
+        }
+      }
+    }
+    const assignedHours = user.monthly_hours;
+    const difference = realHours - assignedHours;
+    // Guardar o actualizar el balance mensual
+    await supabase
+      .from('monthly_balances')
+      .upsert([
+        {
+          user_id: user.id,
+          year,
+          month,
+          assigned_hours: assignedHours,
+          real_hours: realHours,
+          difference
+        }
+      ], { onConflict: 'user_id,year,month' });
   }
-
-  // 3. Calcular información detallada sobre festivos
-  const holidayDays = planning.filter(day => day.isHoliday);
-  const workingDays = planning.filter(day => !day.isHoliday);
-  
-  const holidayHours = holidayDays.reduce((sum, day) => sum + (day.hours || 0), 0);
-  const workingHours = workingDays.reduce((sum, day) => sum + (day.hours || 0), 0);
-
-  // 4. Devolver el resultado
-  return {
-    assigned_hours,
-    scheduled_hours,
-    balance,
-    status,
-    message,
-    planning,
-    holidayInfo: {
-      totalHolidays: holidayDays.length,
-      holidayHours,
-      workingDays: workingDays.length,
-      workingHours,
-    },
-  };
 } 

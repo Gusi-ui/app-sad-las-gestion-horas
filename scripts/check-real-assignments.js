@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkRealAssignments() {
-  console.log('🔍 Verificando asignaciones reales en la base de datos...\n');
+// // console.log('🔍 Verificando asignaciones reales en la base de datos...\n');
 
   try {
     // Obtener todas las asignaciones con información completa
@@ -40,71 +40,71 @@ async function checkRealAssignments() {
     }
 
     if (!assignments || assignments.length === 0) {
-      console.log('⚠️  No se encontraron asignaciones en la base de datos');
+// // console.log('⚠️  No se encontraron asignaciones en la base de datos');
       return;
     }
 
-    console.log(`✅ Se encontraron ${assignments.length} asignaciones:\n`);
+// // console.log(`✅ Se encontraron ${assignments.length} asignaciones:\n`);
 
     assignments.forEach((assignment, index) => {
-      console.log(`📋 Asignación ${index + 1}:`);
-        console.log(`   ID: ${assignment.id}`);
-  console.log(`   Tipo: ${assignment.assignment_type}`);
-  console.log(`   Estado: ${assignment.status}`);
-      console.log(`   Horas semanales: ${assignment.weekly_hours}`);
-      console.log(`   Horario: ${JSON.stringify(assignment.schedule, null, 2)}`);
-      console.log(`   Trabajador: ${assignment.worker?.name} (${assignment.worker?.email}) - ${assignment.worker?.worker_type}`);
-      console.log(`   Usuario: ${assignment.user?.name} (${assignment.user?.email})`);
-      console.log(`   Creada: ${new Date(assignment.created_at).toLocaleString('es-ES')}`);
-      console.log(`   Actualizada: ${new Date(assignment.updated_at).toLocaleString('es-ES')}`);
-      console.log('');
+// // console.log(`📋 Asignación ${index + 1}:`);
+// // console.log(`   ID: ${assignment.id}`);
+// // console.log(`   Tipo: ${assignment.assignment_type}`);
+// // console.log(`   Estado: ${assignment.status}`);
+// // console.log(`   Horas semanales: ${assignment.weekly_hours}`);
+// // console.log(`   Horario: ${JSON.stringify(assignment.schedule, null, 2)}`);
+// // console.log(`   Trabajador: ${assignment.worker?.name} (${assignment.worker?.email}) - ${assignment.worker?.worker_type}`);
+// // console.log(`   Usuario: ${assignment.user?.name} (${assignment.user?.email})`);
+// // console.log(`   Creada: ${new Date(assignment.created_at).toLocaleString('es-ES')}`);
+// // console.log(`   Actualizada: ${new Date(assignment.updated_at).toLocaleString('es-ES')}`);
+// // console.log('');
     });
 
     // Verificar tipos de asignación
     const types = [...new Set(assignments.map(a => a.assignment_type))];
-    console.log('📊 Tipos de asignación encontrados:', types);
+// // console.log('📊 Tipos de asignación encontrados:', types);
 
     // Verificar estados
     const statuses = [...new Set(assignments.map(a => a.status))];
-    console.log('📊 Estados de asignación encontrados:', statuses);
+// // console.log('📊 Estados de asignación encontrados:', statuses);
 
     // Verificar trabajadores únicos
     const uniqueWorkers = [...new Set(assignments.map(a => a.worker_id))];
-    console.log(`📊 Trabajadores únicos con asignaciones: ${uniqueWorkers.length}`);
+// // console.log(`📊 Trabajadores únicos con asignaciones: ${uniqueWorkers.length}`);
 
     // Verificar usuarios únicos
     const uniqueUsers = [...new Set(assignments.map(a => a.user_id))];
-    console.log(`📊 Usuarios únicos con asignaciones: ${uniqueUsers.length}`);
+// // console.log(`📊 Usuarios únicos con asignaciones: ${uniqueUsers.length}`);
 
     // Verificar integridad de datos
-    console.log('\n🔍 Verificando integridad de datos...');
+// // console.log('\n🔍 Verificando integridad de datos...');
     
     const invalidAssignments = assignments.filter(a => 
       !a.worker || !a.user || !a.assignment_type || !a.status
     );
 
     if (invalidAssignments.length > 0) {
-      console.log('⚠️  Asignaciones con datos incompletos:');
+// // console.log('⚠️  Asignaciones con datos incompletos:');
       invalidAssignments.forEach(a => {
-        console.log(`   - ID: ${a.id} - Worker: ${!!a.worker} - User: ${!!a.user} - Type: ${!!a.assignment_type} - Status: ${!!a.status}`);
+// // console.log(`   - ID: ${a.id} - Worker: ${!!a.worker} - User: ${!!a.user} - Type: ${!!a.assignment_type} - Status: ${!!a.status}`);
       });
     } else {
-      console.log('✅ Todas las asignaciones tienen datos completos');
+// // console.log('✅ Todas las asignaciones tienen datos completos');
     }
 
     // Verificar horarios
-    console.log('\n🔍 Verificando horarios...');
+// // console.log('\n🔍 Verificando horarios...');
     const assignmentsWithSchedule = assignments.filter(a => a.schedule);
-    console.log(`✅ ${assignmentsWithSchedule.length} asignaciones tienen horario definido`);
+// // console.log(`✅ ${assignmentsWithSchedule.length} asignaciones tienen horario definido`);
 
     assignmentsWithSchedule.forEach((assignment, index) => {
-      console.log(`\n📅 Horario de asignación ${index + 1} (${assignment.worker?.name} - ${assignment.user?.name}):`);
+// // console.log(`\n📅 Horario de asignación ${index + 1} (${assignment.worker?.name} - ${assignment.user?.name}):`);
       if (assignment.schedule && typeof assignment.schedule === 'object') {
         Object.entries(assignment.schedule).forEach(([day, slots]) => {
           if (slots && slots.length > 0) {
-            console.log(`   ${day}: ${slots.length} franja(s)`);
+// // console.log(`   ${day}: ${slots.length} franja(s)`);
             slots.forEach((slot, slotIndex) => {
-              console.log(`     ${slotIndex + 1}. ${slot.start_time} - ${slot.end_time}`);
+// // console.log(`     ${slotIndex + 1}. ${slot.start_time} - ${slot.end_time}`);
             });
           }
         });

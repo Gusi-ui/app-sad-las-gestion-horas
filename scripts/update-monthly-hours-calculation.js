@@ -83,7 +83,7 @@ async function calculateMonthlyHoursForWorker(workerType, weeklyHours, year, mon
 }
 
 async function updateMonthlyHoursCalculation() {
-  console.log('🔄 Actualizando cálculo de horas mensuales con lógica de festivos...\n');
+// // console.log('🔄 Actualizando cálculo de horas mensuales con lógica de festivos...\n');
 
   try {
     // Obtener festivos de 2025
@@ -98,7 +98,7 @@ async function updateMonthlyHoursCalculation() {
       return;
     }
 
-    console.log(`✅ Se cargaron ${holidays.length} festivos\n`);
+// // console.log(`✅ Se cargaron ${holidays.length} festivos\n`);
 
     // Obtener todas las asignaciones activas
     const { data: assignments, error: assignmentsError } = await supabase
@@ -118,7 +118,7 @@ async function updateMonthlyHoursCalculation() {
       return;
     }
 
-    console.log(`✅ Se encontraron ${assignments.length} asignaciones activas\n`);
+// // console.log(`✅ Se encontraron ${assignments.length} asignaciones activas\n`);
 
     // Calcular horas mensuales para cada asignación
     const calculations = [];
@@ -160,7 +160,7 @@ async function updateMonthlyHoursCalculation() {
     }
 
     // Mostrar resultados
-    console.log('📊 Cálculos de horas mensuales:\n');
+// // console.log('📊 Cálculos de horas mensuales:\n');
 
     const workerGroups = {};
     calculations.forEach(calc => {
@@ -174,10 +174,10 @@ async function updateMonthlyHoursCalculation() {
       const workerCalcs = workerGroups[workerId];
       const firstCalc = workerCalcs[0];
       
-      console.log(`👤 ${firstCalc.workerName} (${firstCalc.workerType})`);
-      console.log(`   Horas semanales: ${firstCalc.weeklyHours}`);
-      console.log(`   Tipo de asignación: ${firstCalc.assignmentType}`);
-      console.log(`   Horas mensuales calculadas:`);
+// // console.log(`👤 ${firstCalc.workerName} (${firstCalc.workerType})`);
+// // console.log(`   Horas semanales: ${firstCalc.weeklyHours}`);
+// // console.log(`   Tipo de asignación: ${firstCalc.assignmentType}`);
+// // console.log(`   Horas mensuales calculadas:`);
       
       // Mostrar solo los próximos 3 meses
       workerCalcs.slice(0, 3).forEach(calc => {
@@ -187,37 +187,37 @@ async function updateMonthlyHoursCalculation() {
         ];
         const monthName = monthNames[calc.month - 1];
         
-        console.log(`     ${monthName} ${calc.year}: ${calc.calculatedHours} horas`);
+// // console.log(`     ${monthName} ${calc.year}: ${calc.calculatedHours} horas`);
       });
-      console.log('');
+// // console.log('');
     });
 
     // Ejemplo específico: San Juan 2025
-    console.log('🎯 Ejemplo específico: San Juan 2025 (24 de junio, martes)\n');
+// // console.log('🎯 Ejemplo específico: San Juan 2025 (24 de junio, martes)\n');
     
     const sanJuanDate = new Date('2025-06-24');
     const sanJuanString = sanJuanDate.toISOString().split('T')[0];
     const sanJuanHoliday = holidays.find(h => h.date === sanJuanString);
     
     if (sanJuanHoliday) {
-      console.log(`✅ San Juan encontrado: ${sanJuanHoliday.name} (${sanJuanHoliday.type})`);
-      console.log(`   Fecha: ${sanJuanString} (Martes)`);
-      console.log(`   Es fin de semana: ${isWeekend(sanJuanDate) ? 'Sí' : 'No'}`);
-      console.log(`   Es festivo: Sí`);
-      console.log(`   Es día laborable: ${isWorkingDay(sanJuanDate, holidays) ? 'Sí' : 'No'}`);
-      console.log(`   Es día festivo: ${isHolidayDay(sanJuanDate, holidays) ? 'Sí' : 'No'}`);
-      console.log('');
+// // console.log(`✅ San Juan encontrado: ${sanJuanHoliday.name} (${sanJuanHoliday.type})`);
+// // console.log(`   Fecha: ${sanJuanString} (Martes)`);
+// // console.log(`   Es fin de semana: ${isWeekend(sanJuanDate) ? 'Sí' : 'No'}`);
+// // console.log(`   Es festivo: Sí`);
+// // console.log(`   Es día laborable: ${isWorkingDay(sanJuanDate, holidays) ? 'Sí' : 'No'}`);
+// // console.log(`   Es día festivo: ${isHolidayDay(sanJuanDate, holidays) ? 'Sí' : 'No'}`);
+// // console.log('');
       
       // Mostrar qué trabajadoras pueden trabajar ese día
       const uniqueWorkerTypes = [...new Set(assignments.map(a => a.worker?.worker_type).filter(Boolean))];
       
       uniqueWorkerTypes.forEach(workerType => {
         const canWork = canWorkerWorkOnDay(workerType, sanJuanDate, holidays);
-        console.log(`   Trabajadora ${workerType}: ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
+// // console.log(`   Trabajadora ${workerType}: ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
       });
     }
 
-    console.log('✅ Cálculo de horas mensuales completado');
+// // console.log('✅ Cálculo de horas mensuales completado');
 
   } catch (error) {
     console.error('❌ Error inesperado:', error);

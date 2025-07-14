@@ -32,66 +32,94 @@ export function useHoursCalculation(workerId: string | null) {
 
   // Función para verificar si una asignación tiene servicio hoy
   const hasServiceToday = (assignment: AssignmentWithUser) => {
-    if (!assignment.specific_schedule) return true;
-    
+    if (!assignment.schedule) return true;
+
     const today = new Date();
     const todayDayName = Object.keys({
       monday: 'monday',
-      tuesday: 'tuesday', 
+      tuesday: 'tuesday',
       wednesday: 'wednesday',
       thursday: 'thursday',
       friday: 'friday',
       saturday: 'saturday',
       sunday: 'sunday'
     })[today.getDay() === 0 ? 6 : today.getDay() - 1];
-    
-    const todaySchedule = assignment.specific_schedule?.[todayDayName as keyof typeof assignment.specific_schedule];
-    return todaySchedule && todaySchedule.length > 0;
+
+    const todaySchedule = assignment.schedule?.[todayDayName as keyof typeof assignment.schedule];
+    return todaySchedule?.enabled && todaySchedule.timeSlots && todaySchedule.timeSlots.length > 0;
+  };
+
+  // Función para verificar si una asignación tiene servicio mañana (para mostrar servicios próximos)
+  const hasServiceTomorrow = (assignment: AssignmentWithUser) => {
+    if (!assignment.schedule) return false;
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowDayName = Object.keys({
+      monday: 'monday',
+      tuesday: 'tuesday',
+      wednesday: 'wednesday',
+      thursday: 'thursday',
+      friday: 'friday',
+      saturday: 'saturday',
+      sunday: 'sunday'
+    })[tomorrow.getDay() === 0 ? 6 : tomorrow.getDay() - 1];
+
+    const tomorrowSchedule = assignment.schedule?.[tomorrowDayName as keyof typeof assignment.schedule];
+    return tomorrowSchedule?.enabled && tomorrowSchedule.timeSlots && tomorrowSchedule.timeSlots.length > 0;
+  };
+
+  // Función para convertir el nuevo formato de schedule al formato esperado por calculateWeeklyHours
+  const calculateWeeklyHoursFromNewFormat = (schedule: any) => {
+    if (!schedule) return 0;
+
+    let totalHours = 0;
+
+    Object.values(schedule).forEach((daySchedule: any) => {
+      if (!daySchedule?.enabled || !daySchedule.timeSlots || daySchedule.timeSlots.length === 0) return;
+
+      daySchedule.timeSlots.forEach((slot: any) => {
+        const [startHour, startMin] = slot.start.split(':').map(Number);
+        const [endHour, endMin] = slot.end.split(':').map(Number);
+        const startTime = startHour + startMin / 60;
+        const endTime = endHour + endMin / 60;
+        totalHours += Math.max(0, endTime - startTime);
+      });
+    });
+
+    return Math.round(totalHours * 10) / 10;
   };
 
   // Función para obtener el horario de hoy de una asignación
   const getTodaySchedule = (assignment: AssignmentWithUser) => {
-    if (!assignment.specific_schedule) return null;
-    
+    if (!assignment.schedule) return null;
+
     const today = new Date();
     const todayDayName = Object.keys({
       monday: 'monday',
-      tuesday: 'tuesday', 
+      tuesday: 'tuesday',
       wednesday: 'wednesday',
       thursday: 'thursday',
       friday: 'friday',
       saturday: 'saturday',
       sunday: 'sunday'
     })[today.getDay() === 0 ? 6 : today.getDay() - 1];
-    
-    const todaySchedule = assignment.specific_schedule?.[todayDayName as keyof typeof assignment.specific_schedule];
-    if (!todaySchedule || todaySchedule.length === 0) return null;
-    
-    // Manejar múltiples slots de tiempo
-    // Caso 1: Array de objetos {start, end} (formato nuevo)
-    if (Array.isArray(todaySchedule) && todaySchedule.length > 0 && typeof todaySchedule[0] === 'object' && todaySchedule[0] !== null && 'start' in todaySchedule[0] && 'end' in todaySchedule[0]) {
-      return todaySchedule.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
-    } 
-    // Caso 2: Array de strings (formato antiguo) - ['08:00', '10:00']
-    else if (todaySchedule.length === 2 && typeof todaySchedule[0] === 'string' && typeof todaySchedule[1] === 'string') {
-      return `${todaySchedule[0]} - ${todaySchedule[1]}`;
-    }
-    // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
-    else if (Array.isArray(todaySchedule) && todaySchedule.length > 0 && typeof todaySchedule[0] === 'string') {
-      return todaySchedule.join(', ');
-    }
-    
-    return null;
+
+    const todaySchedule = assignment.schedule?.[todayDayName as keyof typeof assignment.schedule];
+    if (!todaySchedule?.enabled || !todaySchedule.timeSlots || todaySchedule.timeSlots.length === 0) return null;
+
+    // Formatear los timeSlots
+    return todaySchedule.timeSlots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
   };
 
   // Función para obtener el estado de un servicio basado en la hora
   const getServiceStatus = (assignment: AssignmentWithUser) => {
     const todaySchedule = getTodaySchedule(assignment);
     if (!todaySchedule) return 'no-service';
-    
+
     // Parsear horario - manejar múltiples slots
     const timeSlots: Array<{start: string, end: string}> = [];
-    
+
     // Formato múltiple: "08:00-09:30, 13:00-15:00"
     if (todaySchedule.includes(',')) {
       const slots = todaySchedule.split(',').map(slot => slot.trim());
@@ -112,31 +140,31 @@ export function useHoursCalculation(workerId: string | null) {
         timeSlots.push({ start: parts[0], end: parts[1] });
       }
     }
-    
+
     // Si no pudimos parsear ningún horario, retornar no-service
     if (timeSlots.length === 0) {
       return 'no-service';
     }
-    
+
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
+
     // Verificar si algún slot está en progreso o completado
     for (const slot of timeSlots) {
       const [startHour, startMin] = slot.start.split(':').map(Number);
       const [endHour, endMin] = slot.end.split(':').map(Number);
       const startTime = startHour * 60 + startMin;
       const endTime = endHour * 60 + endMin;
-      
+
       if (currentTime >= startTime && currentTime <= endTime) {
         return 'in-progress';
       }
-      
+
       if (currentTime > endTime) {
         return 'completed';
       }
     }
-    
+
     // Si no hay slots en progreso o completados, el próximo está pendiente
     return 'pending';
   };
@@ -144,19 +172,28 @@ export function useHoursCalculation(workerId: string | null) {
   // Calcular estadísticas generales
   const stats = useMemo(() => {
     const totalAssignedHours = assignments.reduce((sum, a) => {
-      const weeklyHours = calculateWeeklyHours(a.specific_schedule);
+      const weeklyHours = calculateWeeklyHoursFromNewFormat(a.schedule);
       return sum + weeklyHours;
     }, 0);
-    
+
     const uniqueUsers = new Set(assignments.map(a => a.user_id)).size;
     const todaysAssignments = assignments.filter(hasServiceToday);
-    
-    return {
-      totalAssignedHours,
-      uniqueUsers,
-      todaysAssignments,
-      totalAssignments: assignments.length
-    };
+    const tomorrowsAssignments = assignments.filter(hasServiceTomorrow);
+
+    // Solo mostrar servicios de mañana si es domingo y hay servicios de lunes
+    const today = new Date();
+    const isSunday = today.getDay() === 0;
+    const assignmentsToShow = todaysAssignments.length > 0 ? todaysAssignments :
+      (isSunday && tomorrowsAssignments.length > 0 ? [] : tomorrowsAssignments);
+
+          return {
+        totalAssignedHours,
+        uniqueUsers,
+        todaysAssignments,
+        tomorrowsAssignments,
+        assignmentsToShow,
+        totalAssignments: assignments.length
+      };
   }, [assignments]);
 
   // Cargar datos
@@ -206,7 +243,7 @@ export function useHoursCalculation(workerId: string | null) {
         assignmentsData?.forEach(assignment => {
           const userId = assignment.user_id;
           const user = assignment.users;
-          
+
           if (!user) return;
 
           if (!userStatusMap.has(userId)) {
@@ -228,9 +265,9 @@ export function useHoursCalculation(workerId: string | null) {
           }
 
           const userStatus = userStatusMap.get(userId)!;
-          
-          // Calcular horas semanales basadas en el horario específico
-          const weeklyHours = calculateWeeklyHours(assignment.specific_schedule);
+
+            // Calcular horas semanales basadas en el horario específico
+  const weeklyHours = calculateWeeklyHoursFromNewFormat(assignment.schedule);
           userStatus.assignedHours += weeklyHours;
           userStatus.assignments.push(assignment);
         });
@@ -275,7 +312,7 @@ export function useHoursCalculation(workerId: string | null) {
                 planningResult.planning.forEach(day => {
                   const dayDate = new Date(day.date);
                   const dayDay = dayDate.getDate();
-                  
+
                   // Solo contar días hasta hoy
                   if (dayDay <= todayDay) {
                     totalUsedHours += day.hours;
@@ -297,16 +334,15 @@ export function useHoursCalculation(workerId: string | null) {
                 }
 
                 // Log de debugging para reasignaciones
-                if (planningResult.reassignments.length > 0) {
-                  console.log(`🔄 Reasignaciones detectadas para ${userStatus.userName} ${userStatus.userSurname}:`, planningResult.reassignments.length);
-                }
+                // if (planningResult.reassignments.length > 0) {
+                //   // // }
 
               } catch (reassignmentError) {
                 console.error('Error calculating hours with reassignment for user:', userId, reassignmentError);
-                
+
                 // Fallback al método anterior si hay error
                 let totalUsedHours = 0;
-                
+
                 allAssignments.forEach(assignment => {
                   try {
                     // Calcular horas utilizadas hasta hoy para esta asignación
@@ -321,7 +357,7 @@ export function useHoursCalculation(workerId: string | null) {
                     // Continuar con la siguiente asignación
                   }
                 });
-                
+
                 userStatus.usedHours = totalUsedHours;
                 userStatus.remainingHours = userStatus.monthlyHours - userStatus.usedHours;
                 userStatus.totalWorkers = allAssignments.length;
@@ -344,7 +380,7 @@ export function useHoursCalculation(workerId: string | null) {
         }
 
         setUserHoursStatus(Array.from(userStatusMap.values()));
-        
+
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Error al cargar los datos');
@@ -352,7 +388,7 @@ export function useHoursCalculation(workerId: string | null) {
         setLoading(false);
       }
     };
-    
+
     fetchData().catch(err => {
       console.error('Unhandled error in fetchData:', err);
       setError('Error inesperado al cargar los datos');
@@ -379,6 +415,8 @@ export function useHoursCalculation(workerId: string | null) {
     getServiceStatus,
     getTodaySchedule,
     hasServiceToday,
+    hasServiceTomorrow,
+    calculateWeeklyHoursFromNewFormat,
     refetch: () => {
       setAssignments([]);
       setUserHoursStatus([]);
@@ -386,4 +424,4 @@ export function useHoursCalculation(workerId: string | null) {
       setError(null);
     }
   };
-} 
+}

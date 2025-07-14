@@ -5,15 +5,15 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 async function testAssignmentCalculation() {
   try {
-    console.log('🧪 Probando cálculo de asignaciones con lógica de reasignación...\n');
+// // console.log('🧪 Probando cálculo de asignaciones con lógica de reasignación...\n');
 
     // Datos de ejemplo para José Martínez (que sabemos que existe)
     const testUserId = '9af4d980-414c-4e9b-8400-3f6021755d45'; // José Martínez
     const testMonth = 7; // Julio
     const testYear = 2025;
 
-    console.log(`Usuario: José Martínez (ID: ${testUserId})`);
-    console.log(`Mes: ${testMonth}/${testYear}\n`);
+// // console.log(`Usuario: José Martínez (ID: ${testUserId})`);
+// // console.log(`Mes: ${testMonth}/${testYear}\n`);
 
     // Simular asignaciones para un usuario con servicio en días laborables
     const laborableAssignment = {
@@ -46,11 +46,11 @@ async function testAssignmentCalculation() {
       status: 'active'
     };
 
-    console.log('📅 Configuración de servicios:');
-    console.log('   Días laborables: Lunes a viernes, 08:00-09:30 y 13:00-15:00 (3.5h/día)');
-    console.log('   Fines de semana: Sábado y domingo, 09:00-10:30 (1.5h/día)');
-    console.log(`   Horas por semana laborable: ${laborableAssignment.assigned_hours_per_week}h`);
-    console.log(`   Horas por semana festiva: ${holidayAssignment.assigned_hours_per_week}h`);
+// // console.log('📅 Configuración de servicios:');
+// // console.log('   Días laborables: Lunes a viernes, 08:00-09:30 y 13:00-15:00 (3.5h/día)');
+// // console.log('   Fines de semana: Sábado y domingo, 09:00-10:30 (1.5h/día)');
+// // console.log(`   Horas por semana laborable: ${laborableAssignment.assigned_hours_per_week}h`);
+// // console.log(`   Horas por semana festiva: ${holidayAssignment.assigned_hours_per_week}h`);
 
     // Obtener festivos de julio 2025
     const { data: holidays, error: holidaysError } = await supabase
@@ -64,15 +64,15 @@ async function testAssignmentCalculation() {
       return;
     }
 
-    console.log(`\n🎉 Festivos en julio 2025:`);
+// // console.log(`\n🎉 Festivos en julio 2025:`);
     const holidayDates = new Set();
     if (holidays && holidays.length > 0) {
       holidays.forEach(holiday => {
-        console.log(`   ${holiday.day} de julio - ${holiday.name} (${holiday.type})`);
+// // console.log(`   ${holiday.day} de julio - ${holiday.name} (${holiday.type})`);
         holidayDates.add(holiday.day);
       });
     } else {
-      console.log('   No hay festivos registrados para julio 2025');
+// // console.log('   No hay festivos registrados para julio 2025');
     }
 
     // Calcular días del mes
@@ -98,13 +98,13 @@ async function testAssignmentCalculation() {
       }
     }
 
-    console.log(`\n📊 Días del mes de julio 2025:`);
-    console.log(`   Días laborables: ${laborableDays.length}`);
-    console.log(`   Fines de semana: ${weekendDays.length}`);
-    console.log(`   Días festivos: ${holidayDays.length}`);
+// // console.log(`\n📊 Días del mes de julio 2025:`);
+// // console.log(`   Días laborables: ${laborableDays.length}`);
+// // console.log(`   Fines de semana: ${weekendDays.length}`);
+// // console.log(`   Días festivos: ${holidayDays.length}`);
 
     // Mostrar días específicos
-    console.log(`\n📅 Días laborables:`);
+// // console.log(`\n📅 Días laborables:`);
     laborableDays.forEach(day => {
       const dayNames = { 
         monday: 'Lunes', 
@@ -113,19 +113,19 @@ async function testAssignmentCalculation() {
         thursday: 'Jueves', 
         friday: 'Viernes'
       };
-      console.log(`   ${day.date} de julio - ${dayNames[day.dayName]}`);
+// // console.log(`   ${day.date} de julio - ${dayNames[day.dayName]}`);
     });
 
-    console.log(`\n🌅 Fines de semana:`);
+// // console.log(`\n🌅 Fines de semana:`);
     weekendDays.forEach(day => {
       const dayNames = { 
         saturday: 'Sábado', 
         sunday: 'Domingo'
       };
-      console.log(`   ${day.date} de julio - ${dayNames[day.dayName]}`);
+// // console.log(`   ${day.date} de julio - ${dayNames[day.dayName]}`);
     });
 
-    console.log(`\n🎉 Días festivos:`);
+// // console.log(`\n🎉 Días festivos:`);
     holidayDays.forEach(day => {
       const dayNames = { 
         monday: 'Lunes', 
@@ -137,27 +137,27 @@ async function testAssignmentCalculation() {
         sunday: 'Domingo'
       };
       const holiday = holidays.find(h => h.day === day.date);
-      console.log(`   ${day.date} de julio - ${dayNames[day.dayName]} (${holiday.name})`);
+// // console.log(`   ${day.date} de julio - ${dayNames[day.dayName]} (${holiday.name})`);
     });
 
     // Aplicar lógica de reasignación
-    console.log(`\n🔄 LÓGICA DE REASIGNACIÓN:`);
+// // console.log(`\n🔄 LÓGICA DE REASIGNACIÓN:`);
     
     // Caso 1: Usuario con servicio solo en días laborables
-    console.log(`\n📋 CASO 1: Usuario con servicio solo en días laborables`);
+// // console.log(`\n📋 CASO 1: Usuario con servicio solo en días laborables`);
     const laborableServiceDays = laborableDays.filter(day => 
       laborableAssignment.specific_schedule[day.dayName] && 
       laborableAssignment.specific_schedule[day.dayName].length > 0
     );
     
     const laborableHours = laborableServiceDays.length * 3.5;
-    console.log(`   Días laborables con servicio: ${laborableServiceDays.length}`);
-    console.log(`   Horas trabajadora laborable: ${laborableHours.toFixed(1)}h`);
-    console.log(`   Horas trabajadora festivos: 0h`);
-    console.log(`   Total: ${laborableHours.toFixed(1)}h`);
+// // console.log(`   Días laborables con servicio: ${laborableServiceDays.length}`);
+// // console.log(`   Horas trabajadora laborable: ${laborableHours.toFixed(1)}h`);
+// // console.log(`   Horas trabajadora festivos: 0h`);
+// // console.log(`   Total: ${laborableHours.toFixed(1)}h`);
 
     // Caso 2: Usuario con servicio en días laborables + festivos/fines de semana
-    console.log(`\n📋 CASO 2: Usuario con servicio en días laborables + festivos/fines de semana`);
+// // console.log(`\n📋 CASO 2: Usuario con servicio en días laborables + festivos/fines de semana`);
     
     // Días que van a la trabajadora de festivos (fines de semana + festivos)
     const holidayWorkerDays = [...weekendDays, ...holidayDays];
@@ -169,21 +169,21 @@ async function testAssignmentCalculation() {
     const holidayWorkerHours = holidayWorkerServiceDays.length * 1.5;
     const totalHoursCase2 = laborableHours + holidayWorkerHours;
     
-    console.log(`   Días laborables con servicio: ${laborableServiceDays.length}`);
-    console.log(`   Días festivos/fines de semana con servicio: ${holidayWorkerServiceDays.length}`);
-    console.log(`   Horas trabajadora laborable: ${laborableHours.toFixed(1)}h`);
-    console.log(`   Horas trabajadora festivos: ${holidayWorkerHours.toFixed(1)}h`);
-    console.log(`   Total: ${totalHoursCase2.toFixed(1)}h`);
+// // console.log(`   Días laborables con servicio: ${laborableServiceDays.length}`);
+// // console.log(`   Días festivos/fines de semana con servicio: ${holidayWorkerServiceDays.length}`);
+// // console.log(`   Horas trabajadora laborable: ${laborableHours.toFixed(1)}h`);
+// // console.log(`   Horas trabajadora festivos: ${holidayWorkerHours.toFixed(1)}h`);
+// // console.log(`   Total: ${totalHoursCase2.toFixed(1)}h`);
 
     // Caso 3: Usuario con servicio solo en festivos/fines de semana
-    console.log(`\n📋 CASO 3: Usuario con servicio solo en festivos/fines de semana`);
-    console.log(`   Días laborables con servicio: 0`);
-    console.log(`   Días festivos/fines de semana con servicio: ${holidayWorkerServiceDays.length}`);
-    console.log(`   Horas trabajadora laborable: 0h`);
-    console.log(`   Horas trabajadora festivos: ${holidayWorkerHours.toFixed(1)}h`);
-    console.log(`   Total: ${holidayWorkerHours.toFixed(1)}h`);
+// // console.log(`\n📋 CASO 3: Usuario con servicio solo en festivos/fines de semana`);
+// // console.log(`   Días laborables con servicio: 0`);
+// // console.log(`   Días festivos/fines de semana con servicio: ${holidayWorkerServiceDays.length}`);
+// // console.log(`   Horas trabajadora laborable: 0h`);
+// // console.log(`   Horas trabajadora festivos: ${holidayWorkerHours.toFixed(1)}h`);
+// // console.log(`   Total: ${holidayWorkerHours.toFixed(1)}h`);
 
-    console.log(`\n✅ Prueba completada. La lógica de reasignación está correctamente implementada.`);
+// // console.log(`\n✅ Prueba completada. La lógica de reasignación está correctamente implementada.`);
 
   } catch (error) {
     console.error('Error en la prueba:', error);

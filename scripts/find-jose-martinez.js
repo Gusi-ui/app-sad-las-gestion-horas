@@ -11,7 +11,7 @@ const supabase = createClient(
 
 async function findJoseMartinez() {
   try {
-    console.log('🔍 Buscando usuarios llamados José Martínez...\n');
+// // console.log('🔍 Buscando usuarios llamados José Martínez...\n');
 
     // Buscar todos los usuarios con nombre José y apellido Martínez
     const { data: users, error } = await supabase
@@ -25,13 +25,13 @@ async function findJoseMartinez() {
       return;
     }
 
-    console.log(`✅ Encontrados ${users.length} usuarios:`);
+// // console.log(`✅ Encontrados ${users.length} usuarios:`);
     users.forEach((user, index) => {
-      console.log(`${index + 1}. ID: ${user.id}`);
-      console.log(`   Nombre: ${user.name} ${user.surname}`);
-      console.log(`   Dirección: ${user.address || 'No especificada'}`);
-      console.log(`   Teléfono: ${user.phone || 'No especificado'}`);
-      console.log('');
+// // console.log(`${index + 1}. ID: ${user.id}`);
+// // console.log(`   Nombre: ${user.name} ${user.surname}`);
+// // console.log(`   Dirección: ${user.address || 'No especificada'}`);
+// // console.log(`   Teléfono: ${user.phone || 'No especificado'}`);
+// // console.log('');
     });
 
     // Buscar específicamente José Martínez
@@ -46,13 +46,13 @@ async function findJoseMartinez() {
       return;
     }
 
-    console.log(`\n🎯 Usuarios exactamente llamados "José Martínez": ${joseMartinez.length}`);
+// // console.log(`\n🎯 Usuarios exactamente llamados "José Martínez": ${joseMartinez.length}`);
     joseMartinez.forEach((user, index) => {
-      console.log(`${index + 1}. ID: ${user.id}`);
-      console.log(`   Nombre: ${user.name} ${user.surname}`);
-      console.log(`   Dirección: ${user.address || 'No especificada'}`);
-      console.log(`   Teléfono: ${user.phone || 'No especificado'}`);
-      console.log('');
+// // console.log(`${index + 1}. ID: ${user.id}`);
+// // console.log(`   Nombre: ${user.name} ${user.surname}`);
+// // console.log(`   Dirección: ${user.address || 'No especificada'}`);
+// // console.log(`   Teléfono: ${user.phone || 'No especificado'}`);
+// // console.log('');
     });
 
   } catch (error) {

@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function deleteAllAssignments() {
   try {
-    console.log('🗑️ Eliminando todas las asignaciones de la base de datos...\n');
+// // console.log('🗑️ Eliminando todas las asignaciones de la base de datos...\n');
     
     // 1. Obtener todas las asignaciones antes de eliminar
     const { data: allAssignments, error: fetchError } = await supabase
@@ -32,22 +32,22 @@ async function deleteAllAssignments() {
       return;
     }
 
-    console.log(`📊 Asignaciones encontradas: ${allAssignments?.length || 0}`);
+// // console.log(`📊 Asignaciones encontradas: ${allAssignments?.length || 0}`);
     
     if (allAssignments && allAssignments.length > 0) {
-      console.log('\n📋 Asignaciones que se van a eliminar:');
+// // console.log('\n📋 Asignaciones que se van a eliminar:');
       allAssignments.forEach((assignment, index) => {
-        console.log(`   ${index + 1}. ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
-        console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
-        console.log(`      ID: ${assignment.id}`);
+// // console.log(`   ${index + 1}. ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
+// // console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`      ID: ${assignment.id}`);
       });
     } else {
-      console.log('✅ No hay asignaciones para eliminar');
+// // console.log('✅ No hay asignaciones para eliminar');
       return;
     }
 
     // 2. Eliminar todas las asignaciones
-    console.log('\n🗑️ Procediendo con la eliminación...');
+// // console.log('\n🗑️ Procediendo con la eliminación...');
     const { error: deleteError } = await supabase
       .from('assignments')
       .delete()
@@ -58,7 +58,7 @@ async function deleteAllAssignments() {
       return;
     }
 
-    console.log(`✅ ${allAssignments.length} asignaciones eliminadas correctamente`);
+// // console.log(`✅ ${allAssignments.length} asignaciones eliminadas correctamente`);
 
     // 3. Verificar que se eliminaron
     const { data: remainingAssignments, error: verifyError } = await supabase
@@ -70,16 +70,16 @@ async function deleteAllAssignments() {
       return;
     }
 
-    console.log(`📊 Asignaciones restantes: ${remainingAssignments?.length || 0}`);
+// // console.log(`📊 Asignaciones restantes: ${remainingAssignments?.length || 0}`);
     
     if (remainingAssignments && remainingAssignments.length > 0) {
-      console.log('⚠️  Aún quedan asignaciones en la base de datos');
+// // console.log('⚠️  Aún quedan asignaciones en la base de datos');
     } else {
-      console.log('✅ Todas las asignaciones han sido eliminadas');
+// // console.log('✅ Todas las asignaciones han sido eliminadas');
     }
 
     // 4. También eliminar balances de julio 2025 para empezar limpio
-    console.log('\n🗑️ Eliminando balances de julio 2025...');
+// // console.log('\n🗑️ Eliminando balances de julio 2025...');
     const { error: balanceDeleteError } = await supabase
       .from('monthly_hours')
       .delete()
@@ -89,11 +89,11 @@ async function deleteAllAssignments() {
     if (balanceDeleteError) {
       console.error('Error al eliminar balances:', balanceDeleteError);
     } else {
-      console.log('✅ Balances de julio 2025 eliminados');
+// // console.log('✅ Balances de julio 2025 eliminados');
     }
 
-    console.log('\n🎉 Base de datos limpia y lista para datos reales');
-    console.log('💡 Ahora puedes crear asignaciones reales desde la interfaz de administración');
+// // console.log('\n🎉 Base de datos limpia y lista para datos reales');
+// // console.log('💡 Ahora puedes crear asignaciones reales desde la interfaz de administración');
 
   } catch (err) {
     console.error('❌ Error inesperado:', err);

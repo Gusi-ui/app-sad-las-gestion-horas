@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ArrowLeft, Save, User, Mail, Phone, MapPin, AlertTriangle, CheckCircle, XCircle, Calendar, Heart, Badge, X } from 'lucide-react'
 import { Badge as UIBadge } from '@/components/ui/badge'
-import ToastNotification from '@/components/ui/toast-notification'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
 interface EmergencyContact {
   name: string
@@ -70,6 +70,8 @@ interface UserFormData {
 export default function EditUserPage() {
   const params = useParams()
   const router = useRouter()
+  const { success, error: showError, warning, info } = useNotificationHelpers()
+  
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -92,16 +94,6 @@ export default function EditUserPage() {
   })
   const [errors, setErrors] = useState<{[key: string]: string}>({})
   const [validationStates, setValidationStates] = useState<{[key: string]: 'valid' | 'invalid' | 'neutral'}>({})
-  // Añadir estado para el toast
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
-  })
 
   useEffect(() => {
     if (params.id) {
@@ -353,11 +345,7 @@ export default function EditUserPage() {
     validateField('city', formData.city)
     const hasErrors = Object.values(errors).some(error => error !== '') || !!validateDNI(formData.dni).error
     if (hasErrors) {
-      setToast({
-        message: 'Por favor, corrige los errores en el formulario antes de guardar.',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Por favor, corrige los errores en el formulario antes de guardar.')
       return
     }
 
@@ -383,21 +371,13 @@ export default function EditUserPage() {
         throw error
       }
 
-      setToast({
-        message: 'Usuario actualizado correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Usuario actualizado correctamente')
       setTimeout(() => {
         router.push('/admin/users')
       }, 1500)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error al actualizar usuario: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error al actualizar usuario: ' + errorMessage)
     } finally {
       setSaving(false)
     }
@@ -731,12 +711,6 @@ export default function EditUserPage() {
           ))}
         </CardContent>
       </Card>
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast(t => ({ ...t, isVisible: false }))}
-      />
     </div>
   )
 } 

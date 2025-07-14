@@ -15,7 +15,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function createAdminUsers() {
   try {
-    console.log('🚀 Creando usuarios admin en Supabase Auth...')
+// // console.log('🚀 Creando usuarios admin en Supabase Auth...')
     
     const adminUsers = [
       {
@@ -31,7 +31,7 @@ async function createAdminUsers() {
     ]
     
     for (const user of adminUsers) {
-      console.log(`\n📝 Procesando: ${user.email}`)
+// // console.log(`\n📝 Procesando: ${user.email}`)
       
       try {
         // Intentar crear el usuario usando el admin API
@@ -46,20 +46,20 @@ async function createAdminUsers() {
         })
         
         if (error) {
-          console.log(`❌ Error al crear ${user.email}: ${error.message}`)
+// // console.log(`❌ Error al crear ${user.email}: ${error.message}`)
           
           // Si el error es que el usuario ya existe, intentar obtenerlo
           if (error.message.includes('already registered')) {
-            console.log(`🔍 Usuario ${user.email} ya existe, intentando obtener...`)
+// // console.log(`🔍 Usuario ${user.email} ya existe, intentando obtener...`)
             
             const { data: existingUser, error: getError } = await supabase.auth.admin.listUsers()
             
             if (getError) {
-              console.log(`❌ Error al listar usuarios: ${getError.message}`)
+// // console.log(`❌ Error al listar usuarios: ${getError.message}`)
             } else {
               const foundUser = existingUser.users.find(u => u.email === user.email)
               if (foundUser) {
-                console.log(`✅ Usuario encontrado: ${foundUser.email} (ID: ${foundUser.id})`)
+// // console.log(`✅ Usuario encontrado: ${foundUser.email} (ID: ${foundUser.id})`)
                 
                 // Intentar actualizar la contraseña
                 const { error: updateError } = await supabase.auth.admin.updateUserById(
@@ -68,32 +68,32 @@ async function createAdminUsers() {
                 )
                 
                 if (updateError) {
-                  console.log(`⚠️ Error al actualizar contraseña: ${updateError.message}`)
+// // console.log(`⚠️ Error al actualizar contraseña: ${updateError.message}`)
                 } else {
-                  console.log(`✅ Contraseña actualizada para ${user.email}`)
+// // console.log(`✅ Contraseña actualizada para ${user.email}`)
                 }
               } else {
-                console.log(`❌ Usuario ${user.email} no encontrado en auth.users`)
+// // console.log(`❌ Usuario ${user.email} no encontrado en auth.users`)
               }
             }
           }
         } else {
-          console.log(`✅ Usuario creado exitosamente: ${data.user.email}`)
-          console.log(`   ID: ${data.user.id}`)
-          console.log(`   Confirmado: ${data.user.email_confirmed_at ? 'Sí' : 'No'}`)
+// // console.log(`✅ Usuario creado exitosamente: ${data.user.email}`)
+// // console.log(`   ID: ${data.user.id}`)
+// // console.log(`   Confirmado: ${data.user.email_confirmed_at ? 'Sí' : 'No'}`)
         }
         
       } catch (err) {
-        console.log(`❌ Error inesperado con ${user.email}:`, err.message)
+// // console.log(`❌ Error inesperado con ${user.email}:`, err.message)
       }
     }
     
-    console.log('\n🎉 Proceso completado')
-    console.log('\n📋 Credenciales de acceso:')
-    console.log('🔑 Contraseña: TempPass123!')
-    console.log('\n👤 Usuarios:')
+// // console.log('\n🎉 Proceso completado')
+// // console.log('\n📋 Credenciales de acceso:')
+// // console.log('🔑 Contraseña: TempPass123!')
+// // console.log('\n👤 Usuarios:')
     adminUsers.forEach(user => {
-      console.log(`  - ${user.email} (${user.full_name})`)
+// // console.log(`  - ${user.email} (${user.full_name})`)
     })
     
   } catch (error) {

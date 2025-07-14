@@ -19,7 +19,7 @@ const supabase = createClient(
 
 async function testRosaJoseCalculation() {
   try {
-    console.log('🔍 Verificando cálculo para Rosa Robles y José Martínez - Julio 2025\n');
+// // console.log('🔍 Verificando cálculo para Rosa Robles y José Martínez - Julio 2025\n');
 
     // 1. Buscar Rosa Robles por ID
     const rosaWorkerId = '1661b7b6-20d1-4eab-bdd3-462e9603d27a';
@@ -34,7 +34,7 @@ async function testRosaJoseCalculation() {
       return;
     }
 
-    console.log('✅ Rosa Robles encontrada:', {
+// // console.log('✅ Rosa Robles encontrada:', {
       id: rosaWorker.id,
       name: rosaWorker.name,
       surname: rosaWorker.surname,
@@ -55,7 +55,7 @@ async function testRosaJoseCalculation() {
       return;
     }
 
-    console.log('✅ José Martínez encontrado:', {
+// // console.log('✅ José Martínez encontrado:', {
       id: joseUser.id,
       name: joseUser.name,
       surname: joseUser.surname,
@@ -73,9 +73,9 @@ async function testRosaJoseCalculation() {
       return;
     }
 
-    console.log('✅ Asignaciones de José Martínez encontradas:', allAssignments.length);
+// // console.log('✅ Asignaciones de José Martínez encontradas:', allAssignments.length);
     allAssignments.forEach(assignment => {
-      console.log(`- ${assignment.workers.name} ${assignment.workers.surname} (${assignment.workers.worker_type || 'No definido'})`);
+// // console.log(`- ${assignment.workers.name} ${assignment.workers.surname} (${assignment.workers.worker_type || 'No definido'})`);
     });
 
     // 4. Obtener la asignación específica de Rosa para José
@@ -85,7 +85,7 @@ async function testRosaJoseCalculation() {
       return;
     }
 
-    console.log('✅ Asignación de Rosa encontrada:', {
+// // console.log('✅ Asignación de Rosa encontrada:', {
       id: rosaAssignment.id,
       schedule: rosaAssignment.schedule,
       hours_per_day: rosaAssignment.hours_per_day
@@ -97,14 +97,14 @@ async function testRosaJoseCalculation() {
       return worker.worker_type === 'holiday_weekend' || worker.worker_type === 'both';
     });
 
-    console.log(`\n📋 Análisis de servicios:`);
-    console.log(`- ¿Tiene servicios en fines de semana/festivos?: ${hasWeekendHolidayServices ? 'SÍ' : 'NO'}`);
+// // console.log(`\n📋 Análisis de servicios:`);
+// // console.log(`- ¿Tiene servicios en fines de semana/festivos?: ${hasWeekendHolidayServices ? 'SÍ' : 'NO'}`);
 
     if (hasWeekendHolidayServices) {
       const holidayWorker = allAssignments.find(a => 
         a.workers.worker_type === 'holiday_weekend' || a.workers.worker_type === 'both'
       );
-      console.log(`- Trabajadora de festivos: ${holidayWorker.workers.name} ${holidayWorker.workers.surname}`);
+// // console.log(`- Trabajadora de festivos: ${holidayWorker.workers.name} ${holidayWorker.workers.surname}`);
     }
 
     // 6. Obtener festivos de julio 2025
@@ -119,7 +119,7 @@ async function testRosaJoseCalculation() {
       return;
     }
 
-    console.log('✅ Festivos de julio 2025:', holidays.map(h => `${h.day}/${h.month}: ${h.name}`));
+// // console.log('✅ Festivos de julio 2025:', holidays.map(h => `${h.day}/${h.month}: ${h.name}`));
 
     // 7. Calcular días laborables y festivos
     const year = 2025;
@@ -153,11 +153,11 @@ async function testRosaJoseCalculation() {
       }
     }
 
-    console.log('\n📊 Cálculo de días:');
-    console.log(`- Días laborables normales: ${laborableDays}`);
-    console.log(`- Días festivos laborables: ${laborableHolidayDays}`);
-    console.log(`- Días festivos/fines de semana: ${holidayWeekendDays}`);
-    console.log(`- Total días: ${daysInMonth}`);
+// // console.log('\n📊 Cálculo de días:');
+// // console.log(`- Días laborables normales: ${laborableDays}`);
+// // console.log(`- Días festivos laborables: ${laborableHolidayDays}`);
+// // console.log(`- Días festivos/fines de semana: ${holidayWeekendDays}`);
+// // console.log(`- Total días: ${daysInMonth}`);
 
     // 8. Calcular horas según la lógica
     let rosaHours, holidayWorkerHours, totalHours;
@@ -168,52 +168,52 @@ async function testRosaJoseCalculation() {
       holidayWorkerHours = holidayWeekendDays * 1.5; // Incluye festivos laborables
       totalHours = rosaHours + holidayWorkerHours;
 
-      console.log('\n⏰ Cálculo de horas (CON servicios festivos):');
-      console.log(`- Rosa Robles (laborable): ${laborableDays} días × 3.5h = ${rosaHours}h`);
-      console.log(`- Trabajadora festivos: ${holidayWeekendDays} días × 1.5h = ${holidayWorkerHours}h`);
-      console.log(`- TOTAL: ${totalHours}h`);
+// // console.log('\n⏰ Cálculo de horas (CON servicios festivos):');
+// // console.log(`- Rosa Robles (laborable): ${laborableDays} días × 3.5h = ${rosaHours}h`);
+// // console.log(`- Trabajadora festivos: ${holidayWeekendDays} días × 1.5h = ${holidayWorkerHours}h`);
+// // console.log(`- TOTAL: ${totalHours}h`);
     } else {
       // Lógica para usuarios SIN servicios en fines de semana/festivos
       rosaHours = laborableDays * 3.5; // Solo días laborables normales (sin festivos)
       holidayWorkerHours = 0; // No hay trabajadora de festivos
       totalHours = rosaHours;
 
-      console.log('\n⏰ Cálculo de horas (SIN servicios festivos):');
-      console.log(`- Rosa Robles (laborable): ${laborableDays} días × 3.5h = ${rosaHours}h`);
-      console.log(`- Trabajadora festivos: No asignada`);
-      console.log(`- TOTAL: ${totalHours}h`);
-      console.log(`- NOTA: ${laborableHolidayDays} día(s) festivo(s) laborable(s) no se contabilizan`);
+// // console.log('\n⏰ Cálculo de horas (SIN servicios festivos):');
+// // console.log(`- Rosa Robles (laborable): ${laborableDays} días × 3.5h = ${rosaHours}h`);
+// // console.log(`- Trabajadora festivos: No asignada`);
+// // console.log(`- TOTAL: ${totalHours}h`);
+// // console.log(`- NOTA: ${laborableHolidayDays} día(s) festivo(s) laborable(s) no se contabilizan`);
     }
 
     // 9. Detalle de reasignaciones
-    console.log('\n🔄 Detalle de reasignaciones:');
+// // console.log('\n🔄 Detalle de reasignaciones:');
     if (hasWeekendHolidayServices && laborableHolidayDays > 0) {
-      console.log(`- ${laborableHolidayDays} día(s) festivo(s) laborable(s) se reasignan a la trabajadora de festivos`);
+// // console.log(`- ${laborableHolidayDays} día(s) festivo(s) laborable(s) se reasignan a la trabajadora de festivos`);
       holidayDates.forEach(day => {
         const date = new Date(year, month - 1, day);
         const dayOfWeek = date.getDay();
         if (dayOfWeek !== 0 && dayOfWeek !== 6) { // No es fin de semana
-          console.log(`  • ${day}/7 (${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dayOfWeek]}): 3.5h → 1.5h`);
+// // console.log(`  • ${day}/7 (${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dayOfWeek]}): 3.5h → 1.5h`);
         }
       });
     } else if (!hasWeekendHolidayServices && laborableHolidayDays > 0) {
-      console.log(`- ${laborableHolidayDays} día(s) festivo(s) laborable(s) NO se realizan (no hay trabajadora de festivos)`);
+// // console.log(`- ${laborableHolidayDays} día(s) festivo(s) laborable(s) NO se realizan (no hay trabajadora de festivos)`);
       holidayDates.forEach(day => {
         const date = new Date(year, month - 1, day);
         const dayOfWeek = date.getDay();
         if (dayOfWeek !== 0 && dayOfWeek !== 6) { // No es fin de semana
-          console.log(`  • ${day}/7 (${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dayOfWeek]}): 3.5h → 0h`);
+// // console.log(`  • ${day}/7 (${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][dayOfWeek]}): 3.5h → 0h`);
         }
       });
     }
 
     // 10. Resultado final
-    console.log('\n🎯 RESULTADO FINAL:');
-    console.log(`- Rosa Robles: ${rosaHours}h`);
+// // console.log('\n🎯 RESULTADO FINAL:');
+// // console.log(`- Rosa Robles: ${rosaHours}h`);
     if (hasWeekendHolidayServices) {
-      console.log(`- Trabajadora festivos: ${holidayWorkerHours}h`);
+// // console.log(`- Trabajadora festivos: ${holidayWorkerHours}h`);
     }
-    console.log(`- TOTAL: ${totalHours}h`);
+// // console.log(`- TOTAL: ${totalHours}h`);
 
   } catch (error) {
     console.error('❌ Error general:', error.message);

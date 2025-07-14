@@ -6,11 +6,11 @@ import { createClient } from '@supabase/supabase-js'
 function createSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-  
+
   if (!supabaseUrl || !supabaseKey) {
     throw new Error('Missing Supabase environment variables')
   }
-  
+
   return createClient(supabaseUrl, supabaseKey)
 }
 
@@ -26,12 +26,12 @@ function generarPassword(longitud = 12) {
 export async function POST(req: NextRequest) {
   try {
     const supabase = createSupabaseClient()
-    
+
     const body = await req.json()
-    const { 
-      email, 
-      full_name, 
-      phone, 
+    const {
+      email,
+      full_name,
+      phone,
       worker_type = 'laborable',
       availability_days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
       hourly_rate = 15.00,
@@ -52,9 +52,7 @@ export async function POST(req: NextRequest) {
       password,
       email_confirm: true
     })
-    // console.log('Resultado createUser:', { userData, userError });
-
-    if (userError || !userData?.user) {
+    // // if (userError || !userData?.user) {
       console.error('Error creando usuario en Auth:', userError);
       return NextResponse.json({ error: userError?.message || 'Error creando usuario en Auth' }, { status: 500 })
     }
@@ -72,9 +70,7 @@ export async function POST(req: NextRequest) {
       worker_type,
       created_at: new Date().toISOString()
     })
-    // console.log('Resultado insert worker_profiles:', { profileError });
-
-    if (profileError) {
+    // // if (profileError) {
       // Si falla el perfil, elimina el usuario creado en Auth para evitar inconsistencias
       await supabase.auth.admin.deleteUser(userId)
       console.error('Error creando perfil:', profileError);
@@ -100,9 +96,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    // console.log('Resultado insert workers:', { workersError });
-
-    if (workersError) {
+    // // if (workersError) {
       // Si falla, elimina el usuario y el perfil para evitar inconsistencias
       await supabase.from('worker_profiles').delete().eq('id', userId)
       await supabase.auth.admin.deleteUser(userId)
@@ -116,4 +110,4 @@ export async function POST(req: NextRequest) {
     console.error('Error en create-worker:', error, JSON.stringify(error));
     return NextResponse.json({ error: error instanceof Error ? error.message : 'Error desconocido' }, { status: 500 });
   }
-} 
+}

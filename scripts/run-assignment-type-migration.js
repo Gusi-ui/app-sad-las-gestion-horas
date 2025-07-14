@@ -17,10 +17,10 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function runMigration() {
   try {
-    console.log('🚀 Iniciando migración para agregar assignment_type...');
+// // console.log('🚀 Iniciando migración para agregar assignment_type...');
     
     // Paso 1: Agregar la columna assignment_type
-    console.log('📝 Paso 1: Agregando columna assignment_type...');
+// // console.log('📝 Paso 1: Agregando columna assignment_type...');
     const { error: alterError } = await supabase.rpc('exec_sql', {
       sql: `
         ALTER TABLE assignments 
@@ -34,10 +34,10 @@ async function runMigration() {
       return;
     }
 
-    console.log('✅ Columna assignment_type agregada correctamente');
+// // console.log('✅ Columna assignment_type agregada correctamente');
 
     // Paso 2: Actualizar asignaciones existentes
-    console.log('📝 Paso 2: Actualizando asignaciones existentes...');
+// // console.log('📝 Paso 2: Actualizando asignaciones existentes...');
     const { error: updateError } = await supabase.rpc('exec_sql', {
       sql: `
         UPDATE assignments 
@@ -51,10 +51,10 @@ async function runMigration() {
       return;
     }
 
-    console.log('✅ Asignaciones existentes actualizadas');
+// // console.log('✅ Asignaciones existentes actualizadas');
 
     // Paso 3: Verificar la migración
-    console.log('📝 Paso 3: Verificando migración...');
+// // console.log('📝 Paso 3: Verificando migración...');
     const { data: assignments, error: selectError } = await supabase
       .from('assignments')
       .select('id, assignment_type, specific_schedule')
@@ -65,10 +65,10 @@ async function runMigration() {
       return;
     }
 
-    console.log('✅ Migración completada exitosamente!');
-    console.log('📊 Muestra de asignaciones actualizadas:');
+// // console.log('✅ Migración completada exitosamente!');
+// // console.log('📊 Muestra de asignaciones actualizadas:');
     assignments.forEach(assignment => {
-      console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type}`);
+// // console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type}`);
     });
 
   } catch (error) {

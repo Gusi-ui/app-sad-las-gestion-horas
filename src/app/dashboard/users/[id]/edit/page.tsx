@@ -32,17 +32,13 @@ export default function EditUserPage() {
   useEffect(() => {
     const checkAuth = async () => {
       const { data: { user: authUser }, error } = await supabase.auth.getUser()
-      // console.log('🔐 Auth check:', { user: authUser?.id, error })
-      
-      if (error || !authUser) {
-        // console.log('❌ User not authenticated, redirecting to login')
-        router.push('/login')
+      // if (error || !authUser) {
+        // router.push('/login')
         return
       }
-      
-      // console.log('✅ User authenticated:', authUser.id)
-    }
-    
+
+      // }
+
     checkAuth()
   }, [router]) // Removido showToast de las dependencias
 
@@ -53,17 +49,13 @@ export default function EditUserPage() {
     }
 
     try {
-      // console.log('Fetching user with ID:', userId)
-      
-      const { data, error } = await supabase
+      // const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
 
-      // console.log('Fetch user response:', { data, error })
-
-      if (error) {
+      // if (error) {
         console.error('Error fetching user:', error)
         showToast('Error al cargar los datos del usuario', 'error')
         router.push('/dashboard/users')
@@ -88,11 +80,7 @@ export default function EditUserPage() {
 
   const handleSubmit = useCallback(async (formData: UserFormData) => {
     try {
-      // console.log('🔄 Starting user update...')
-      // console.log('📝 Form data received:', formData)
-      // console.log('🆔 User ID:', userId)
-      
-      const updateData = {
+      // // // const updateData = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
         phone: formData.phone.replace(/\s/g, ''),
@@ -101,10 +89,8 @@ export default function EditUserPage() {
         is_active: formData.is_active,
         monthly_hours: Number(formData.monthly_hours)
       }
-      
-      // console.log('📤 Update data:', updateData)
-      
-      const { error } = await supabase
+
+      // const { error } = await supabase
         .from('users')
         .update(updateData)
         .eq('id', userId)
@@ -115,8 +101,7 @@ export default function EditUserPage() {
         return
       }
 
-      // console.log('✅ User updated successfully')
-      showToast('Usuario actualizado correctamente', 'success')
+      // showToast('Usuario actualizado correctamente', 'success')
       setTimeout(() => {
         router.push('/dashboard/users')
       }, 1500)
@@ -147,7 +132,7 @@ export default function EditUserPage() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600">Usuario no encontrado</p>
-          <button 
+          <button
             onClick={() => router.push('/dashboard/users')}
             className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >

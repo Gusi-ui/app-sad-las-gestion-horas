@@ -1,7 +1,7 @@
 // Script para probar holidayUtils en el navegador
 // Copia y pega este código en la consola del navegador en la página de planning
 
-console.log('🧪 Probando holidayUtils en el navegador...')
+// // console.log('🧪 Probando holidayUtils en el navegador...')
 
 // Simular la función getHolidaysForYear
 async function testGetHolidaysForYear() {
@@ -18,7 +18,7 @@ async function testGetHolidaysForYear() {
     const startDate = `${year}-01-01`
     const endDate = `${year}-12-31`
     
-    console.log('🔄 Consultando festivos para 2025...')
+// // console.log('🔄 Consultando festivos para 2025...')
     
     const { data, error } = await supabase
       .from('holidays')
@@ -33,7 +33,7 @@ async function testGetHolidaysForYear() {
       return []
     }
 
-    console.log('✅ Festivos obtenidos:', data)
+// // console.log('✅ Festivos obtenidos:', data)
     return data || []
   } catch (error) {
     console.error('❌ Error inesperado:', error)
@@ -43,7 +43,7 @@ async function testGetHolidaysForYear() {
 
 // Función simplificada para probar sin Supabase
 function testHolidayLogic() {
-  console.log('🧪 Probando lógica de festivos...')
+// // console.log('🧪 Probando lógica de festivos...')
   
   // Festivos conocidos de 2025
   const knownHolidays = [
@@ -63,7 +63,7 @@ function testHolidayLogic() {
     '2025-12-26', // San Esteban
   ]
   
-  console.log('📅 Festivos conocidos:', knownHolidays)
+// // console.log('📅 Festivos conocidos:', knownHolidays)
   
   // Probar fechas específicas
   const testDates = [
@@ -80,22 +80,22 @@ function testHolidayLogic() {
     const isHoliday = knownHolidays.includes(date)
     const isSpecial = isWeekend || isHoliday
     
-    console.log(`   ${date} (${description}):`)
-    console.log(`     - Weekend: ${isWeekend}`)
-    console.log(`     - Holiday: ${isHoliday}`)
-    console.log(`     - Especial: ${isSpecial ? '🔴 SÍ' : '⚪ NO'}`)
+// // console.log(`   ${date} (${description}):`)
+// // console.log(`     - Weekend: ${isWeekend}`)
+// // console.log(`     - Holiday: ${isHoliday}`)
+// // console.log(`     - Especial: ${isSpecial ? '🔴 SÍ' : '⚪ NO'}`)
   })
   
   return knownHolidays
 }
 
 // Ejecutar pruebas
-console.log('🚀 Iniciando pruebas...')
+// // console.log('🚀 Iniciando pruebas...')
 const holidays = testHolidayLogic()
 
-console.log('\n📋 INSTRUCCIONES:')
-console.log('1. Copia este resultado en la consola del navegador')
-console.log('2. Navega a la página de planning')
-console.log('3. Ve a junio 2025')
-console.log('4. Verifica que los días 24, 28 y 29 aparezcan con fondo rojo')
-console.log('5. Si no aparecen, revisa los logs de la consola para errores') 
+// // console.log('\n📋 INSTRUCCIONES:')
+// // console.log('1. Copia este resultado en la consola del navegador')
+// // console.log('2. Navega a la página de planning')
+// // console.log('3. Ve a junio 2025')
+// // console.log('4. Verifica que los días 24, 28 y 29 aparezcan con fondo rojo')
+// // console.log('5. Si no aparecen, revisa los logs de la consola para errores') 

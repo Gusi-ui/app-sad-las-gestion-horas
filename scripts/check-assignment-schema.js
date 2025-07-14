@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkAssignmentSchema() {
-  console.log('🔍 Verificando esquema de la tabla assignments...\n');
+// // console.log('🔍 Verificando esquema de la tabla assignments...\n');
 
   try {
     // Obtener información de la tabla assignments
@@ -28,12 +28,12 @@ async function checkAssignmentSchema() {
 
     if (assignments && assignments.length > 0) {
       const assignment = assignments[0];
-      console.log('📋 Campos disponibles en la tabla assignments:');
+// // console.log('📋 Campos disponibles en la tabla assignments:');
       Object.keys(assignment).forEach(field => {
-        console.log(`   - ${field}: ${typeof assignment[field]} = ${JSON.stringify(assignment[field])}`);
+// // console.log(`   - ${field}: ${typeof assignment[field]} = ${JSON.stringify(assignment[field])}`);
       });
     } else {
-      console.log('⚠️  No hay asignaciones en la tabla para verificar el esquema');
+// // console.log('⚠️  No hay asignaciones en la tabla para verificar el esquema');
     }
 
     // Intentar obtener una asignación específica para ver todos los campos
@@ -42,11 +42,11 @@ async function checkAssignmentSchema() {
       .select('*');
 
     if (!allError && allAssignments && allAssignments.length > 0) {
-      console.log('\n📊 Resumen de campos en todas las asignaciones:');
+// // console.log('\n📊 Resumen de campos en todas las asignaciones:');
       const firstAssignment = allAssignments[0];
       Object.keys(firstAssignment).forEach(field => {
         const values = allAssignments.map(a => a[field]).filter(v => v !== null && v !== undefined);
-        console.log(`   - ${field}: ${values.length} valores no nulos`);
+// // console.log(`   - ${field}: ${values.length} valores no nulos`);
       });
     }
 

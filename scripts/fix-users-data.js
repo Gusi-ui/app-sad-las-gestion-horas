@@ -55,7 +55,7 @@ function getSpecialRequirements(specialRequirements) {
 }
 
 async function fixUsersData() {
-  console.log('🔧 Iniciando limpieza y estandarización de datos de usuarios...\n')
+// // console.log('🔧 Iniciando limpieza y estandarización de datos de usuarios...\n')
 
   try {
     // Obtener todos los usuarios
@@ -68,10 +68,10 @@ async function fixUsersData() {
       return
     }
 
-    console.log(`📊 Procesando ${users.length} usuarios...\n`)
+// // console.log(`📊 Procesando ${users.length} usuarios...\n`)
 
     for (const user of users) {
-      console.log(`🔧 Procesando: ${user.name} ${user.surname} (${user.client_code})`)
+// // console.log(`🔧 Procesando: ${user.name} ${user.surname} (${user.client_code})`)
       
       const updates = {}
       let hasChanges = false
@@ -79,7 +79,7 @@ async function fixUsersData() {
       // 1. Limpiar tipo de servicio
       if (user.service_type && serviceTypeMapping[user.service_type]) {
         updates.service_type = serviceTypeMapping[user.service_type]
-        console.log(`   🏷️ Tipo de servicio: ${user.service_type} → ${updates.service_type}`)
+// // console.log(`   🏷️ Tipo de servicio: ${user.service_type} → ${updates.service_type}`)
         hasChanges = true
       }
 
@@ -90,7 +90,7 @@ async function fixUsersData() {
       
       if (JSON.stringify(serviceDays) !== JSON.stringify(currentRequirements)) {
         updates.special_requirements = specialRequirements
-        console.log(`   📋 Requisitos especiales: ${specialRequirements.join(', ') || 'Ninguno'}`)
+// // console.log(`   📋 Requisitos especiales: ${specialRequirements.join(', ') || 'Ninguno'}`)
         hasChanges = true
       }
 
@@ -98,7 +98,7 @@ async function fixUsersData() {
       const medicalConditions = cleanArrayField(user.medical_conditions)
       if (JSON.stringify(medicalConditions) !== JSON.stringify(user.medical_conditions)) {
         updates.medical_conditions = medicalConditions
-        console.log(`   💊 Condiciones médicas: ${medicalConditions.join(', ') || 'Ninguna'}`)
+// // console.log(`   💊 Condiciones médicas: ${medicalConditions.join(', ') || 'Ninguna'}`)
         hasChanges = true
       }
 
@@ -106,7 +106,7 @@ async function fixUsersData() {
       const allergies = cleanArrayField(user.allergies)
       if (JSON.stringify(allergies) !== JSON.stringify(user.allergies)) {
         updates.allergies = allergies
-        console.log(`   🚨 Alergias: ${allergies.join(', ') || 'Ninguna'}`)
+// // console.log(`   🚨 Alergias: ${allergies.join(', ') || 'Ninguna'}`)
         hasChanges = true
       }
 
@@ -114,28 +114,28 @@ async function fixUsersData() {
       const medications = cleanArrayField(user.medications)
       if (JSON.stringify(medications) !== JSON.stringify(user.medications)) {
         updates.medications = medications
-        console.log(`   💊 Medicamentos: ${medications.join(', ') || 'Ninguno'}`)
+// // console.log(`   💊 Medicamentos: ${medications.join(', ') || 'Ninguno'}`)
         hasChanges = true
       }
 
       // 6. Asegurar que monthly_hours sea un número
       if (user.monthly_hours === null || user.monthly_hours === undefined) {
         updates.monthly_hours = 0
-        console.log(`   ⏰ Horas mensuales: 0 (valor por defecto)`)
+// // console.log(`   ⏰ Horas mensuales: 0 (valor por defecto)`)
         hasChanges = true
       }
 
       // 7. Asegurar que city tenga valor por defecto
       if (!user.city) {
         updates.city = 'Mataró'
-        console.log(`   🏙️ Ciudad: Mataró (valor por defecto)`)
+// // console.log(`   🏙️ Ciudad: Mataró (valor por defecto)`)
         hasChanges = true
       }
 
       // 8. Asegurar que province tenga valor por defecto
       if (!user.province) {
         updates.province = 'Barcelona'
-        console.log(`   🏥 Provincia: Barcelona (valor por defecto)`)
+// // console.log(`   🏥 Provincia: Barcelona (valor por defecto)`)
         hasChanges = true
       }
 
@@ -149,17 +149,17 @@ async function fixUsersData() {
         if (updateError) {
           console.error(`   ❌ Error al actualizar ${user.client_code}:`, updateError)
         } else {
-          console.log(`   ✅ Usuario ${user.client_code} actualizado correctamente`)
+// // console.log(`   ✅ Usuario ${user.client_code} actualizado correctamente`)
         }
       } else {
-        console.log(`   ✅ Usuario ${user.client_code} ya está correcto`)
+// // console.log(`   ✅ Usuario ${user.client_code} ya está correcto`)
       }
       
-      console.log('')
+// // console.log('')
     }
 
-    console.log('🎉 Proceso de limpieza completado!')
-    console.log('💡 Ejecuta "node scripts/check-existing-users.js" para verificar los resultados')
+// // console.log('🎉 Proceso de limpieza completado!')
+// // console.log('💡 Ejecuta "node scripts/check-existing-users.js" para verificar los resultados')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

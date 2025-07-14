@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Users, Plus, ChevronDown, Filter } from 'lucide-react'
 import ConfirmModal from '@/components/ui/confirm-modal'
-import ToastNotification from '@/components/ui/toast-notification'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
 interface Worker {
   id: string
@@ -30,6 +30,8 @@ interface Worker {
 }
 
 export default function WorkersPage() {
+  const { success, error: showError } = useNotificationHelpers()
+  
   const [workers, setWorkers] = useState<Worker[]>([])
   const [filteredWorkers, setFilteredWorkers] = useState<Worker[]>([])
   const [loading, setLoading] = useState(true)
@@ -40,15 +42,6 @@ export default function WorkersPage() {
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [workerToDelete, setWorkerToDelete] = useState<string | null>(null)
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
-  })
 
   useEffect(() => {
     fetchWorkers()
@@ -153,18 +146,10 @@ export default function WorkersPage() {
       if (error) throw error
       setWorkers(workers.filter(w => w.id !== workerToDelete))
       setFilteredWorkers(filteredWorkers.filter(w => w.id !== workerToDelete))
-      setToast({
-        message: 'Trabajadora eliminada correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Trabajadora eliminada correctamente')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error al eliminar trabajadora: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error al eliminar trabajadora', errorMessage)
     }
   }
 
@@ -175,9 +160,10 @@ export default function WorkersPage() {
       if (error) throw error
       setWorkers(workers.map(w => w.id === workerId ? { ...w, is_active: !isActive } : w))
       setFilteredWorkers(filteredWorkers.map(w => w.id === workerId ? { ...w, is_active: !isActive } : w))
+      success(`Trabajadora ${!isActive ? 'activada' : 'desactivada'} correctamente`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      alert('Error al actualizar estado: ' + errorMessage)
+      showError('Error al actualizar estado', errorMessage)
     }
   }
 
@@ -804,14 +790,6 @@ export default function WorkersPage() {
         confirmText="Eliminar"
         cancelText="Cancelar"
         type="danger"
-      />
-
-      {/* Toast Notification */}
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
       />
     </div>
   )

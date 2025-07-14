@@ -8,11 +8,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ArrowLeft, Save, User, Phone, Mail, MapPin, Calendar, Heart, CheckCircle, XCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { 
+import {
   validateWorker,
-  validateAddress, 
-  isValidPostalCodeFormat, 
-  isValidSpanishPostalCode, 
+  validateAddress,
+  isValidPostalCodeFormat,
+  isValidSpanishPostalCode,
   isValidPostalCodeForProvince,
   getProvinceByPostalCode,
   getPostalCodeSuggestions,
@@ -20,7 +20,7 @@ import {
   isValidDNIFormat,
   getCorrectDNILetter,
   formatDNI,
-  POSTAL_CODE_RANGES 
+  POSTAL_CODE_RANGES
 } from '@/lib/utils'
 
 interface UserFormData {
@@ -153,9 +153,7 @@ export default function NewUserPage() {
       // monthly_hours nunca debe ser NaN ni null
       if (!dataToSave.monthly_hours || isNaN(dataToSave.monthly_hours)) dataToSave.monthly_hours = 0
       // Log para depuración
-      console.log('Insertando usuario:', dataToSave)
-
-      const { data, error } = await supabase
+      // const { data, error } = await supabase
         .from('users')
         .insert([dataToSave])
         .select()
@@ -179,7 +177,7 @@ export default function NewUserPage() {
 
   const handleInputChange = (field: keyof UserFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    
+
     // Validar en tiempo real para campos con validación
     if (['dni', 'address', 'postal_code', 'city', 'province'].includes(field)) {
       const newFormData = { ...formData, [field]: value }
@@ -197,7 +195,7 @@ export default function NewUserPage() {
   // Auto-detectar provincia por código postal
   const handlePostalCodeChange = (postalCode: string) => {
     handleInputChange('postal_code', postalCode)
-    
+
     if (postalCode && isValidPostalCodeFormat(postalCode)) {
       const detectedProvince = getProvinceByPostalCode(postalCode)
       if (detectedProvince && detectedProvince !== formData.province) {
@@ -279,8 +277,8 @@ export default function NewUserPage() {
                       value={formData.dni}
                       onChange={(e) => handleInputChange('dni', e.target.value.toUpperCase())}
                       className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.dni 
-                          ? 'border-red-300 bg-red-50' 
+                        validationErrors.dni
+                          ? 'border-red-300 bg-red-50'
                           : 'border-slate-300'
                       }`}
                       placeholder="12345678A"
@@ -363,8 +361,8 @@ export default function NewUserPage() {
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.address 
-                        ? 'border-red-300 bg-red-50' 
+                      validationErrors.address
+                        ? 'border-red-300 bg-red-50'
                         : 'border-slate-300'
                     }`}
                     placeholder="Calle Mayor 123"
@@ -384,8 +382,8 @@ export default function NewUserPage() {
                       value={formData.postal_code}
                       onChange={(e) => handlePostalCodeChange(e.target.value)}
                       className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.postal_code 
-                          ? 'border-red-300 bg-red-50' 
+                        validationErrors.postal_code
+                          ? 'border-red-300 bg-red-50'
                           : 'border-slate-300'
                       }`}
                       placeholder="08301"
@@ -412,8 +410,8 @@ export default function NewUserPage() {
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
                       className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                        validationErrors.city 
-                          ? 'border-red-300 bg-red-50' 
+                        validationErrors.city
+                          ? 'border-red-300 bg-red-50'
                           : 'border-slate-300'
                       }`}
                       placeholder="Mataró"
@@ -432,8 +430,8 @@ export default function NewUserPage() {
                     value={formData.province}
                     onChange={(e) => handleInputChange('province', e.target.value)}
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                      validationErrors.province 
-                        ? 'border-red-300 bg-red-50' 
+                      validationErrors.province
+                        ? 'border-red-300 bg-red-50'
                         : 'border-slate-300'
                     }`}
                   >

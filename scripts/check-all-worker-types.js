@@ -14,7 +14,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function checkAllWorkerTypes() {
   try {
-    console.log('🔍 Verificando tipos de todas las trabajadoras...\n');
+// // console.log('🔍 Verificando tipos de todas las trabajadoras...\n');
 
     // 1. Obtener todas las trabajadoras
     const { data: workers, error: fetchError } = await supabase
@@ -27,21 +27,21 @@ async function checkAllWorkerTypes() {
     }
 
     if (!workers || workers.length === 0) {
-      console.log('❌ No se encontraron trabajadoras');
+// // console.log('❌ No se encontraron trabajadoras');
       return;
     }
 
-    console.log(`📊 Total de trabajadoras: ${workers.length}\n`);
+// // console.log(`📊 Total de trabajadoras: ${workers.length}\n`);
 
     let needsUpdate = 0;
     let updated = 0;
 
     // 2. Verificar cada trabajadora
     for (const worker of workers) {
-      console.log(`👤 ${worker.name} ${worker.surname}:`);
-      console.log(`   ID: ${worker.id}`);
-      console.log(`   Tipo actual: ${worker.worker_type || '❌ NO DEFINIDO'}`);
-      console.log(`   Días disponibles: ${worker.availability_days?.join(', ') || 'No definidos'}`);
+// // console.log(`👤 ${worker.name} ${worker.surname}:`);
+// // console.log(`   ID: ${worker.id}`);
+// // console.log(`   Tipo actual: ${worker.worker_type || '❌ NO DEFINIDO'}`);
+// // console.log(`   Días disponibles: ${worker.availability_days?.join(', ') || 'No definidos'}`);
 
       // 3. Determinar el tipo basado en los días disponibles
       let suggestedType = 'laborable';
@@ -61,16 +61,16 @@ async function checkAllWorkerTypes() {
         }
       }
 
-      console.log(`   Tipo sugerido: ${suggestedType}`);
+// // console.log(`   Tipo sugerido: ${suggestedType}`);
 
       // 4. Verificar si necesita actualización
       if (!worker.worker_type || worker.worker_type !== suggestedType) {
         needsUpdate++;
-        console.log(`   ⚠️  NECESITA ACTUALIZACIÓN`);
+// // console.log(`   ⚠️  NECESITA ACTUALIZACIÓN`);
         
         // Preguntar si actualizar
         if (process.argv.includes('--auto-update')) {
-          console.log(`   🔄 Actualizando automáticamente...`);
+// // console.log(`   🔄 Actualizando automáticamente...`);
           
           const { error: updateError } = await supabase
             .from('workers')
@@ -78,33 +78,33 @@ async function checkAllWorkerTypes() {
             .eq('id', worker.id);
 
           if (updateError) {
-            console.log(`   ❌ Error al actualizar: ${updateError.message}`);
+// // console.log(`   ❌ Error al actualizar: ${updateError.message}`);
           } else {
             updated++;
-            console.log(`   ✅ Actualizada correctamente`);
+// // console.log(`   ✅ Actualizada correctamente`);
           }
         }
       } else {
-        console.log(`   ✅ Tipo correcto`);
+// // console.log(`   ✅ Tipo correcto`);
       }
       
-      console.log('');
+// // console.log('');
     }
 
     // 5. Resumen
-    console.log('📋 RESUMEN:');
-    console.log(`   Total trabajadoras: ${workers.length}`);
-    console.log(`   Necesitan actualización: ${needsUpdate}`);
-    console.log(`   Actualizadas: ${updated}`);
-    console.log(`   Correctas: ${workers.length - needsUpdate}`);
+// // console.log('📋 RESUMEN:');
+// // console.log(`   Total trabajadoras: ${workers.length}`);
+// // console.log(`   Necesitan actualización: ${needsUpdate}`);
+// // console.log(`   Actualizadas: ${updated}`);
+// // console.log(`   Correctas: ${workers.length - needsUpdate}`);
 
     if (needsUpdate > 0 && !process.argv.includes('--auto-update')) {
-      console.log('\n💡 Para actualizar automáticamente, ejecuta:');
-      console.log('   node scripts/check-all-worker-types.js --auto-update');
+// // console.log('\n💡 Para actualizar automáticamente, ejecuta:');
+// // console.log('   node scripts/check-all-worker-types.js --auto-update');
     }
 
     if (updated > 0) {
-      console.log('\n🎉 Actualizaciones completadas exitosamente!');
+// // console.log('\n🎉 Actualizaciones completadas exitosamente!');
     }
 
   } catch (error) {

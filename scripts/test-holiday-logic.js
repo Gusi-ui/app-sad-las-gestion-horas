@@ -72,7 +72,7 @@ function getDayInfo(date, holidays) {
 }
 
 async function testHolidayLogic() {
-  console.log('🧪 Probando lógica de festivos y asignación de trabajadoras...\n');
+// // console.log('🧪 Probando lógica de festivos y asignación de trabajadoras...\n');
 
   try {
     // Obtener festivos de 2025
@@ -87,7 +87,7 @@ async function testHolidayLogic() {
       return;
     }
 
-    console.log(`✅ Se cargaron ${holidays.length} festivos\n`);
+// // console.log(`✅ Se cargaron ${holidays.length} festivos\n`);
 
     // Probar días específicos de junio 2025
     const testDates = [
@@ -100,7 +100,7 @@ async function testHolidayLogic() {
       '2025-06-29', // Domingo
     ];
 
-    console.log('📅 Análisis de días de junio 2025:\n');
+// // console.log('📅 Análisis de días de junio 2025:\n');
 
     testDates.forEach(dateString => {
       const date = new Date(dateString);
@@ -110,20 +110,20 @@ async function testHolidayLogic() {
       const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       const dayName = dayNames[dayInfo.dayOfWeek];
       
-      console.log(`${dateString} (${dayName}):`);
-      console.log(`   - Es fin de semana: ${dayInfo.isWeekend ? 'Sí' : 'No'}`);
-      console.log(`   - Es festivo: ${dayInfo.isHoliday ? 'Sí' : 'No'}`);
+// // console.log(`${dateString} (${dayName}):`);
+// // console.log(`   - Es fin de semana: ${dayInfo.isWeekend ? 'Sí' : 'No'}`);
+// // console.log(`   - Es festivo: ${dayInfo.isHoliday ? 'Sí' : 'No'}`);
       if (dayInfo.isHoliday && dayInfo.holidayInfo) {
-        console.log(`   - Festivo: ${dayInfo.holidayInfo.name} (${dayInfo.holidayInfo.type})`);
+// // console.log(`   - Festivo: ${dayInfo.holidayInfo.name} (${dayInfo.holidayInfo.type})`);
       }
-      console.log(`   - Es día laborable: ${dayInfo.isWorkingDay ? 'Sí' : 'No'}`);
-      console.log(`   - Es día festivo: ${dayInfo.isHolidayDay ? 'Sí' : 'No'}`);
-      console.log(`   - Tipo de trabajadora asignada: ${workerType}`);
-      console.log('');
+// // console.log(`   - Es día laborable: ${dayInfo.isWorkingDay ? 'Sí' : 'No'}`);
+// // console.log(`   - Es día festivo: ${dayInfo.isHolidayDay ? 'Sí' : 'No'}`);
+// // console.log(`   - Tipo de trabajadora asignada: ${workerType}`);
+// // console.log('');
     });
 
     // Probar todos los festivos de 2025
-    console.log('🎯 Análisis de todos los festivos de 2025:\n');
+// // console.log('🎯 Análisis de todos los festivos de 2025:\n');
 
     holidays.forEach(holiday => {
       const date = new Date(holiday.date);
@@ -133,29 +133,29 @@ async function testHolidayLogic() {
       const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
       const dayName = dayNames[dayInfo.dayOfWeek];
       
-      console.log(`${holiday.date} (${dayName}): ${holiday.name}`);
-      console.log(`   - Tipo: ${holiday.type}`);
-      console.log(`   - Es fin de semana: ${dayInfo.isWeekend ? 'Sí' : 'No'}`);
-      console.log(`   - Trabajadora asignada: ${workerType}`);
+// // console.log(`${holiday.date} (${dayName}): ${holiday.name}`);
+// // console.log(`   - Tipo: ${holiday.type}`);
+// // console.log(`   - Es fin de semana: ${dayInfo.isWeekend ? 'Sí' : 'No'}`);
+// // console.log(`   - Trabajadora asignada: ${workerType}`);
       
       // Verificar lógica específica
       if (dayInfo.isWeekend) {
-        console.log(`   ✅ Correcto: Fin de semana asignado a trabajadora festiva`);
+// // console.log(`   ✅ Correcto: Fin de semana asignado a trabajadora festiva`);
       } else if (dayInfo.isHoliday) {
-        console.log(`   ✅ Correcto: Festivo entre semana asignado a trabajadora festiva`);
+// // console.log(`   ✅ Correcto: Festivo entre semana asignado a trabajadora festiva`);
       } else {
-        console.log(`   ⚠️  Inesperado: Día no identificado como festivo`);
+// // console.log(`   ⚠️  Inesperado: Día no identificado como festivo`);
       }
-      console.log('');
+// // console.log('');
     });
 
     // Probar lógica de trabajadoras
-    console.log('👥 Prueba de lógica de trabajadoras:\n');
+// // console.log('👥 Prueba de lógica de trabajadoras:\n');
 
     const workerTypes = ['laborables', 'festivos', 'flexible'];
     
     workerTypes.forEach(workerType => {
-      console.log(`Trabajadora tipo: ${workerType}`);
+// // console.log(`Trabajadora tipo: ${workerType}`);
       
       // Probar con San Juan (martes festivo)
       const sanJuan = new Date('2025-06-24');
@@ -174,7 +174,7 @@ async function testHolidayLogic() {
           break;
       }
       
-      console.log(`   - San Juan (24/06/2025, martes): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
+// // console.log(`   - San Juan (24/06/2025, martes): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
       
       // Probar con un lunes normal
       const monday = new Date('2025-06-23');
@@ -192,7 +192,7 @@ async function testHolidayLogic() {
           break;
       }
       
-      console.log(`   - Lunes normal (23/06/2025): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
+// // console.log(`   - Lunes normal (23/06/2025): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
       
       // Probar con un sábado
       const saturday = new Date('2025-06-28');
@@ -210,11 +210,11 @@ async function testHolidayLogic() {
           break;
       }
       
-      console.log(`   - Sábado (28/06/2025): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
-      console.log('');
+// // console.log(`   - Sábado (28/06/2025): ${canWork ? 'Puede trabajar' : 'No puede trabajar'}`);
+// // console.log('');
     });
 
-    console.log('✅ Prueba de lógica completada');
+// // console.log('✅ Prueba de lógica completada');
 
   } catch (error) {
     console.error('❌ Error inesperado:', error);

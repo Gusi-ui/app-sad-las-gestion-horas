@@ -7,15 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
-import { 
-  ArrowLeft, 
-  Edit, 
-  Trash2, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Calendar, 
-  Clock, 
+import {
+  ArrowLeft,
+  Edit,
+  Trash2,
+  Phone,
+  Mail,
+  MapPin,
+  Calendar,
+  Clock,
   Euro,
   User,
   Shield,
@@ -63,7 +63,7 @@ export default function WorkerDetailsPage() {
   const { workerStats, getWorkerById } = useWorkers()
   const { showToast, ToastComponent } = useToast()
   const router = useRouter()
-  
+
   const [worker, setWorker] = useState<Worker | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -157,9 +157,7 @@ export default function WorkerDetailsPage() {
 
   const stats = getWorkerStats()
 
-  // console.log('Worker details page rendering:', { worker, isLoading, error })
-
-  return (
+  // return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
@@ -185,8 +183,8 @@ export default function WorkerDetailsPage() {
               </p>
               <div className="flex items-center space-x-3 mt-2">
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  worker.is_active 
-                    ? 'bg-green-100 text-green-800' 
+                  worker.is_active
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
                   {worker.is_active ? (
@@ -206,7 +204,7 @@ export default function WorkerDetailsPage() {
                 </span>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2">
               <Link href={`/dashboard/workers/${worker.id}/edit`}>
                 <Button variant="secondary" size="sm">
@@ -215,8 +213,8 @@ export default function WorkerDetailsPage() {
                 </Button>
               </Link>
               {worker.is_active && (
-                <Button 
-                  variant="secondary" 
+                <Button
+                  variant="secondary"
                   size="sm"
                   onClick={handleDelete}
                   disabled={isDeleting}
@@ -422,12 +420,12 @@ export default function WorkerDetailsPage() {
                     <p className="text-sm text-slate-600">Asignaciones Activas</p>
                     <p className="text-3xl font-bold text-blue-900">{stats.active_assignments}</p>
                   </div>
-                  
+
                   <div className="text-center p-4 bg-green-50 rounded-lg">
                     <p className="text-sm text-slate-600">Horas Trabajadas/Semana</p>
                     <p className="text-3xl font-bold text-green-900">{stats.total_weekly_hours}h</p>
                   </div>
-                  
+
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
                     <p className="text-sm text-slate-600">Total Asignaciones</p>
                     <p className="text-3xl font-bold text-purple-900">{stats.total_assignments}</p>
@@ -440,10 +438,10 @@ export default function WorkerDetailsPage() {
                       <span>{Math.round((stats.total_weekly_hours / stats.max_weekly_hours) * 100)}%</span>
                     </div>
                     <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-blue-600 h-2 rounded-full transition-all"
-                        style={{ 
-                          width: `${Math.min((stats.total_weekly_hours / stats.max_weekly_hours) * 100, 100)}%` 
+                        style={{
+                          width: `${Math.min((stats.total_weekly_hours / stats.max_weekly_hours) * 100, 100)}%`
                         }}
                       ></div>
                     </div>
@@ -535,4 +533,4 @@ export default function WorkerDetailsPage() {
       <div className="h-20"></div>
     </div>
   )
-} 
+}

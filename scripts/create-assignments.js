@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createAssignments() {
   try {
-    console.log('📋 Creando asignaciones entre usuarios y trabajadoras...\n');
+// // console.log('📋 Creando asignaciones entre usuarios y trabajadoras...\n');
     
     // 1. Obtener usuarios activos
     const { data: users, error: usersError } = await supabase
@@ -27,11 +27,11 @@ async function createAssignments() {
       return;
     }
 
-    console.log('👥 Usuarios activos:');
+// // console.log('👥 Usuarios activos:');
     users.forEach(user => {
-      console.log(`   - ${user.name} ${user.surname} (${user.monthly_hours}h/mes)`);
+// // console.log(`   - ${user.name} ${user.surname} (${user.monthly_hours}h/mes)`);
     });
-    console.log('');
+// // console.log('');
 
     // 2. Obtener trabajadoras
     const { data: workers, error: workersError } = await supabase
@@ -45,11 +45,11 @@ async function createAssignments() {
       return;
     }
 
-    console.log('👤 Trabajadoras activas:');
+// // console.log('👤 Trabajadoras activas:');
     workers.forEach(worker => {
-      console.log(`   - ${worker.name} ${worker.surname} (${worker.worker_type})`);
+// // console.log(`   - ${worker.name} ${worker.surname} (${worker.worker_type})`);
     });
-    console.log('');
+// // console.log('');
 
     // 3. Definir asignaciones basándose en la información conocida
     const assignments = [
@@ -90,16 +90,16 @@ async function createAssignments() {
       }
     ];
 
-    console.log('📋 Asignaciones a crear:');
+// // console.log('📋 Asignaciones a crear:');
     assignments.forEach((assignment, index) => {
       const user = users.find(u => u.id === assignment.user_id);
       const worker = workers.find(w => w.id === assignment.worker_id);
       
-      console.log(`   ${index + 1}. ${user?.name} ${user?.surname} → ${worker?.name} ${worker?.surname}`);
-      console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
-      console.log(`      Horario: ${JSON.stringify(assignment.specific_schedule)}`);
+// // console.log(`   ${index + 1}. ${user?.name} ${user?.surname} → ${worker?.name} ${worker?.surname}`);
+// // console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`      Horario: ${JSON.stringify(assignment.specific_schedule)}`);
     });
-    console.log('');
+// // console.log('');
 
     // 4. Crear las asignaciones
     const { data: createdAssignments, error: createError } = await supabase
@@ -112,16 +112,16 @@ async function createAssignments() {
       return;
     }
 
-    console.log('✅ Asignaciones creadas correctamente:');
+// // console.log('✅ Asignaciones creadas correctamente:');
     createdAssignments.forEach(assignment => {
       const user = users.find(u => u.id === assignment.user_id);
       const worker = workers.find(w => w.id === assignment.worker_id);
       
-      console.log(`   - ${user?.name} ${user?.surname} → ${worker?.name} ${worker?.surname}`);
-      console.log(`     ID: ${assignment.id}`);
-      console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`   - ${user?.name} ${user?.surname} → ${worker?.name} ${worker?.surname}`);
+// // console.log(`     ID: ${assignment.id}`);
+// // console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
     });
-    console.log('');
+// // console.log('');
 
     // 5. Verificar asignaciones creadas
     const { data: allAssignments, error: allError } = await supabase
@@ -142,14 +142,14 @@ async function createAssignments() {
       return;
     }
 
-    console.log(`📊 Total asignaciones en la base de datos: ${allAssignments.length}`);
-    console.log('💡 Ahora puedes regenerar los balances con datos reales');
+// // console.log(`📊 Total asignaciones en la base de datos: ${allAssignments.length}`);
+// // console.log('💡 Ahora puedes regenerar los balances con datos reales');
 
     // Mostrar resumen de asignaciones
-    console.log('\n📋 Resumen de asignaciones:');
+// // console.log('\n📋 Resumen de asignaciones:');
     allAssignments.forEach(assignment => {
-      console.log(`   - ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname} (${assignment.workers?.worker_type})`);
-      console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`   - ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname} (${assignment.workers?.worker_type})`);
+// // console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
     });
 
   } catch (err) {

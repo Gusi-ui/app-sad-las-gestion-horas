@@ -17,13 +17,13 @@ async function checkUsersAndWorkers() {
       return;
     }
 
-    console.log('Usuarios activos:');
-    console.log('==================');
+// // console.log('Usuarios activos:');
+// // console.log('==================');
     users.forEach((user, index) => {
-      console.log(`${index + 1}. ${user.name} ${user.surname} (${user.monthly_hours}h/mes) - ID: ${user.id}`);
+// // console.log(`${index + 1}. ${user.name} ${user.surname} (${user.monthly_hours}h/mes) - ID: ${user.id}`);
     });
 
-    console.log('\n' + '='.repeat(50) + '\n');
+// // console.log('\n' + '='.repeat(50) + '\n');
 
     // Verificar trabajadoras
     const { data: workers, error: workersError } = await supabase
@@ -37,13 +37,13 @@ async function checkUsersAndWorkers() {
       return;
     }
 
-    console.log('Trabajadoras activas:');
-    console.log('=====================');
+// // console.log('Trabajadoras activas:');
+// // console.log('=====================');
     workers.forEach((worker, index) => {
-      console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ID: ${worker.id}`);
+// // console.log(`${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ID: ${worker.id}`);
     });
 
-    console.log('\n' + '='.repeat(50) + '\n');
+// // console.log('\n' + '='.repeat(50) + '\n');
 
     // Verificar asignaciones existentes
     const { data: assignments, error: assignmentsError } = await supabase
@@ -56,13 +56,13 @@ async function checkUsersAndWorkers() {
       return;
     }
 
-    console.log('Asignaciones existentes:');
-    console.log('========================');
+// // console.log('Asignaciones existentes:');
+// // console.log('========================');
     if (assignments.length === 0) {
-      console.log('No hay asignaciones en la base de datos.');
+// // console.log('No hay asignaciones en la base de datos.');
     } else {
       assignments.forEach((assignment, index) => {
-        console.log(`${index + 1}. Usuario: ${assignment.user_id} | Trabajadora: ${assignment.worker_id} | ${assignment.assigned_hours_per_week}h/sem | ${assignment.status}`);
+// // console.log(`${index + 1}. Usuario: ${assignment.user_id} | Trabajadora: ${assignment.worker_id} | ${assignment.assigned_hours_per_week}h/sem | ${assignment.status}`);
       });
     }
 

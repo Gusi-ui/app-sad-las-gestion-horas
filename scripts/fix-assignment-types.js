@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function fixAssignmentTypes() {
-  console.log('🔧 Corrigiendo tipos de asignación...\n')
+// // console.log('🔧 Corrigiendo tipos de asignación...\n')
 
   try {
     // Mapeo de tipos incorrectos a correctos
@@ -34,7 +34,7 @@ async function fixAssignmentTypes() {
       return
     }
 
-    console.log(`📊 Total de asignaciones: ${assignments.length}\n`)
+// // console.log(`📊 Total de asignaciones: ${assignments.length}\n`)
 
     // Encontrar asignaciones que necesitan corrección
     const assignmentsToFix = assignments.filter(a => 
@@ -42,18 +42,18 @@ async function fixAssignmentTypes() {
     )
 
     if (assignmentsToFix.length === 0) {
-      console.log('✅ No hay asignaciones que necesiten corrección')
+// // console.log('✅ No hay asignaciones que necesiten corrección')
       return
     }
 
-    console.log(`🔧 Asignaciones a corregir: ${assignmentsToFix.length}\n`)
+// // console.log(`🔧 Asignaciones a corregir: ${assignmentsToFix.length}\n`)
 
     // Corregir cada asignación
     for (const assignment of assignmentsToFix) {
       const newType = typeMapping[assignment.assignment_type]
-      console.log(`  Corrigiendo asignación ${assignment.id}:`)
-      console.log(`    Tipo anterior: "${assignment.assignment_type}"`)
-      console.log(`    Tipo nuevo: "${newType}"`)
+// // console.log(`  Corrigiendo asignación ${assignment.id}:`)
+// // console.log(`    Tipo anterior: "${assignment.assignment_type}"`)
+// // console.log(`    Tipo nuevo: "${newType}"`)
 
       const { error: updateError } = await supabase
         .from('assignments')
@@ -63,12 +63,12 @@ async function fixAssignmentTypes() {
       if (updateError) {
         console.error(`    ❌ Error al actualizar: ${updateError.message}`)
       } else {
-        console.log(`    ✅ Actualizada correctamente`)
+// // console.log(`    ✅ Actualizada correctamente`)
       }
-      console.log()
+// // console.log()
     }
 
-    console.log('✅ Corrección completada')
+// // console.log('✅ Corrección completada')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

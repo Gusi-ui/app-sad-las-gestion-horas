@@ -11,7 +11,7 @@ const supabase = createClient(
 
 async function checkJoseSchedule() {
   try {
-    console.log('🔍 Verificando horario específico de Jose Martínez\n');
+// // console.log('🔍 Verificando horario específico de Jose Martínez\n');
 
     const joseUserId = '9af4d980-414c-4e9b-8400-3f6021755d45';
     
@@ -27,19 +27,19 @@ async function checkJoseSchedule() {
     }
 
     assignments.forEach(assignment => {
-      console.log(`📋 Asignación: ${assignment.workers.name} ${assignment.workers.surname}`);
-      console.log(`   ID: ${assignment.id}`);
-      console.log(`   Horario específico:`);
+// // console.log(`📋 Asignación: ${assignment.workers.name} ${assignment.workers.surname}`);
+// // console.log(`   ID: ${assignment.id}`);
+// // console.log(`   Horario específico:`);
       
       if (assignment.specific_schedule) {
         Object.entries(assignment.specific_schedule).forEach(([day, schedule]) => {
           if (Array.isArray(schedule) && schedule.length > 0) {
-            console.log(`   ${day}:`);
+// // console.log(`   ${day}:`);
             schedule.forEach((slot, index) => {
               if (typeof slot === 'string') {
-                console.log(`     Tramo ${index + 1}: ${slot}`);
+// // console.log(`     Tramo ${index + 1}: ${slot}`);
               } else if (typeof slot === 'object' && slot.start && slot.end) {
-                console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end}`);
+// // console.log(`     Tramo ${index + 1}: ${slot.start} - ${slot.end}`);
               }
             });
             
@@ -60,13 +60,13 @@ async function checkJoseSchedule() {
                 dayHours += Math.max(0, endHour - startHour);
               });
             }
-            console.log(`     Total horas: ${dayHours}h`);
+// // console.log(`     Total horas: ${dayHours}h`);
           }
         });
       } else {
-        console.log('   No hay horario específico configurado');
+// // console.log('   No hay horario específico configurado');
       }
-      console.log('');
+// // console.log('');
     });
 
   } catch (error) {

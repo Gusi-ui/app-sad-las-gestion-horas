@@ -71,7 +71,7 @@ function checkFile(filePath) {
 }
 
 function main() {
-  console.log('🔍 Verificando sistema de reasignación automática...\n');
+// // console.log('🔍 Verificando sistema de reasignación automática...\n');
 
   let allPassed = true;
   let totalChecks = 0;
@@ -81,43 +81,43 @@ function main() {
     totalChecks++;
     const result = checkFile(component);
     
-    console.log(`📁 ${component}:`);
+// // console.log(`📁 ${component}:`);
     
     if (!result.exists) {
-      console.log(`   ❌ Archivo no encontrado`);
-      console.log(`   📝 Errores: ${result.errors.join(', ')}`);
+// // console.log(`   ❌ Archivo no encontrado`);
+// // console.log(`   📝 Errores: ${result.errors.join(', ')}`);
       allPassed = false;
     } else {
       if (result.hasLogic) {
-        console.log(`   ✅ Lógica de reasignación implementada`);
+// // console.log(`   ✅ Lógica de reasignación implementada`);
         passedChecks++;
       } else {
-        console.log(`   ❌ Lógica de reasignación NO implementada`);
+// // console.log(`   ❌ Lógica de reasignación NO implementada`);
         allPassed = false;
       }
       
       if (result.hasUsage) {
-        console.log(`   ✅ Uso de la lógica detectado`);
+// // console.log(`   ✅ Uso de la lógica detectado`);
         passedChecks++;
       } else {
-        console.log(`   ⚠️  Uso de la lógica NO detectado (puede ser normal para algunos archivos)`);
+// // console.log(`   ⚠️  Uso de la lógica NO detectado (puede ser normal para algunos archivos)`);
       }
     }
     
-    console.log('');
+// // console.log('');
   }
 
-  console.log('📊 RESUMEN:');
-  console.log(`   Total de verificaciones: ${totalChecks}`);
-  console.log(`   Verificaciones exitosas: ${passedChecks}`);
-  console.log(`   Estado general: ${allPassed ? '✅ SISTEMA COMPLETO' : '❌ PROBLEMAS DETECTADOS'}`);
+// // console.log('📊 RESUMEN:');
+// // console.log(`   Total de verificaciones: ${totalChecks}`);
+// // console.log(`   Verificaciones exitosas: ${passedChecks}`);
+// // console.log(`   Estado general: ${allPassed ? '✅ SISTEMA COMPLETO' : '❌ PROBLEMAS DETECTADOS'}`);
 
   if (allPassed) {
-    console.log('\n🎉 ¡El sistema de reasignación automática está completamente implementado!');
-    console.log('   Todos los componentes críticos tienen la lógica necesaria.');
+// // console.log('\n🎉 ¡El sistema de reasignación automática está completamente implementado!');
+// // console.log('   Todos los componentes críticos tienen la lógica necesaria.');
   } else {
-    console.log('\n⚠️  Se detectaron problemas en el sistema de reasignación:');
-    console.log('   Revisa los componentes marcados con ❌');
+// // console.log('\n⚠️  Se detectaron problemas en el sistema de reasignación:');
+// // console.log('   Revisa los componentes marcados con ❌');
   }
 
   return allPassed;

@@ -14,11 +14,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function runMigration() {
-  console.log('🚀 Iniciando migración de campos de dirección de trabajadoras...')
+// // console.log('🚀 Iniciando migración de campos de dirección de trabajadoras...')
   
   try {
     // 1. Añadir campos de dirección
-    console.log('\n➕ Añadiendo campos de dirección...')
+// // console.log('\n➕ Añadiendo campos de dirección...')
     
     const migrationQueries = [
       "ALTER TABLE workers ADD COLUMN IF NOT EXISTS street_address TEXT",
@@ -28,18 +28,18 @@ async function runMigration() {
     ]
 
     for (const query of migrationQueries) {
-      console.log(`Ejecutando: ${query}`)
+// // console.log(`Ejecutando: ${query}`)
       const { error } = await supabase.rpc('exec_sql', { sql: query })
       
       if (error) {
         console.error(`❌ Error:`, error)
       } else {
-        console.log(`✅ Ejecutado correctamente`)
+// // console.log(`✅ Ejecutado correctamente`)
       }
     }
 
     // 2. Migrar datos existentes del campo address
-    console.log('\n🔄 Migrando datos existentes...')
+// // console.log('\n🔄 Migrando datos existentes...')
     const { data: workersWithAddress, error: fetchError } = await supabase
       .from('workers')
       .select('id, address, street_address, city, province')
@@ -51,11 +51,11 @@ async function runMigration() {
       return
     }
 
-    console.log(`📊 Encontradas ${workersWithAddress.length} trabajadoras con dirección`)
+// // console.log(`📊 Encontradas ${workersWithAddress.length} trabajadoras con dirección`)
 
     for (const worker of workersWithAddress) {
       if (!worker.street_address && worker.address) {
-        console.log(`🔄 Migrando dirección de ${worker.id}...`)
+// // console.log(`🔄 Migrando dirección de ${worker.id}...`)
         
         const { error: updateError } = await supabase
           .from('workers')
@@ -69,13 +69,13 @@ async function runMigration() {
         if (updateError) {
           console.error(`❌ Error al migrar ${worker.id}:`, updateError)
         } else {
-          console.log(`✅ Dirección migrada para ${worker.id}`)
+// // console.log(`✅ Dirección migrada para ${worker.id}`)
         }
       }
     }
 
     // 3. Verificar resultado final
-    console.log('\n📋 Verificando resultado final...')
+// // console.log('\n📋 Verificando resultado final...')
     const { data: finalCheck, error: finalError } = await supabase
       .from('workers')
       .select('id, name, surname, address, street_address, postal_code, city, province')
@@ -86,16 +86,16 @@ async function runMigration() {
       return
     }
 
-    console.log('\n✅ Migración completada exitosamente!')
-    console.log('\n📊 Ejemplo de datos migrados:')
+// // console.log('\n✅ Migración completada exitosamente!')
+// // console.log('\n📊 Ejemplo de datos migrados:')
     finalCheck.forEach(worker => {
-      console.log(`  ${worker.name} ${worker.surname}:`)
-      console.log(`    Dirección antigua: ${worker.address || 'N/A'}`)
-      console.log(`    Calle: ${worker.street_address || 'N/A'}`)
-      console.log(`    Código postal: ${worker.postal_code || 'N/A'}`)
-      console.log(`    Ciudad: ${worker.city || 'N/A'}`)
-      console.log(`    Provincia: ${worker.province || 'N/A'}`)
-      console.log('')
+// // console.log(`  ${worker.name} ${worker.surname}:`)
+// // console.log(`    Dirección antigua: ${worker.address || 'N/A'}`)
+// // console.log(`    Calle: ${worker.street_address || 'N/A'}`)
+// // console.log(`    Código postal: ${worker.postal_code || 'N/A'}`)
+// // console.log(`    Ciudad: ${worker.city || 'N/A'}`)
+// // console.log(`    Provincia: ${worker.province || 'N/A'}`)
+// // console.log('')
     })
 
   } catch (error) {

@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function verifyAllUsers() {
   try {
-    console.log('🔍 VERIFICANDO TODOS LOS USUARIOS Y SUS BALANCES...\n');
+// // console.log('🔍 VERIFICANDO TODOS LOS USUARIOS Y SUS BALANCES...\n');
     
     // Obtener todos los usuarios activos
     const { data: users, error: usersError } = await supabase
@@ -27,7 +27,7 @@ async function verifyAllUsers() {
       return;
     }
 
-    console.log(`📊 Total usuarios activos: ${users.length}\n`);
+// // console.log(`📊 Total usuarios activos: ${users.length}\n`);
 
     // Obtener todos los balances de julio 2025
     const { data: balances, error: balancesError } = await supabase
@@ -41,7 +41,7 @@ async function verifyAllUsers() {
       return;
     }
 
-    console.log(`📊 Total balances julio 2025: ${balances.length}\n`);
+// // console.log(`📊 Total balances julio 2025: ${balances.length}\n`);
 
     // Obtener todas las asignaciones
     const { data: assignments, error: assignmentsError } = await supabase
@@ -57,7 +57,7 @@ async function verifyAllUsers() {
       return;
     }
 
-    console.log(`📊 Total asignaciones: ${assignments.length}\n`);
+// // console.log(`📊 Total asignaciones: ${assignments.length}\n`);
 
     // Obtener festivos de julio 2025
     const { data: holidays, error: holidaysError } = await supabase
@@ -71,72 +71,72 @@ async function verifyAllUsers() {
       return;
     }
 
-    console.log(`🎉 Festivos julio 2025: ${holidays.length}`);
+// // console.log(`🎉 Festivos julio 2025: ${holidays.length}`);
     holidays.forEach(holiday => {
-      console.log(`   ${holiday.day}/${holiday.month}/${holiday.year}: ${holiday.name}`);
+// // console.log(`   ${holiday.day}/${holiday.month}/${holiday.year}: ${holiday.name}`);
     });
-    console.log('');
+// // console.log('');
 
     // Analizar cada usuario
-    console.log('📋 ANÁLISIS POR USUARIO:');
-    console.log('========================\n');
+// // console.log('📋 ANÁLISIS POR USUARIO:');
+// // console.log('========================\n');
 
     const results = [];
 
     for (const user of users) {
-      console.log(`👤 ${user.name} ${user.surname}`);
-      console.log(`   ID: ${user.id}`);
-      console.log(`   Horas mensuales asignadas: ${user.monthly_hours}h`);
+// // console.log(`👤 ${user.name} ${user.surname}`);
+// // console.log(`   ID: ${user.id}`);
+// // console.log(`   Horas mensuales asignadas: ${user.monthly_hours}h`);
 
       // Buscar asignaciones del usuario
       const userAssignments = assignments.filter(a => a.user_id === user.id);
-      console.log(`   Asignaciones encontradas: ${userAssignments.length}`);
+// // console.log(`   Asignaciones encontradas: ${userAssignments.length}`);
 
       if (userAssignments.length === 0) {
-        console.log(`   ⚠️  SIN ASIGNACIONES - No debería tener balance`);
-        console.log('');
+// // console.log(`   ⚠️  SIN ASIGNACIONES - No debería tener balance`);
+// // console.log('');
         continue;
       }
 
       // Mostrar asignaciones
       userAssignments.forEach((assignment, index) => {
-        console.log(`   Asignación ${index + 1}:`);
-        console.log(`     Trabajadora: ${assignment.workers?.name || 'N/A'}`);
-        console.log(`     Horario: ${JSON.stringify(assignment.schedule)}`);
+// // console.log(`   Asignación ${index + 1}:`);
+// // console.log(`     Trabajadora: ${assignment.workers?.name || 'N/A'}`);
+// // console.log(`     Horario: ${JSON.stringify(assignment.schedule)}`);
       });
 
       // Buscar balance del usuario
       const userBalance = balances.find(b => b.user_id === user.id);
       
       if (userBalance) {
-        console.log(`   📊 Balance en BD:`);
-        console.log(`     Asignadas: ${userBalance.assigned_hours}h`);
-        console.log(`     Laborables: ${userBalance.laborable_hours}h`);
-        console.log(`     Festivos: ${userBalance.holiday_hours}h`);
-        console.log(`     Diferencia: ${userBalance.difference}h`);
+// // console.log(`   📊 Balance en BD:`);
+// // console.log(`     Asignadas: ${userBalance.assigned_hours}h`);
+// // console.log(`     Laborables: ${userBalance.laborable_hours}h`);
+// // console.log(`     Festivos: ${userBalance.holiday_hours}h`);
+// // console.log(`     Diferencia: ${userBalance.difference}h`);
 
         // Calcular manualmente
         const manualCalculation = calculateManualHours(userAssignments, holidays, 2025, 7);
         
-        console.log(`   🧮 Cálculo manual:`);
-        console.log(`     Días laborables: ${manualCalculation.laborableDays}`);
-        console.log(`     Días festivos: ${manualCalculation.holidayDays}`);
-        console.log(`     Horas laborables: ${manualCalculation.laborableHours}h`);
-        console.log(`     Horas festivas: ${manualCalculation.holidayHours}h`);
-        console.log(`     Total manual: ${manualCalculation.totalHours}h`);
+// // console.log(`   🧮 Cálculo manual:`);
+// // console.log(`     Días laborables: ${manualCalculation.laborableDays}`);
+// // console.log(`     Días festivos: ${manualCalculation.holidayDays}`);
+// // console.log(`     Horas laborables: ${manualCalculation.laborableHours}h`);
+// // console.log(`     Horas festivas: ${manualCalculation.holidayHours}h`);
+// // console.log(`     Total manual: ${manualCalculation.totalHours}h`);
 
         // Comparar
         const laborableDiff = Math.abs(manualCalculation.laborableHours - userBalance.laborable_hours);
         const holidayDiff = Math.abs(manualCalculation.holidayHours - userBalance.holiday_hours);
         const totalDiff = Math.abs(manualCalculation.totalHours - (userBalance.laborable_hours + userBalance.holiday_hours));
 
-        console.log(`   📊 Comparación:`);
-        console.log(`     Diferencia laborables: ${laborableDiff.toFixed(2)}h`);
-        console.log(`     Diferencia festivos: ${holidayDiff.toFixed(2)}h`);
-        console.log(`     Diferencia total: ${totalDiff.toFixed(2)}h`);
+// // console.log(`   📊 Comparación:`);
+// // console.log(`     Diferencia laborables: ${laborableDiff.toFixed(2)}h`);
+// // console.log(`     Diferencia festivos: ${holidayDiff.toFixed(2)}h`);
+// // console.log(`     Diferencia total: ${totalDiff.toFixed(2)}h`);
 
         if (totalDiff > 0.1) {
-          console.log(`   ❌ ERROR: Los valores NO coinciden`);
+// // console.log(`   ❌ ERROR: Los valores NO coinciden`);
           results.push({
             user: `${user.name} ${user.surname}`,
             userId: user.id,
@@ -145,31 +145,31 @@ async function verifyAllUsers() {
             difference: totalDiff
           });
         } else {
-          console.log(`   ✅ Los valores coinciden`);
+// // console.log(`   ✅ Los valores coinciden`);
         }
       } else {
-        console.log(`   ⚠️  SIN BALANCE - No se encontró balance para julio 2025`);
+// // console.log(`   ⚠️  SIN BALANCE - No se encontró balance para julio 2025`);
       }
 
-      console.log('');
+// // console.log('');
     }
 
     // Resumen de errores
     if (results.length > 0) {
-      console.log('🚨 RESUMEN DE ERRORES ENCONTRADOS:');
-      console.log('==================================\n');
+// // console.log('🚨 RESUMEN DE ERRORES ENCONTRADOS:');
+// // console.log('==================================\n');
       
       results.forEach((result, index) => {
-        console.log(`${index + 1}. ${result.user}`);
-        console.log(`   Manual: ${result.manual.totalHours}h (${result.manual.laborableHours}h laborables + ${result.manual.holidayHours}h festivos)`);
-        console.log(`   BD: ${result.balance.laborable_hours + result.balance.holiday_hours}h (${result.balance.laborable_hours}h laborables + ${result.balance.holiday_hours}h festivos)`);
-        console.log(`   Diferencia: ${result.difference.toFixed(2)}h`);
-        console.log('');
+// // console.log(`${index + 1}. ${result.user}`);
+// // console.log(`   Manual: ${result.manual.totalHours}h (${result.manual.laborableHours}h laborables + ${result.manual.holidayHours}h festivos)`);
+// // console.log(`   BD: ${result.balance.laborable_hours + result.balance.holiday_hours}h (${result.balance.laborable_hours}h laborables + ${result.balance.holiday_hours}h festivos)`);
+// // console.log(`   Diferencia: ${result.difference.toFixed(2)}h`);
+// // console.log('');
       });
 
-      console.log(`📊 Total usuarios con errores: ${results.length}/${users.length}`);
+// // console.log(`📊 Total usuarios con errores: ${results.length}/${users.length}`);
     } else {
-      console.log('✅ Todos los balances son correctos');
+// // console.log('✅ Todos los balances son correctos');
     }
 
   } catch (err) {

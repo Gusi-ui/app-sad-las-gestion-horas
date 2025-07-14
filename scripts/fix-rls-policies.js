@@ -16,11 +16,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function fixRLSPolicies() {
-  console.log('🔧 Arreglando políticas RLS...\n')
+// // console.log('🔧 Arreglando políticas RLS...\n')
 
   try {
     // Deshabilitar RLS en todas las tablas
-    console.log('📋 Deshabilitando RLS...')
+// // console.log('📋 Deshabilitando RLS...')
     const tables = ['admins', 'workers', 'users', 'assignments', 'monthly_plans', 'service_days', 'holidays', 'system_alerts']
     
     for (const table of tables) {
@@ -31,11 +31,11 @@ async function fixRLSPolicies() {
       if (error) {
         console.warn(`⚠️ No se pudo deshabilitar RLS en ${table}:`, error.message)
       } else {
-        console.log(`✅ RLS deshabilitado en ${table}`)
+// // console.log(`✅ RLS deshabilitado en ${table}`)
       }
     }
 
-    console.log('\n📋 Eliminando políticas existentes...')
+// // console.log('\n📋 Eliminando políticas existentes...')
     
     // Eliminar políticas existentes
     const policies = [
@@ -60,7 +60,7 @@ async function fixRLSPolicies() {
       }
     }
 
-    console.log('\n📋 Habilitando RLS nuevamente...')
+// // console.log('\n📋 Habilitando RLS nuevamente...')
     
     // Habilitar RLS nuevamente
     for (const table of tables) {
@@ -71,11 +71,11 @@ async function fixRLSPolicies() {
       if (error) {
         console.warn(`⚠️ No se pudo habilitar RLS en ${table}:`, error.message)
       } else {
-        console.log(`✅ RLS habilitado en ${table}`)
+// // console.log(`✅ RLS habilitado en ${table}`)
       }
     }
 
-    console.log('\n📋 Creando nuevas políticas simplificadas...')
+// // console.log('\n📋 Creando nuevas políticas simplificadas...')
     
     // Crear políticas simplificadas
     const newPolicies = [
@@ -94,12 +94,12 @@ async function fixRLSPolicies() {
       if (error) {
         console.warn(`⚠️ No se pudo crear política:`, error.message)
       } else {
-        console.log(`✅ Política creada`)
+// // console.log(`✅ Política creada`)
       }
     }
 
-    console.log('\n✅ Políticas RLS arregladas exitosamente!')
-    console.log('🔓 Acceso completo habilitado para usuarios autenticados')
+// // console.log('\n✅ Políticas RLS arregladas exitosamente!')
+// // console.log('🔓 Acceso completo habilitado para usuarios autenticados')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

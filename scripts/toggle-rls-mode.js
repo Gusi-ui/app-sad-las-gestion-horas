@@ -15,21 +15,21 @@ async function toggleRLSMode() {
   const mode = process.argv[2] // 'dev' o 'prod'
   
   if (!mode || (mode !== 'dev' && mode !== 'prod')) {
-    console.log('🔧 Script para alternar modo RLS')
-    console.log('\nUso:')
-    console.log('  node scripts/toggle-rls-mode.js dev   # Modo desarrollo (RLS deshabilitado)')
-    console.log('  node scripts/toggle-rls-mode.js prod  # Modo producción (RLS seguro)')
-    console.log('\nEjemplos:')
-    console.log('  node scripts/toggle-rls-mode.js dev')
-    console.log('  node scripts/toggle-rls-mode.js prod')
+// // console.log('🔧 Script para alternar modo RLS')
+// // console.log('\nUso:')
+// // console.log('  node scripts/toggle-rls-mode.js dev   # Modo desarrollo (RLS deshabilitado)')
+// // console.log('  node scripts/toggle-rls-mode.js prod  # Modo producción (RLS seguro)')
+// // console.log('\nEjemplos:')
+// // console.log('  node scripts/toggle-rls-mode.js dev')
+// // console.log('  node scripts/toggle-rls-mode.js prod')
     process.exit(0)
   }
 
   if (mode === 'dev') {
-    console.log('🔧 Cambiando a modo DESARROLLO (RLS deshabilitado)...\n')
+// // console.log('🔧 Cambiando a modo DESARROLLO (RLS deshabilitado)...\n')
     await disableRLSForDevelopment()
   } else if (mode === 'prod') {
-    console.log('🔒 Cambiando a modo PRODUCCIÓN (RLS seguro)...\n')
+// // console.log('🔒 Cambiando a modo PRODUCCIÓN (RLS seguro)...\n')
     await enableSecureRLS()
   }
 }
@@ -41,7 +41,7 @@ async function disableRLSForDevelopment() {
       'monthly_plans', 'service_days', 'holidays', 'system_alerts'
     ]
 
-    console.log('📋 Deshabilitando RLS en todas las tablas...')
+// // console.log('📋 Deshabilitando RLS en todas las tablas...')
     
     for (const table of tables) {
       try {
@@ -52,14 +52,14 @@ async function disableRLSForDevelopment() {
         if (error) {
           console.warn(`⚠️ No se pudo deshabilitar RLS en ${table}:`, error.message)
         } else {
-          console.log(`✅ RLS deshabilitado en ${table}`)
+// // console.log(`✅ RLS deshabilitado en ${table}`)
         }
       } catch (err) {
         console.warn(`⚠️ Error procesando ${table}:`, err.message)
       }
     }
 
-    console.log('\n🔍 Verificando acceso...')
+// // console.log('\n🔍 Verificando acceso...')
     
     const testTables = ['workers', 'users', 'assignments']
     for (const table of testTables) {
@@ -71,12 +71,12 @@ async function disableRLSForDevelopment() {
       if (error) {
         console.error(`❌ Error al acceder a ${table}:`, error.message)
       } else {
-        console.log(`✅ Acceso a ${table} funcionando`)
+// // console.log(`✅ Acceso a ${table} funcionando`)
       }
     }
 
-    console.log('\n✅ Modo DESARROLLO activado')
-    console.log('⚠️ RLS deshabilitado - NO usar en producción')
+// // console.log('\n✅ Modo DESARROLLO activado')
+// // console.log('⚠️ RLS deshabilitado - NO usar en producción')
 
   } catch (error) {
     console.error('❌ Error:', error)
@@ -90,7 +90,7 @@ async function enableSecureRLS() {
       'monthly_plans', 'service_days', 'holidays', 'system_alerts'
     ]
 
-    console.log('📋 Habilitando RLS en todas las tablas...')
+// // console.log('📋 Habilitando RLS en todas las tablas...')
     
     for (const table of tables) {
       try {
@@ -101,14 +101,14 @@ async function enableSecureRLS() {
         if (error) {
           console.warn(`⚠️ No se pudo habilitar RLS en ${table}:`, error.message)
         } else {
-          console.log(`✅ RLS habilitado en ${table}`)
+// // console.log(`✅ RLS habilitado en ${table}`)
         }
       } catch (err) {
         console.warn(`⚠️ Error procesando ${table}:`, err.message)
       }
     }
 
-    console.log('\n📋 Creando políticas seguras...')
+// // console.log('\n📋 Creando políticas seguras...')
 
     // Políticas básicas para desarrollo seguro
     const basicPolicies = [
@@ -128,16 +128,16 @@ async function enableSecureRLS() {
         if (error) {
           console.warn(`⚠️ Error en política:`, error.message)
         } else {
-          console.log(`✅ Política creada`)
+// // console.log(`✅ Política creada`)
         }
       } catch (err) {
         console.warn(`⚠️ Error aplicando política:`, err.message)
       }
     }
 
-    console.log('\n✅ Modo PRODUCCIÓN activado')
-    console.log('🔒 RLS habilitado con políticas básicas')
-    console.log('💡 Para políticas más seguras, ejecuta: node scripts/enable-secure-rls.js')
+// // console.log('\n✅ Modo PRODUCCIÓN activado')
+// // console.log('🔒 RLS habilitado con políticas básicas')
+// // console.log('💡 Para políticas más seguras, ejecuta: node scripts/enable-secure-rls.js')
 
   } catch (error) {
     console.error('❌ Error:', error)

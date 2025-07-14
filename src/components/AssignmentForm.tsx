@@ -36,18 +36,18 @@ export interface AssignmentFormData {
   specific_schedule: Record<WeekDay, TimeSlot[]>
 }
 
-export function AssignmentForm({ 
-  assignment, 
-  isEditing = false, 
-  onSubmit, 
-  onCancel, 
+export function AssignmentForm({
+  assignment,
+  isEditing = false,
+  onSubmit,
+  onCancel,
   loading = false,
   userId,
   workerId
 }: AssignmentFormProps) {
   const { workers, getAvailableWorkers } = useWorkers()
   const { data: users } = useUsers()
-  
+
   const [formData, setFormData] = useState<AssignmentFormData>({
     worker_id: workerId || '',
     user_id: userId || '',
@@ -78,9 +78,7 @@ export function AssignmentForm({
   // Cargar datos de la asignación si estamos editando
   useEffect(() => {
     if (assignment && isEditing) {
-      console.log('Cargando datos de asignación para edición:', assignment);
-      
-      setFormData({
+      // setFormData({
         worker_id: assignment.worker_id,
         user_id: assignment.user_id,
         assigned_hours_per_week: assignment.assigned_hours_per_week,
@@ -94,15 +92,12 @@ export function AssignmentForm({
           friday: [], saturday: [], sunday: []
         } as Record<WeekDay, TimeSlot[]>
       })
-      
+
       // Convertir el specific_schedule al nuevo formato
       const newSchedule: Record<string, TimeSlot[]> = {}
       if (assignment.specific_schedule) {
-        console.log('Specific schedule original:', assignment.specific_schedule);
-        
-        Object.entries(assignment.specific_schedule).forEach(([day, timeData]) => {
-          console.log(`Procesando día ${day}:`, timeData);
-          if (timeData && Array.isArray(timeData)) {
+        // Object.entries(assignment.specific_schedule).forEach(([day, timeData]) => {
+          // if (timeData && Array.isArray(timeData)) {
             // Si es formato antiguo: array de strings (puede ser más de dos)
             if (timeData.length > 0 && typeof timeData[0] === 'string') {
               const slots: TimeSlot[] = [];
@@ -116,29 +111,24 @@ export function AssignmentForm({
                 }
               }
               newSchedule[day] = slots;
-              console.log(`Convertido formato antiguo múltiple para ${day}:`, slots);
-            } else if (timeData.length > 0 && typeof timeData[0] === 'object') {
+              // } else if (timeData.length > 0 && typeof timeData[0] === 'object') {
               // Formato nuevo: TimeSlot[]
               newSchedule[day] = timeData as unknown as TimeSlot[]
-              console.log(`Formato nuevo para ${day}:`, newSchedule[day]);
-            } else {
+              // } else {
               newSchedule[day] = []
-              console.log(`Sin datos para ${day}`);
-            }
+              // }
           } else {
             newSchedule[day] = []
-            console.log(`No hay datos para ${day}`);
-          }
+            // }
         })
       }
       // Asegurar que todos los días existen en el objeto
       ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
         if (!newSchedule[day]) newSchedule[day] = []
       })
-      
-      console.log('Schedule final:', newSchedule);
-      setWeeklySchedule(newSchedule)
-      
+
+      // setWeeklySchedule(newSchedule)
+
       // Calcular horas totales
       const total = Object.values(newSchedule).reduce((sum, slots) => {
         return sum + slots.reduce((daySum, slot) => {
@@ -204,7 +194,7 @@ export function AssignmentForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!validateForm()) {
       return
     }
@@ -254,12 +244,12 @@ export function AssignmentForm({
                 {errors.worker_id && (
                   <p className="text-red-500 text-xs mt-1">{errors.worker_id}</p>
                 )}
-                
+
                 {selectedWorker && (
                           <div className="mt-3 p-3 bg-primary-50 rounded-lg">
           <p className="text-sm font-medium text-primary-900">Información de la trabajadora:</p>
           <p className="text-sm text-primary-700">
-                      Tarifa: {selectedWorker.hourly_rate}€/h • 
+                      Tarifa: {selectedWorker.hourly_rate}€/h •
                       Máx: {selectedWorker.max_weekly_hours}h/semana
                     </p>
                   </div>
@@ -291,12 +281,12 @@ export function AssignmentForm({
                 {errors.user_id && (
                   <p className="text-red-500 text-xs mt-1">{errors.user_id}</p>
                 )}
-                
+
                 {selectedUser && (
                   <div className="mt-3 p-3 bg-green-50 rounded-lg">
                     <p className="text-sm font-medium text-green-900">Información del usuario:</p>
                     <p className="text-sm text-green-700">
-                      Teléfono: {selectedUser.phone} • 
+                      Teléfono: {selectedUser.phone} •
                       Horas/mes: {selectedUser.monthly_hours || 0}h
                     </p>
                   </div>
@@ -328,7 +318,7 @@ export function AssignmentForm({
                     <p className="text-red-500 text-xs mt-1">{errors.start_date}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Fecha de Fin (opcional)

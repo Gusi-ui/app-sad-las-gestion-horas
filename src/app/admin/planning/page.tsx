@@ -299,22 +299,20 @@ export default function PlanningPage() {
     const isHoliday = holidays.includes(dateString)
     const isSpecialDay = isWeekend || isHoliday
 
-    return filteredAssignments.filter(assignment => {
+    const result = filteredAssignments.filter(assignment => {
       // Verificar que la asignación esté activa en esta fecha
       const start = new Date(assignment.start_date)
       const end = assignment.end_date ? new Date(assignment.end_date) : null
       const isActive = (!end && date >= start) || (end && date >= start && date <= end)
-      
       if (!isActive) return false
-
       // Para días especiales (fines de semana o festivos), mostrar asignaciones de tipo 'festivos'
       if (isSpecialDay) {
         return assignment.assignment_type === 'festivos'
       }
-      
       // Para días laborables, mostrar asignaciones de tipo 'laborables'
       return assignment.assignment_type === 'laborables'
     })
+    return result
   }
 
   // Función para obtener el horario específico de una asignación para un día
@@ -323,12 +321,21 @@ export default function PlanningPage() {
 
     const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
     const dayName = dayNames[date.getDay()]
-    
+    const dateString = date.toLocaleDateString('en-CA')
+    const isHoliday = holidays.includes(dateString)
+
+    // NUEVA LÓGICA: Si es festivo y la asignación es de festivos y tiene schedule.holiday.enabled, usar ese horario
+    if (isHoliday && assignment.assignment_type === 'festivos' && assignment.schedule && assignment.schedule.holiday && assignment.schedule.holiday.enabled) {
+      const holidaySchedule = assignment.schedule.holiday
+      if (holidaySchedule.timeSlots && holidaySchedule.timeSlots.length > 0) {
+        return holidaySchedule.timeSlots[0]
+      }
+    }
+
     const daySchedule = assignment.schedule[dayName]
     if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
       return daySchedule.timeSlots[0] // Tomamos el primer timeSlot
     }
-    
     return null
   }
 

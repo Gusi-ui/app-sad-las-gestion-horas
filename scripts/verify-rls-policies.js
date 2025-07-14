@@ -12,11 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function verifyRLSPolicies() {
-  console.log('🔍 Verificando políticas RLS...\n')
+// // console.log('🔍 Verificando políticas RLS...\n')
 
   try {
     // Verificar estado de RLS en todas las tablas
-    console.log('📋 Estado de RLS por tabla:')
+// // console.log('📋 Estado de RLS por tabla:')
     
     const tables = [
       'admins',
@@ -38,21 +38,21 @@ async function verifyRLSPolicies() {
 
         if (error) {
           if (error.message.includes('infinite recursion')) {
-            console.log(`🔴 ${table}: RLS habilitado con error de recursión`)
+// // console.log(`🔴 ${table}: RLS habilitado con error de recursión`)
           } else if (error.message.includes('permission denied')) {
-            console.log(`🟡 ${table}: RLS habilitado - acceso denegado (esperado)`)
+// // console.log(`🟡 ${table}: RLS habilitado - acceso denegado (esperado)`)
           } else {
-            console.log(`🔴 ${table}: Error - ${error.message}`)
+// // console.log(`🔴 ${table}: Error - ${error.message}`)
           }
         } else {
-          console.log(`🟢 ${table}: RLS deshabilitado o políticas permisivas`)
+// // console.log(`🟢 ${table}: RLS deshabilitado o políticas permisivas`)
         }
       } catch (err) {
-        console.log(`🔴 ${table}: Error de conexión - ${err.message}`)
+// // console.log(`🔴 ${table}: Error de conexión - ${err.message}`)
       }
     }
 
-    console.log('\n📊 Conteo de registros (si es accesible):')
+// // console.log('\n📊 Conteo de registros (si es accesible):')
     
     // Intentar contar registros en tablas principales
     const mainTables = ['workers', 'users', 'assignments']
@@ -64,16 +64,16 @@ async function verifyRLSPolicies() {
           .select('*', { count: 'exact', head: true })
         
         if (error) {
-          console.log(`❌ ${table}: No se puede contar - ${error.message}`)
+// // console.log(`❌ ${table}: No se puede contar - ${error.message}`)
         } else {
-          console.log(`✅ ${table}: ${count || 0} registros`)
+// // console.log(`✅ ${table}: ${count || 0} registros`)
         }
       } catch (err) {
-        console.log(`❌ ${table}: Error al contar - ${err.message}`)
+// // console.log(`❌ ${table}: Error al contar - ${err.message}`)
       }
     }
 
-    console.log('\n🔒 Verificación de políticas:')
+// // console.log('\n🔒 Verificación de políticas:')
     
     // Verificar si hay políticas activas
     try {
@@ -87,9 +87,9 @@ async function verifyRLSPolicies() {
       })
       
       if (error) {
-        console.log('⚠️ No se pueden verificar políticas via RPC')
+// // console.log('⚠️ No se pueden verificar políticas via RPC')
       } else if (policies && policies.length > 0) {
-        console.log(`✅ ${policies.length} políticas activas encontradas`)
+// // console.log(`✅ ${policies.length} políticas activas encontradas`)
         
         // Agrupar por tabla
         const policiesByTable = {}
@@ -101,27 +101,27 @@ async function verifyRLSPolicies() {
         })
         
         Object.keys(policiesByTable).forEach(table => {
-          console.log(`  📋 ${table}: ${policiesByTable[table].join(', ')}`)
+// // console.log(`  📋 ${table}: ${policiesByTable[table].join(', ')}`)
         })
       } else {
-        console.log('⚠️ No se encontraron políticas activas')
+// // console.log('⚠️ No se encontraron políticas activas')
       }
     } catch (err) {
-      console.log('⚠️ No se pueden verificar políticas - RPC no disponible')
+// // console.log('⚠️ No se pueden verificar políticas - RPC no disponible')
     }
 
-    console.log('\n📋 Recomendaciones:')
+// // console.log('\n📋 Recomendaciones:')
     
     // Dar recomendaciones basadas en el estado actual
-    console.log('• Si ves errores de recursión: Ejecuta scripts/disable-rls-for-development.js')
-    console.log('• Si ves "acceso denegado": Las políticas están funcionando correctamente')
-    console.log('• Si ves "RLS deshabilitado": Configuración para desarrollo')
-    console.log('• Para producción: Ejecuta scripts/enable-secure-rls.js')
+// // console.log('• Si ves errores de recursión: Ejecuta scripts/disable-rls-for-development.js')
+// // console.log('• Si ves "acceso denegado": Las políticas están funcionando correctamente')
+// // console.log('• Si ves "RLS deshabilitado": Configuración para desarrollo')
+// // console.log('• Para producción: Ejecuta scripts/enable-secure-rls.js')
 
-    console.log('\n🚀 Próximos pasos:')
-    console.log('1. Para desarrollo: Usar políticas permisivas o deshabilitar RLS')
-    console.log('2. Para producción: Implementar políticas seguras')
-    console.log('3. Para testing: Verificar cada rol tiene acceso apropiado')
+// // console.log('\n🚀 Próximos pasos:')
+// // console.log('1. Para desarrollo: Usar políticas permisivas o deshabilitar RLS')
+// // console.log('2. Para producción: Implementar políticas seguras')
+// // console.log('3. Para testing: Verificar cada rol tiene acceso apropiado')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

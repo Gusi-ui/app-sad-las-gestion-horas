@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function cleanDuplicateAssignments() {
   try {
-    console.log('🧹 Limpiando asignaciones duplicadas...\n');
+// // console.log('🧹 Limpiando asignaciones duplicadas...\n');
     
     // 1. Obtener todas las asignaciones
     const { data: allAssignments, error: fetchError } = await supabase
@@ -37,7 +37,7 @@ async function cleanDuplicateAssignments() {
       return;
     }
 
-    console.log(`📊 Total asignaciones encontradas: ${allAssignments.length}`);
+// // console.log(`📊 Total asignaciones encontradas: ${allAssignments.length}`);
 
     // 2. Identificar duplicaciones
     const duplicates = [];
@@ -52,24 +52,24 @@ async function cleanDuplicateAssignments() {
       }
     });
 
-    console.log(`🚨 Asignaciones duplicadas encontradas: ${duplicates.length}`);
+// // console.log(`🚨 Asignaciones duplicadas encontradas: ${duplicates.length}`);
 
     if (duplicates.length === 0) {
-      console.log('✅ No hay duplicaciones que limpiar');
+// // console.log('✅ No hay duplicaciones que limpiar');
       return;
     }
 
     // 3. Mostrar duplicaciones
-    console.log('\n📋 Duplicaciones encontradas:');
+// // console.log('\n📋 Duplicaciones encontradas:');
     duplicates.forEach((assignment, index) => {
-      console.log(`   ${index + 1}. ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
-      console.log(`      ID: ${assignment.id}`);
-      console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
-      console.log(`      Creada: ${assignment.created_at}`);
+// // console.log(`   ${index + 1}. ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
+// // console.log(`      ID: ${assignment.id}`);
+// // console.log(`      Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`      Creada: ${assignment.created_at}`);
     });
 
     // 4. Eliminar duplicaciones (mantener la más reciente)
-    console.log('\n🗑️ Eliminando duplicaciones...');
+// // console.log('\n🗑️ Eliminando duplicaciones...');
     
     const duplicateIds = duplicates.map(d => d.id);
     const { error: deleteError } = await supabase
@@ -82,7 +82,7 @@ async function cleanDuplicateAssignments() {
       return;
     }
 
-    console.log(`✅ ${duplicates.length} duplicaciones eliminadas`);
+// // console.log(`✅ ${duplicates.length} duplicaciones eliminadas`);
 
     // 5. Verificar resultado
     const { data: remainingAssignments, error: remainingError } = await supabase
@@ -102,14 +102,14 @@ async function cleanDuplicateAssignments() {
       return;
     }
 
-    console.log(`\n📊 Asignaciones restantes: ${remainingAssignments.length}`);
-    console.log('\n📋 Resumen final de asignaciones:');
+// // console.log(`\n📊 Asignaciones restantes: ${remainingAssignments.length}`);
+// // console.log('\n📋 Resumen final de asignaciones:');
     remainingAssignments.forEach(assignment => {
-      console.log(`   - ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
-      console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
+// // console.log(`   - ${assignment.users?.name} ${assignment.users?.surname} → ${assignment.workers?.name} ${assignment.workers?.surname}`);
+// // console.log(`     Horas/semana: ${assignment.assigned_hours_per_week}h`);
     });
 
-    console.log('\n💡 Ahora puedes regenerar los balances sin duplicaciones');
+// // console.log('\n💡 Ahora puedes regenerar los balances sin duplicaciones');
 
   } catch (err) {
     console.error('❌ Error inesperado:', err);

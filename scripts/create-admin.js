@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function createAdminUser() {
   try {
-    console.log('🔍 Verificando usuarios admin existentes...')
+// // console.log('🔍 Verificando usuarios admin existentes...')
     
     // Verificar si existen roles del sistema
     const { data: roles, error: rolesError } = await supabase
@@ -25,7 +25,7 @@ async function createAdminUser() {
       return
     }
     
-    console.log('Roles encontrados:', roles?.length || 0)
+// // console.log('Roles encontrados:', roles?.length || 0)
     
     // Verificar si existen admins
     const { data: admins, error: adminsError } = await supabase
@@ -37,19 +37,19 @@ async function createAdminUser() {
       return
     }
     
-    console.log('Admins encontrados:', admins?.length || 0)
+// // console.log('Admins encontrados:', admins?.length || 0)
     
     if (admins && admins.length > 0) {
-      console.log('✅ Ya existen usuarios admin:')
+// // console.log('✅ Ya existen usuarios admin:')
       admins.forEach(admin => {
-        console.log(`  - ${admin.email} (${admin.full_name})`)
+// // console.log(`  - ${admin.email} (${admin.full_name})`)
       })
       return
     }
     
     // Crear roles del sistema si no existen
     if (!roles || roles.length === 0) {
-      console.log('📝 Creando roles del sistema...')
+// // console.log('📝 Creando roles del sistema...')
       
       const { data: superAdminRole, error: superAdminError } = await supabase
         .from('system_roles')
@@ -95,7 +95,7 @@ async function createAdminUser() {
         return
       }
       
-      console.log('✅ Roles del sistema creados')
+// // console.log('✅ Roles del sistema creados')
     }
     
     // Obtener el rol super_admin
@@ -111,7 +111,7 @@ async function createAdminUser() {
     }
     
     // Crear usuario en auth.users
-    console.log('👤 Creando usuario en auth.users...')
+// // console.log('👤 Creando usuario en auth.users...')
     
     const testAdminEmail = 'admin@sadlas.com'
     const testAdminPassword = 'Admin123!'
@@ -127,10 +127,10 @@ async function createAdminUser() {
       return
     }
     
-    console.log('✅ Usuario creado en auth.users:', authUser.user.email)
+// // console.log('✅ Usuario creado en auth.users:', authUser.user.email)
     
     // Crear admin en la tabla admins
-    console.log('👨‍💼 Creando admin en la tabla admins...')
+// // console.log('👨‍💼 Creando admin en la tabla admins...')
     
     const { data: admin, error: adminError } = await supabase
       .from('admins')
@@ -149,10 +149,10 @@ async function createAdminUser() {
       return
     }
     
-    console.log('✅ Admin creado exitosamente!')
-    console.log('📧 Email:', testAdminEmail)
-    console.log('🔑 Contraseña:', testAdminPassword)
-    console.log('⚠️  IMPORTANTE: Cambia la contraseña después del primer login')
+// // console.log('✅ Admin creado exitosamente!')
+// // console.log('📧 Email:', testAdminEmail)
+// // console.log('🔑 Contraseña:', testAdminPassword)
+// // console.log('⚠️  IMPORTANTE: Cambia la contraseña después del primer login')
     
   } catch (error) {
     console.error('Error inesperado:', error)

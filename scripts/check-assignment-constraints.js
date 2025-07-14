@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function checkAssignmentConstraints() {
-  console.log('🔍 Verificando restricciones de assignment_type en la tabla assignments...\n')
+// // console.log('🔍 Verificando restricciones de assignment_type en la tabla assignments...\n')
 
   try {
     // Intentar insertar con diferentes tipos para ver cuáles están permitidos
@@ -22,10 +22,10 @@ async function checkAssignmentConstraints() {
       'weekdays', 'all'
     ]
     
-    console.log('🧪 Probando tipos de asignación permitidos:')
+// // console.log('🧪 Probando tipos de asignación permitidos:')
     
     for (const testType of testTypes) {
-      console.log(`\n  Probando tipo: "${testType}"`)
+// // console.log(`\n  Probando tipo: "${testType}"`)
       
       try {
         const { error } = await supabase
@@ -40,12 +40,12 @@ async function checkAssignmentConstraints() {
           })
 
         if (error) {
-          console.log(`    ❌ Error: ${error.message}`)
+// // console.log(`    ❌ Error: ${error.message}`)
           if (error.code === '23514') {
-            console.log(`    📋 Código: ${error.code} - Violación de constraint`)
+// // console.log(`    📋 Código: ${error.code} - Violación de constraint`)
           }
         } else {
-          console.log(`    ✅ Permitido`)
+// // console.log(`    ✅ Permitido`)
           // Eliminar el registro de prueba
           await supabase
             .from('assignments')
@@ -53,12 +53,12 @@ async function checkAssignmentConstraints() {
             .eq('worker_id', '00000000-0000-0000-0000-000000000000')
         }
       } catch (err) {
-        console.log(`    ❌ Error: ${err.message}`)
+// // console.log(`    ❌ Error: ${err.message}`)
       }
     }
 
     // Verificar asignaciones existentes
-    console.log('\n📋 Verificando asignaciones existentes:')
+// // console.log('\n📋 Verificando asignaciones existentes:')
     const { data: existingAssignments, error: existingError } = await supabase
       .from('assignments')
       .select('id, assignment_type, created_at')
@@ -67,21 +67,21 @@ async function checkAssignmentConstraints() {
     if (existingError) {
       console.error('❌ Error al cargar asignaciones existentes:', existingError)
     } else {
-      console.log(`📊 Total de asignaciones existentes: ${existingAssignments?.length || 0}`)
+// // console.log(`📊 Total de asignaciones existentes: ${existingAssignments?.length || 0}`)
       
       if (existingAssignments && existingAssignments.length > 0) {
         const types = [...new Set(existingAssignments.map(a => a.assignment_type))]
-        console.log('🎯 Tipos de asignación existentes:')
+// // console.log('🎯 Tipos de asignación existentes:')
         types.forEach(type => {
           const count = existingAssignments.filter(a => a.assignment_type === type).length
-          console.log(`  - ${type}: ${count} asignaciones`)
+// // console.log(`  - ${type}: ${count} asignaciones`)
         })
       }
     }
 
-    console.log('\n💡 Recomendación:')
-    console.log('   Si los tipos "laborables", "festivos", "flexible" no están permitidos,')
-    console.log('   necesitas actualizar el constraint de la tabla assignments.')
+// // console.log('\n💡 Recomendación:')
+// // console.log('   Si los tipos "laborables", "festivos", "flexible" no están permitidos,')
+// // console.log('   necesitas actualizar el constraint de la tabla assignments.')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

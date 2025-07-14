@@ -42,8 +42,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
     try {
       const resolvedParams = await params
       
-      console.log('Datos del formulario a guardar:', formData);
-      
       // Convertir TimeSlot[] a string[] para la base de datos
       const convertedSchedule: Record<string, string[]> = {}
       Object.entries(formData.specific_schedule).forEach(([day, timeSlots]) => {
@@ -58,8 +56,6 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         notes: formData.notes?.trim() || undefined,
         end_date: formData.end_date || undefined
       };
-      
-      console.log('Datos a enviar a la base de datos:', updateData);
       
       const result = await updateAssignment(resolvedParams.id, updateData)
       

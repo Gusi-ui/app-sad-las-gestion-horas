@@ -5,11 +5,11 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 async function checkWorkerTypeConstraints() {
   try {
-    console.log('🔍 Verificando restricciones de worker_type...\n');
+// // console.log('🔍 Verificando restricciones de worker_type...\n');
 
     // 1. Verificar tabla workers
-    console.log('📋 Tabla "workers":');
-    console.log('==================');
+// // console.log('📋 Tabla "workers":');
+// // console.log('==================');
     
     // Intentar insertar diferentes valores para worker_type
     const testValues = ['laborable', 'holiday_weekend', 'both', 'worker', 'admin'];
@@ -27,12 +27,12 @@ async function checkWorkerTypeConstraints() {
           }]);
         
         if (error) {
-          console.log(`   ❌ "${value}": ${error.message}`);
+// // console.log(`   ❌ "${value}": ${error.message}`);
           if (error.code === '23514') {
-            console.log(`      Error de restricción check constraint`);
+// // console.log(`      Error de restricción check constraint`);
           }
         } else {
-          console.log(`   ✅ "${value}": Permitido`);
+// // console.log(`   ✅ "${value}": Permitido`);
           // Limpiar el registro de prueba
           await supabase
             .from('workers')
@@ -40,15 +40,15 @@ async function checkWorkerTypeConstraints() {
             .eq('email', `test_${value}@test.com`);
         }
       } catch (e) {
-        console.log(`   ❌ "${value}": Error inesperado`);
+// // console.log(`   ❌ "${value}": Error inesperado`);
       }
     }
 
-    console.log('\n' + '='.repeat(60) + '\n');
+// // console.log('\n' + '='.repeat(60) + '\n');
 
     // 2. Verificar tabla worker_profiles
-    console.log('📋 Tabla "worker_profiles":');
-    console.log('===========================');
+// // console.log('📋 Tabla "worker_profiles":');
+// // console.log('===========================');
     
     for (const value of testValues) {
       try {
@@ -62,12 +62,12 @@ async function checkWorkerTypeConstraints() {
           }]);
         
         if (error) {
-          console.log(`   ❌ "${value}": ${error.message}`);
+// // console.log(`   ❌ "${value}": ${error.message}`);
           if (error.code === '23514') {
-            console.log(`      Error de restricción check constraint`);
+// // console.log(`      Error de restricción check constraint`);
           }
         } else {
-          console.log(`   ✅ "${value}": Permitido`);
+// // console.log(`   ✅ "${value}": Permitido`);
           // Limpiar el registro de prueba
           await supabase
             .from('worker_profiles')
@@ -75,15 +75,15 @@ async function checkWorkerTypeConstraints() {
             .eq('email', `test_${value}@test.com`);
         }
       } catch (e) {
-        console.log(`   ❌ "${value}": Error inesperado`);
+// // console.log(`   ❌ "${value}": Error inesperado`);
       }
     }
 
-    console.log('\n' + '='.repeat(60) + '\n');
+// // console.log('\n' + '='.repeat(60) + '\n');
 
     // 3. Verificar estructura actual
-    console.log('🏗️ Estructura actual:');
-    console.log('=====================');
+// // console.log('🏗️ Estructura actual:');
+// // console.log('=====================');
     
     // Verificar qué valores están permitidos actualmente
     const { data: workers, error: workersError } = await supabase
@@ -93,9 +93,9 @@ async function checkWorkerTypeConstraints() {
     
     if (!workersError && workers && workers.length > 0) {
       const types = [...new Set(workers.map(w => w.worker_type))];
-      console.log('   Tipos encontrados en workers:', types);
+// // console.log('   Tipos encontrados en workers:', types);
     } else {
-      console.log('   No hay datos en workers para verificar tipos');
+// // console.log('   No hay datos en workers para verificar tipos');
     }
 
     const { data: profiles, error: profilesError } = await supabase
@@ -105,9 +105,9 @@ async function checkWorkerTypeConstraints() {
     
     if (!profilesError && profiles && profiles.length > 0) {
       const types = [...new Set(profiles.map(p => p.worker_type))];
-      console.log('   Tipos encontrados en worker_profiles:', types);
+// // console.log('   Tipos encontrados en worker_profiles:', types);
     } else {
-      console.log('   No hay datos en worker_profiles para verificar tipos');
+// // console.log('   No hay datos en worker_profiles para verificar tipos');
     }
 
   } catch (error) {

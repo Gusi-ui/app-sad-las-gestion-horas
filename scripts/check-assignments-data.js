@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function checkAssignmentsData() {
-  console.log('🔍 Verificando datos de asignaciones...\n')
+// // console.log('🔍 Verificando datos de asignaciones...\n')
 
   try {
     // Obtener todas las asignaciones
@@ -37,38 +37,38 @@ async function checkAssignmentsData() {
       return
     }
 
-    console.log(`📊 Total de asignaciones: ${assignments.length}\n`)
+// // console.log(`📊 Total de asignaciones: ${assignments.length}\n`)
 
     // Verificar tipos de asignación
     const assignmentTypes = [...new Set(assignments.map(a => a.assignment_type))]
-    console.log('🎯 Tipos de asignación encontrados:')
+// // console.log('🎯 Tipos de asignación encontrados:')
     assignmentTypes.forEach(type => {
       const count = assignments.filter(a => a.assignment_type === type).length
-      console.log(`  - ${type}: ${count} asignaciones`)
+// // console.log(`  - ${type}: ${count} asignaciones`)
     })
-    console.log()
+// // console.log()
 
     // Verificar estados
     const statuses = [...new Set(assignments.map(a => a.status))]
-    console.log('📋 Estados encontrados:')
+// // console.log('📋 Estados encontrados:')
     statuses.forEach(status => {
       const count = assignments.filter(a => a.status === status).length
-      console.log(`  - ${status}: ${count} asignaciones`)
+// // console.log(`  - ${status}: ${count} asignaciones`)
     })
-    console.log()
+// // console.log()
 
     // Mostrar algunas asignaciones de ejemplo
-    console.log('📝 Ejemplos de asignaciones:')
+// // console.log('📝 Ejemplos de asignaciones:')
     assignments.slice(0, 3).forEach((assignment, index) => {
-      console.log(`\n  Asignación ${index + 1}:`)
-      console.log(`    ID: ${assignment.id}`)
-      console.log(`    Trabajadora: ${assignment.workers?.name} ${assignment.workers?.surname}`)
-      console.log(`    Usuario: ${assignment.users?.name} ${assignment.users?.surname}`)
-      console.log(`    Tipo: ${assignment.assignment_type}`)
-      console.log(`    Estado: ${assignment.status}`)
-      console.log(`    Horas: ${assignment.weekly_hours}h/semana`)
-      console.log(`    Inicio: ${assignment.start_date}`)
-      console.log(`    Fin: ${assignment.end_date || 'Sin fecha de fin'}`)
+// // console.log(`\n  Asignación ${index + 1}:`)
+// // console.log(`    ID: ${assignment.id}`)
+// // console.log(`    Trabajadora: ${assignment.workers?.name} ${assignment.workers?.surname}`)
+// // console.log(`    Usuario: ${assignment.users?.name} ${assignment.users?.surname}`)
+// // console.log(`    Tipo: ${assignment.assignment_type}`)
+// // console.log(`    Estado: ${assignment.status}`)
+// // console.log(`    Horas: ${assignment.weekly_hours}h/semana`)
+// // console.log(`    Inicio: ${assignment.start_date}`)
+// // console.log(`    Fin: ${assignment.end_date || 'Sin fecha de fin'}`)
     })
 
     // Verificar si hay asignaciones con tipos problemáticos
@@ -77,9 +77,9 @@ async function checkAssignmentsData() {
     )
 
     if (problematicTypes.length > 0) {
-      console.log('\n⚠️  Asignaciones con tipos problemáticos:')
+// // console.log('\n⚠️  Asignaciones con tipos problemáticos:')
       problematicTypes.forEach(assignment => {
-        console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
+// // console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
       })
     }
 
@@ -89,13 +89,13 @@ async function checkAssignmentsData() {
     )
 
     if (problematicStatuses.length > 0) {
-      console.log('\n⚠️  Asignaciones con estados problemáticos:')
+// // console.log('\n⚠️  Asignaciones con estados problemáticos:')
       problematicStatuses.forEach(assignment => {
-        console.log(`  - ID: ${assignment.id}, Estado: "${assignment.status}"`)
+// // console.log(`  - ID: ${assignment.id}, Estado: "${assignment.status}"`)
       })
     }
 
-    console.log('\n✅ Verificación completada')
+// // console.log('\n✅ Verificación completada')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

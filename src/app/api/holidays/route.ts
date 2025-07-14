@@ -11,9 +11,25 @@ export async function GET(req: NextRequest) {
   }
 
   const supabase = await createClient();
-  let query = supabase.from("local_holidays").select("*").eq("year", year);
-  if (month) query = query.eq("month", month);
-  const { data, error } = await query.order("month").order("day");
+  
+  if (!supabase) {
+    return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+  }
+  
+  // Construir el rango de fechas para el año y mes especificados
+  const startDate = `${year}-${month ? month.toString().padStart(2, '0') : '01'}-01`;
+  const endDate = month 
+    ? `${year}-${month.toString().padStart(2, '0')}-31`
+    : `${year}-12-31`;
+  
+  let query = supabase
+    .from("holidays")
+    .select("*")
+    .gte("date", startDate)
+    .lte("date", endDate)
+    .eq("is_active", true);
+    
+  const { data, error } = await query.order("date");
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -25,13 +41,23 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, year, month, day, type } = body;
-    if (!name || !year || !month || !day) {
-      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    const { name, date, type, region, city } = body;
+    if (!name || !date) {
+      return NextResponse.json({ error: "Faltan campos obligatorios: name, date" }, { status: 400 });
     }
     const supabase = await createClient();
-    const { data, error } = await supabase.from("local_holidays").insert([
-      { name, year, month, day, type: type || "local" }
+    if (!supabase) {
+      return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+    }
+    const { data, error } = await supabase.from("holidays").insert([
+      { 
+        name, 
+        date, 
+        type: type || "local",
+        region: region || "Catalunya",
+        city: city || "Mataró",
+        is_active: true
+      }
     ]).select().single();
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
@@ -49,7 +75,10 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Falta el parámetro id" }, { status: 400 });
   }
   const supabase = await createClient();
-  const { error } = await supabase.from("local_holidays").delete().eq("id", id);
+  if (!supabase) {
+    return NextResponse.json({ error: "Error de configuración del servidor" }, { status: 500 });
+  }
+  const { error } = await supabase.from("holidays").delete().eq("id", id);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

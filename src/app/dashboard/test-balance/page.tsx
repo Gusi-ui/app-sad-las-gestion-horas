@@ -98,9 +98,9 @@ export default function TestBalancePage() {
   const generateMonthlyPlanning = async (assignments: Assignment[], userId: string, workerId: string, month: number, year: number) => {
     // Usar la nueva funcionalidad de reasignación automática de festivos
     const { generateMonthlyPlanningWithHolidayReassignment } = await import('@/lib/holidayReassignment');
-    
+
     const result = await generateMonthlyPlanningWithHolidayReassignment(assignments, userId, month, year);
-    
+
     // Convertir al formato esperado por el sistema actual
     const planning = result.planning.map(day => ({
       date: day.date,
@@ -112,18 +112,15 @@ export default function TestBalancePage() {
     setReassignments(result.reassignments);
 
     // Mostrar información de reasignaciones en consola para debugging
-    if (result.reassignments.length > 0) {
-      console.log('🔄 Reasignaciones automáticas detectadas:', result.reassignments);
-      console.log('📊 Resumen:', result.reassignments.length, 'reasignaciones');
-    }
+    // if (result.reassignments.length > 0) {
+    //   //   // }
 
     return planning;
   };
 
   const handleBalanceGenerated = () => {
     // Recargar datos si es necesario
-    console.log('Balance generado exitosamente');
-  };
+    // };
 
   if (loading) {
     return (
@@ -235,10 +232,10 @@ export default function TestBalancePage() {
                 >
                   <option value="">Seleccionar trabajadora...</option>
                   {selectedUser && workers
-                    .filter(worker => 
-                      assignments.some(a => 
-                        a.user_id === selectedUser && 
-                        a.worker_id === worker.id && 
+                    .filter(worker =>
+                      assignments.some(a =>
+                        a.user_id === selectedUser &&
+                        a.worker_id === worker.id &&
                         a.status === 'active'
                       )
                     )
@@ -355,14 +352,14 @@ export default function TestBalancePage() {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {users.map(user => {
-                const userWorkers = workers.filter(worker => 
-                  assignments.some(a => 
-                    a.user_id === user.id && 
-                    a.worker_id === worker.id && 
+                const userWorkers = workers.filter(worker =>
+                  assignments.some(a =>
+                    a.user_id === user.id &&
+                    a.worker_id === worker.id &&
                     a.status === 'active'
                   )
                 );
-                
+
                 return (
                   <div key={user.id} className="p-3 border border-slate-200 rounded-lg">
                     <div className="font-medium text-slate-900">
@@ -435,4 +432,4 @@ export default function TestBalancePage() {
       </div>
     </div>
   );
-} 
+}

@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Obtener los balances mensuales con información del usuario
     const { data: balances, error: balancesError } = await supabase
-      .from('monthly_balances')
+      .from('monthly_plans')
       .select(`
         *,
         users:user_id (

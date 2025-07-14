@@ -13,13 +13,13 @@ async function checkWorkerProfilesSimple() {
     if (workerProfilesError) {
       console.error('Error con worker_profiles:', workerProfilesError.message);
     } else {
-      console.log('Trabajadoras en worker_profiles:');
-      console.log('=================================');
+// // console.log('Trabajadoras en worker_profiles:');
+// // console.log('=================================');
       if (workerProfiles.length === 0) {
-        console.log('No hay trabajadoras en worker_profiles.');
+// // console.log('No hay trabajadoras en worker_profiles.');
       } else {
         workerProfiles.forEach((worker, index) => {
-          console.log(`${index + 1}. ${worker.name} ${worker.surname} - Email: ${worker.email}`);
+// // console.log(`${index + 1}. ${worker.name} ${worker.surname} - Email: ${worker.email}`);
         });
       }
     }

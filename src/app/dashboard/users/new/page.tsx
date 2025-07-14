@@ -11,9 +11,7 @@ export default function NewUserPage() {
 
   const handleSubmit = async (formData: UserFormData) => {
     try {
-      // console.log('📝 Creating user with data:', formData)
-      
-      const userData = {
+      // const userData = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
         phone: formData.phone.replace(/\s/g, ''),
@@ -22,18 +20,14 @@ export default function NewUserPage() {
         is_active: formData.is_active,
         monthly_hours: formData.monthly_hours
       }
-      
-      // console.log('🔧 Processed user data:', userData)
 
-      const { data, error } = await supabase
+      // const { data, error } = await supabase
         .from('users')
         .insert([userData])
         .select()
         .single()
 
-      // console.log('📊 Supabase response:', { data, error })
-
-      if (error) {
+      // if (error) {
         console.error('❌ Supabase error details:', {
           message: error.message,
           details: error.details,
@@ -50,8 +44,7 @@ export default function NewUserPage() {
         return
       }
 
-      // console.log('✅ User created successfully:', data)
-      showToast('Usuario creado correctamente', 'success')
+      // showToast('Usuario creado correctamente', 'success')
       router.push('/dashboard/users')
     } catch (error) {
       console.error('❌ Unexpected error creating user:', error)

@@ -7,10 +7,11 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Save, Calendar, Clock, Users, Plus, X } from 'lucide-react'
-import ToastNotification from '@/components/ui/toast-notification'
+import { ArrowLeft, Save, Calendar, Clock, Users, Plus, X, Zap } from 'lucide-react'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 import { getHolidaysForYear } from '@/lib/holidayUtils'
 import AssignmentCalendar from '@/components/AssignmentCalendar'
+import AssignmentHistoryCard from '@/components/AssignmentHistoryCard'
 
 interface Assignment {
   id: string
@@ -69,6 +70,11 @@ interface FormData {
   end_date: string
   weekly_hours: number
   schedule: WeeklySchedule
+  selectedTypes: {
+    laborables: boolean
+    festivos: boolean
+    flexible: boolean
+  }
 }
 
 const defaultDaySchedule: DaySchedule = {
@@ -91,6 +97,7 @@ export default function EditAssignmentPage() {
   const params = useParams()
   const router = useRouter()
   const assignmentId = params.id as string
+  const { success, error: showError, warning, info } = useNotificationHelpers()
   
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [workers, setWorkers] = useState<Worker[]>([])
@@ -104,16 +111,12 @@ export default function EditAssignmentPage() {
     start_date: '',
     end_date: '',
     weekly_hours: 0,
-    schedule: defaultWeeklySchedule
-  })
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
+    schedule: defaultWeeklySchedule,
+    selectedTypes: {
+      laborables: false,
+      festivos: false,
+      flexible: false
+    }
   })
 
   useEffect(() => {
@@ -128,18 +131,14 @@ export default function EditAssignmentPage() {
     setFormData(prev => ({ ...prev, weekly_hours: totalHours }))
   }, [formData.schedule])
 
-  const orderedDays: (keyof WeeklySchedule)[] = [
-    'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
-  ]
-  const dayNames: Record<keyof WeeklySchedule, string> = {
+  const dayNames = {
     monday: 'Lunes',
     tuesday: 'Martes',
     wednesday: 'Miércoles',
     thursday: 'Jueves',
     friday: 'Viernes',
     saturday: 'Sábado',
-    sunday: 'Domingo',
-    holiday: 'Festivos entre semana'
+    sunday: 'Domingo'
   }
 
   const [holidays, setHolidays] = useState<string[]>([])
@@ -153,30 +152,6 @@ export default function EditAssignmentPage() {
       })
     }
   }, [formData.start_date])
-
-  function isDayDisabled(day: keyof WeeklySchedule): boolean {
-    // Obtener la fecha del primer día de la semana de la asignación
-    if (!formData.start_date) return false
-    const startDate = new Date(formData.start_date)
-    // Buscar el primer día de ese mes que sea el día de la semana correspondiente
-    const year = startDate.getFullYear()
-    const month = startDate.getMonth()
-    let date = new Date(year, month, 1)
-    while (date.getDay() !== orderedDays.indexOf(day)) {
-      date.setDate(date.getDate() + 1)
-      if (date.getMonth() !== month) break // Evitar bucle infinito
-    }
-    const dateString = date.toISOString().split('T')[0]
-    const isWeekend = day === 'saturday' || day === 'sunday'
-    const isHoliday = holidays.includes(dateString)
-    if (formData.assignment_type === 'laborables') {
-      return isWeekend || isHoliday
-    }
-    if (formData.assignment_type === 'festivos') {
-      return !(isWeekend || isHoliday)
-    }
-    return false // flexible: todos los días habilitados
-  }
 
   const fetchData = async () => {
     if (!supabase) {
@@ -195,11 +170,7 @@ export default function EditAssignmentPage() {
 
       if (assignmentError) {
         console.error('Error al cargar asignación:', assignmentError)
-        setToast({
-          message: 'Error al cargar asignación: ' + assignmentError.message,
-          type: 'error',
-          isVisible: true
-        })
+        showError('Error al cargar asignación: ' + assignmentError.message)
         return
       }
 
@@ -212,11 +183,7 @@ export default function EditAssignmentPage() {
 
       if (workersError) {
         console.error('Error al cargar trabajadoras:', workersError)
-        setToast({
-          message: `Error al cargar trabajadoras: ${workersError.message || 'Error desconocido'}`,
-          type: 'error',
-          isVisible: true
-        })
+        showError(`Error al cargar trabajadoras: ${workersError.message || 'Error desconocido'}`)
       }
 
       // Fetch users
@@ -228,11 +195,7 @@ export default function EditAssignmentPage() {
 
       if (usersError) {
         console.error('Error al cargar usuarios:', usersError)
-        setToast({
-          message: `Error al cargar usuarios: ${usersError.message || 'Error desconocido'}`,
-          type: 'error',
-          isVisible: true
-        })
+        showError(`Error al cargar usuarios: ${usersError.message || 'Error desconocido'}`)
       }
 
       setAssignment(assignmentData)
@@ -245,6 +208,14 @@ export default function EditAssignmentPage() {
       if (!schedule.holiday) {
         schedule = { ...schedule, holiday: { ...defaultDaySchedule } }
       }
+
+      // Determinar los tipos seleccionados basándose en el tipo de asignación
+      const selectedTypes = {
+        laborables: assignmentData.assignment_type === 'laborables',
+        festivos: assignmentData.assignment_type === 'festivos',
+        flexible: assignmentData.assignment_type === 'flexible'
+      }
+
       setFormData({
         worker_id: assignmentData.worker_id,
         user_id: assignmentData.user_id,
@@ -252,15 +223,12 @@ export default function EditAssignmentPage() {
         start_date: assignmentData.start_date,
         end_date: assignmentData.end_date || '',
         weekly_hours: assignmentData.weekly_hours,
-        schedule: schedule
+        schedule: schedule,
+        selectedTypes: selectedTypes
       })
     } catch (error) {
       console.error('Error inesperado:', error)
-      setToast({
-        message: 'Error inesperado al cargar datos',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error inesperado al cargar datos')
     } finally {
       setLoading(false)
     }
@@ -317,42 +285,16 @@ export default function EditAssignmentPage() {
 
   const handleAssignmentTypeChange = (type: 'laborables' | 'festivos' | 'flexible') => {
     setFormData(prev => {
-      const newSchedule = { ...defaultWeeklySchedule }
+      const newSelectedTypes = { ...prev.selectedTypes }
+      newSelectedTypes[type] = !newSelectedTypes[type]
       
-      if (type === 'laborables') {
-        // Solo lunes a viernes
-        newSchedule.monday.enabled = true
-        newSchedule.tuesday.enabled = true
-        newSchedule.wednesday.enabled = true
-        newSchedule.thursday.enabled = true
-        newSchedule.friday.enabled = true
-        newSchedule.saturday.enabled = false
-        newSchedule.sunday.enabled = false
-      } else if (type === 'festivos') {
-        // Solo fines de semana
-        newSchedule.monday.enabled = false
-        newSchedule.tuesday.enabled = false
-        newSchedule.wednesday.enabled = false
-        newSchedule.thursday.enabled = false
-        newSchedule.friday.enabled = false
-        newSchedule.saturday.enabled = true
-        newSchedule.sunday.enabled = true
-      } else if (type === 'flexible') {
-        // Todos los días
-        newSchedule.monday.enabled = true
-        newSchedule.tuesday.enabled = true
-        newSchedule.wednesday.enabled = true
-        newSchedule.thursday.enabled = true
-        newSchedule.friday.enabled = true
-        newSchedule.saturday.enabled = true
-        newSchedule.sunday.enabled = true
+      const newFormData = { 
+        ...prev, 
+        selectedTypes: newSelectedTypes,
+        assignment_type: type // Mantener el tipo principal para compatibilidad
       }
       
-      return {
-        ...prev,
-        assignment_type: type,
-        schedule: newSchedule
-      }
+      return newFormData
     })
   }
 
@@ -414,29 +356,30 @@ export default function EditAssignmentPage() {
     const errors: string[] = []
 
     if (!formData.worker_id) {
-      errors.push('Debes seleccionar una trabajadora')
+      errors.push('Debe seleccionar una trabajadora')
     }
 
     if (!formData.user_id) {
-      errors.push('Debes seleccionar un usuario')
+      errors.push('Debe seleccionar un usuario')
     }
 
     if (!formData.start_date) {
-      errors.push('Debes especificar una fecha de inicio')
+      errors.push('Debe especificar una fecha de inicio')
     }
 
-    if (formData.weekly_hours <= 0) {
-      errors.push('Debes configurar al menos un horario con horas válidas')
+    if (formData.end_date && formData.start_date && formData.end_date < formData.start_date) {
+      errors.push('La fecha de fin no puede ser anterior a la fecha de inicio')
     }
 
-    if (formData.end_date && new Date(formData.end_date) <= new Date(formData.start_date)) {
-      errors.push('La fecha de fin debe ser posterior a la fecha de inicio')
+    // Verificar que al menos un tipo de asignación esté seleccionado
+    if (!formData.selectedTypes.laborables && !formData.selectedTypes.festivos && !formData.selectedTypes.flexible) {
+      errors.push('Debe seleccionar al menos un tipo de asignación')
     }
 
-    // Validar que al menos un día esté habilitado
-    const hasEnabledDays = Object.values(formData.schedule).some(day => day.enabled)
-    if (!hasEnabledDays) {
-      errors.push('Debes habilitar al menos un día de la semana')
+    // Verificar que al menos un día tenga horario configurado
+    const hasSchedule = Object.values(formData.schedule).some(day => day.enabled)
+    if (!hasSchedule) {
+      errors.push('Debe configurar al menos un día con horario')
     }
 
     return errors
@@ -447,11 +390,7 @@ export default function EditAssignmentPage() {
     
     const errors = validateForm()
     if (errors.length > 0) {
-      setToast({
-        message: errors.join(', '),
-        type: 'error',
-        isVisible: true
-      })
+      errors.forEach(error => showError(error))
       return
     }
 
@@ -461,18 +400,8 @@ export default function EditAssignmentPage() {
       if (!supabase) {
         throw new Error('Cliente Supabase no disponible')
       }
-      // Log de depuración
-      console.log('[EDIT] assignment_type:', formData.assignment_type)
-      console.log('[EDIT] objeto enviado:', {
-        worker_id: formData.worker_id,
-        user_id: formData.user_id,
-        assignment_type: formData.assignment_type,
-        start_date: formData.start_date,
-        end_date: formData.end_date || null,
-        weekly_hours: formData.weekly_hours,
-        schedule: formData.schedule
-      })
-      const { data, error } = await supabase
+
+      const { data, error: supabaseError } = await supabase
         .from('assignments')
         .update({
           worker_id: formData.worker_id,
@@ -486,19 +415,15 @@ export default function EditAssignmentPage() {
         .eq('id', assignmentId)
         .select()
 
-      if (error) {
-        throw new Error(`Error de base de datos: ${error.message} (${error.code})`)
+      if (supabaseError) {
+        throw new Error(`Error de base de datos: ${supabaseError.message} (${supabaseError.code})`)
       }
 
       if (!data || data.length === 0) {
         throw new Error('No se pudo actualizar la asignación')
       }
 
-      setToast({
-        message: 'Asignación actualizada correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Asignación actualizada correctamente')
 
       // Redirect to assignments list
       setTimeout(() => {
@@ -508,11 +433,7 @@ export default function EditAssignmentPage() {
     } catch (error) {
       console.error('Error completo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: `Error al actualizar asignación: ${errorMessage}`,
-        type: 'error',
-        isVisible: true
-      })
+      showError(`Error al actualizar asignación: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
@@ -592,7 +513,7 @@ export default function EditAssignmentPage() {
                   <option value="">Seleccionar trabajadora</option>
                   {workers.map((worker) => (
                     <option key={worker.id} value={worker.id}>
-                      {worker.name} {worker.surname}
+                      {worker.name} {worker.surname} - {worker.is_active ? 'Activo' : 'Inactivo'}
                     </option>
                   ))}
                 </select>
@@ -613,87 +534,184 @@ export default function EditAssignmentPage() {
                   <option value="">Seleccionar usuario</option>
                   {users.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name} {user.surname}
+                      {user.name} {user.surname} - {user.is_active ? 'Activo' : 'Inactivo'}
                     </option>
                   ))}
                 </select>
               </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Assignment Type */}
-              <div className="space-y-2">
-                <label htmlFor="assignment_type" className="text-sm font-medium text-slate-700">
-                  Tipo de Asignación *
-                </label>
-                <select
-                  id="assignment_type"
-                  value={formData.assignment_type}
-                  onChange={(e) => handleAssignmentTypeChange(e.target.value as 'laborables' | 'festivos' | 'flexible')}
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="laborables">Días Laborables (L-V)</option>
-                  <option value="festivos">Días Festivos (S-D)</option>
-                  <option value="flexible">Asignación Flexible (Todos los días)</option>
-                </select>
-              </div>
+        {/* Assignment Type with Toggle Switches */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+            <CardTitle className="flex items-center">
+              <Zap className="w-5 h-5 mr-2 text-slate-600" />
+              Tipo de Asignación
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600 mb-4">
+                Selecciona los tipos de asignación que deseas aplicar. Los cambios se reflejarán automáticamente en el horario semanal y el calendario:
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Días Laborables */}
+                <div className={`
+                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                  ${formData.selectedTypes.laborables 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                  }
+                `} onClick={() => handleAssignmentTypeChange('laborables')}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900">Días Laborables</h3>
+                    <div className={`
+                      w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${formData.selectedTypes.laborables 
+                        ? 'border-blue-500 bg-blue-500' 
+                        : 'border-slate-300'
+                      }
+                    `}>
+                      {formData.selectedTypes.laborables && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">Lunes a Viernes, excluyendo festivos</p>
+                </div>
 
-              {/* Assignment Calendar Preview */}
-              <div className="col-span-1 md:col-span-2">
-                <AssignmentCalendar
-                  schedule={formData.schedule}
-                  assignmentType={formData.assignment_type}
-                  startDate={formData.start_date}
-                  year={formData.start_date ? new Date(formData.start_date).getFullYear() : new Date().getFullYear()}
-                  month={formData.start_date ? new Date(formData.start_date).getMonth() + 1 : new Date().getMonth() + 1}
-                  className="mt-4"
-                />
-              </div>
+                {/* Días Festivos */}
+                <div className={`
+                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                  ${formData.selectedTypes.festivos 
+                    ? 'border-purple-500 bg-purple-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                  }
+                `} onClick={() => handleAssignmentTypeChange('festivos')}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900">Días Festivos</h3>
+                    <div className={`
+                      w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${formData.selectedTypes.festivos 
+                        ? 'border-purple-500 bg-purple-500' 
+                        : 'border-slate-300'
+                      }
+                    `}>
+                      {formData.selectedTypes.festivos && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">Sábados, domingos y festivos entre semana</p>
+                </div>
 
-              {/* Weekly Hours (Read-only) */}
-              <div className="space-y-2">
-                <label htmlFor="weekly_hours" className="text-sm font-medium text-slate-700">
-                  Horas Semanales (Calculadas automáticamente)
-                </label>
-                <Input
-                  id="weekly_hours"
-                  type="number"
-                  value={isNaN(formData.weekly_hours) ? 0 : formData.weekly_hours}
-                  readOnly
-                  className="border-slate-300 bg-slate-50 text-slate-700 font-semibold"
-                  placeholder="0"
-                />
-              </div>
-
-              {/* Start Date */}
-              <div className="space-y-2">
-                <label htmlFor="start_date" className="text-sm font-medium text-slate-700">
-                  Fecha de Inicio *
-                </label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => handleInputChange('start_date', e.target.value)}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              {/* End Date (Optional) */}
-              <div className="space-y-2">
-                <label htmlFor="end_date" className="text-sm font-medium text-slate-700">
-                  Fecha de Fin (Opcional)
-                </label>
-                <Input
-                  id="end_date"
-                  type="date"
-                  value={formData.end_date}
-                  onChange={(e) => handleInputChange('end_date', e.target.value)}
-                  className="border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                  min={formData.start_date}
-                />
+                {/* Asignación Flexible */}
+                <div className={`
+                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                  ${formData.selectedTypes.flexible 
+                    ? 'border-green-500 bg-green-50' 
+                    : 'border-slate-200 hover:border-slate-300'
+                  }
+                `} onClick={() => handleAssignmentTypeChange('flexible')}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900">Asignación Flexible</h3>
+                    <div className={`
+                      w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${formData.selectedTypes.flexible 
+                        ? 'border-green-500 bg-green-500' 
+                        : 'border-slate-300'
+                      }
+                    `}>
+                      {formData.selectedTypes.flexible && (
+                        <div className="w-2 h-2 bg-white rounded-full"></div>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">Todos los días de la semana</p>
+                </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Weekly Hours and Dates */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Weekly Hours Card */}
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-blue-900">
+                <Clock className="w-5 h-5 mr-2" />
+                Horas Semanales
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center">
+                <div className="text-4xl font-bold text-blue-900 mb-2">
+                  {isNaN(formData.weekly_hours) ? 0 : formData.weekly_hours}
+                </div>
+                <p className="text-sm text-blue-700">horas calculadas automáticamente</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Start Date */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-slate-900">
+                <Calendar className="w-5 h-5 mr-2" />
+                Fecha de Inicio *
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                type="date"
+                value={formData.start_date}
+                onChange={(e) => handleInputChange('start_date', e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg py-3"
+                required
+              />
+            </CardContent>
+          </Card>
+
+          {/* End Date */}
+          <Card className="border-0 shadow-lg">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center text-slate-900">
+                <Calendar className="w-5 h-5 mr-2" />
+                Fecha de Fin (Opcional)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Input
+                type="date"
+                value={formData.end_date}
+                onChange={(e) => handleInputChange('end_date', e.target.value)}
+                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg py-3"
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Holiday Calendar Preview */}
+        <Card className="border-0 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+            <CardTitle className="flex items-center">
+              <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+              Vista Previa del Calendario
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <AssignmentCalendar
+              schedule={formData.schedule}
+              assignmentType={formData.assignment_type}
+              startDate={formData.start_date || new Date().toISOString().split('T')[0]}
+              year={formData.start_date ? new Date(formData.start_date).getFullYear() : new Date().getFullYear()}
+              month={formData.start_date ? new Date(formData.start_date).getMonth() + 1 : new Date().getMonth() + 1}
+              className="mt-4"
+            />
           </CardContent>
         </Card>
 
@@ -707,71 +725,71 @@ export default function EditAssignmentPage() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {orderedDays.map((day) => {
+              {Object.entries(dayNames).map(([dayKey, dayName]) => {
+                const day = dayKey as keyof WeeklySchedule
                 const daySchedule = formData.schedule[day]
-                const disabled = isDayDisabled(day)
+                
                 return (
-                  <div key={day} className={`border border-slate-200 rounded-lg p-4 ${disabled ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div key={day} className="border border-slate-200 rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <label className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-3">
                         <input
                           type="checkbox"
+                          id={`enable_${day}`}
                           checked={daySchedule.enabled}
                           onChange={() => toggleDayEnabled(day)}
                           className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                          disabled={disabled}
                         />
-                        <span className="font-medium text-slate-700">
-                          {dayNames[day]}
-                        </span>
-                      </label>
+                        <label htmlFor={`enable_${day}`} className="text-sm font-medium text-slate-700">
+                          {dayName}
+                        </label>
+                      </div>
+                      {daySchedule.enabled && (
+                        <Button
+                          type="button"
+                          onClick={() => addTimeSlot(day)}
+                          className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
+                        >
+                          <Plus className="w-3 h-3 mr-1" />
+                          Añadir Tramo
+                        </Button>
+                      )}
                     </div>
-                    {daySchedule.enabled && !disabled && (
+                    
+                    {daySchedule.enabled && (
                       <div className="space-y-2">
-                        {daySchedule.timeSlots.map((slot: TimeSlot, slotIndex: number) => (
+                        {daySchedule.timeSlots.map((slot, slotIndex) => (
                           <div key={slotIndex} className="flex items-center space-x-2">
                             <Input
                               type="time"
                               value={slot.start}
                               onChange={(e) => updateTimeSlot(day, slotIndex, 'start', e.target.value)}
-                              className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                              className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                             />
-                            <span className="text-slate-500">a</span>
+                            <span className="text-slate-500">-</span>
                             <Input
                               type="time"
                               value={slot.end}
                               onChange={(e) => updateTimeSlot(day, slotIndex, 'end', e.target.value)}
-                              className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                              className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                             />
                             {daySchedule.timeSlots.length > 1 && (
                               <Button
                                 type="button"
-                                variant="secondary"
-                                size="sm"
                                 onClick={() => removeTimeSlot(day, slotIndex)}
-                                className="text-red-600 border-red-300 hover:bg-red-50"
+                                className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-3 h-3" />
                               </Button>
                             )}
                           </div>
                         ))}
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => addTimeSlot(day)}
-                          className="text-blue-600 border-blue-300 hover:bg-blue-50"
-                        >
-                          <Plus className="w-4 h-4 mr-1" />
-                          Añadir Horario
-                        </Button>
                       </div>
                     )}
                   </div>
                 )
               })}
-              {formData.assignment_type === 'festivos' && (
+              {(formData.selectedTypes.festivos || formData.selectedTypes.flexible) && (
                 <div className="border border-slate-200 rounded-lg p-4">
                   <div className="mb-2 font-semibold text-blue-700">Festivos entre semana</div>
                   <div className="text-xs text-blue-600 mb-2">Puedes definir un horario especial para los festivos que caen entre lunes y viernes. Este horario se aplicará automáticamente a todos los festivos entre semana.</div>
@@ -795,37 +813,33 @@ export default function EditAssignmentPage() {
                             type="time"
                             value={slot.start}
                             onChange={(e) => updateTimeSlot('holiday', slotIndex, 'start', e.target.value)}
-                            className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                           />
-                          <span className="text-slate-500">a</span>
+                          <span className="text-slate-500">-</span>
                           <Input
                             type="time"
                             value={slot.end}
                             onChange={(e) => updateTimeSlot('holiday', slotIndex, 'end', e.target.value)}
-                            className="w-32 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
+                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
                           />
                           {formData.schedule.holiday.timeSlots.length > 1 && (
                             <Button
                               type="button"
-                              variant="secondary"
-                              size="sm"
                               onClick={() => removeTimeSlot('holiday', slotIndex)}
-                              className="text-red-600 border-red-300 hover:bg-red-50"
+                              className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200"
                             >
-                              <X className="w-4 h-4" />
+                              <X className="w-3 h-3" />
                             </Button>
                           )}
                         </div>
                       ))}
                       <Button
                         type="button"
-                        variant="secondary"
-                        size="sm"
                         onClick={() => addTimeSlot('holiday')}
-                        className="text-blue-600 border-blue-300 hover:bg-blue-50"
+                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
                       >
-                        <Plus className="w-4 h-4 mr-1" />
-                        Añadir Horario
+                        <Plus className="w-3 h-3 mr-1" />
+                        Añadir Tramo
                       </Button>
                     </div>
                   )}
@@ -835,12 +849,15 @@ export default function EditAssignmentPage() {
           </CardContent>
         </Card>
 
+        {/* Assignment History */}
+        <AssignmentHistoryCard assignmentId={assignmentId} />
+
         {/* Submit Button */}
         <div className="flex justify-end">
           <Button
             type="submit"
             disabled={saving}
-            className="bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 shadow-lg px-8 py-3"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
           >
             {saving ? (
               <>
@@ -856,14 +873,6 @@ export default function EditAssignmentPage() {
           </Button>
         </div>
       </form>
-
-      {/* Toast Notification */}
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast({ ...toast, isVisible: false })}
-      />
     </div>
   )
 } 

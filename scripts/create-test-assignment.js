@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function createTestAssignment() {
-  console.log('📝 Creando asignación de prueba...\n')
+// // console.log('📝 Creando asignación de prueba...\n')
 
   try {
     // Obtener una trabajadora y un usuario existentes
@@ -34,8 +34,8 @@ async function createTestAssignment() {
     const worker = workers[0]
     const user = users[0]
 
-    console.log(`👤 Trabajadora: ${worker.name} ${worker.surname}`)
-    console.log(`👤 Usuario: ${user.name} ${user.surname}`)
+// // console.log(`👤 Trabajadora: ${worker.name} ${worker.surname}`)
+// // console.log(`👤 Usuario: ${user.name} ${user.surname}`)
 
     // Crear asignación con tipo válido
     const { data, error } = await supabase
@@ -55,10 +55,10 @@ async function createTestAssignment() {
       return
     }
 
-    console.log('✅ Asignación creada correctamente:')
-    console.log(`  ID: ${data[0].id}`)
-    console.log(`  Tipo: ${data[0].assignment_type}`)
-    console.log(`  Estado: ${data[0].status}`)
+// // console.log('✅ Asignación creada correctamente:')
+// // console.log(`  ID: ${data[0].id}`)
+// // console.log(`  Tipo: ${data[0].assignment_type}`)
+// // console.log(`  Estado: ${data[0].status}`)
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

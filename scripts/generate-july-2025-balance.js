@@ -14,13 +14,13 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function generateJuly2025Balance() {
   try {
-    console.log('🎯 Generando balance mensual de Julio 2025 con nueva lógica de reasignación...\n');
+// // console.log('🎯 Generando balance mensual de Julio 2025 con nueva lógica de reasignación...\n');
 
     const month = 7;
     const year = 2025;
 
     // 1. Obtener todos los usuarios activos
-    console.log('1. Obteniendo usuarios activos...');
+// // console.log('1. Obteniendo usuarios activos...');
     const { data: users, error: usersError } = await supabase
       .from('users')
       .select('id, name, surname, monthly_hours')
@@ -32,14 +32,14 @@ async function generateJuly2025Balance() {
     }
 
     if (!users || users.length === 0) {
-      console.log('❌ No se encontraron usuarios activos');
+// // console.log('❌ No se encontraron usuarios activos');
       return;
     }
 
-    console.log(`✅ Encontrados ${users.length} usuarios activos\n`);
+// // console.log(`✅ Encontrados ${users.length} usuarios activos\n`);
 
     // 2. Obtener festivos de julio 2025
-    console.log('2. Obteniendo festivos de julio 2025...');
+// // console.log('2. Obteniendo festivos de julio 2025...');
     const { data: holidays, error: holidaysError } = await supabase
       .from('local_holidays')
       .select('day, name, type')
@@ -51,7 +51,7 @@ async function generateJuly2025Balance() {
     }
 
     const holidayDays = holidays?.map(h => h.day) || [];
-    console.log(`✅ Encontrados ${holidayDays.length} festivos: ${holidayDays.join(', ')}\n`);
+// // console.log(`✅ Encontrados ${holidayDays.length} festivos: ${holidayDays.join(', ')}\n`);
 
     // 3. Procesar cada usuario
     let processedUsers = 0;
@@ -59,9 +59,9 @@ async function generateJuly2025Balance() {
 
     for (const user of users) {
       try {
-        console.log(`📊 Procesando usuario: ${user.name} ${user.surname}`);
-        console.log(`   ID: ${user.id}`);
-        console.log(`   Horas mensuales asignadas: ${user.monthly_hours || 0}h`);
+// // console.log(`📊 Procesando usuario: ${user.name} ${user.surname}`);
+// // console.log(`   ID: ${user.id}`);
+// // console.log(`   Horas mensuales asignadas: ${user.monthly_hours || 0}h`);
 
         // 4. Obtener asignaciones del usuario
         const { data: assignments, error: assignmentsError } = await supabase
@@ -86,12 +86,12 @@ async function generateJuly2025Balance() {
         }
 
         if (!assignments || assignments.length === 0) {
-          console.log(`   ⚠️  No tiene asignaciones activas`);
-          console.log('');
+// // console.log(`   ⚠️  No tiene asignaciones activas`);
+// // console.log('');
           continue;
         }
 
-        console.log(`   📋 Asignaciones encontradas: ${assignments.length}`);
+// // console.log(`   📋 Asignaciones encontradas: ${assignments.length}`);
 
         // 5. Calcular días del mes
         const daysInMonth = new Date(year, month, 0).getDate();
@@ -111,8 +111,8 @@ async function generateJuly2025Balance() {
           }
         }
 
-        console.log(`   📅 Días laborables: ${laborableDays.length} (${laborableDays.join(', ')})`);
-        console.log(`   🌟 Días festivos/fines de semana: ${holidayWeekendDays.length} (${holidayWeekendDays.join(', ')})`);
+// // console.log(`   📅 Días laborables: ${laborableDays.length} (${laborableDays.join(', ')})`);
+// // console.log(`   🌟 Días festivos/fines de semana: ${holidayWeekendDays.length} (${holidayWeekendDays.join(', ')})`);
 
         // 6. Calcular horas por trabajadora
         let totalLaborableHours = 0;
@@ -123,7 +123,7 @@ async function generateJuly2025Balance() {
           const worker = assignment.workers;
           const workerType = worker.worker_type || 'laborable';
           
-          console.log(`   👤 ${worker.name} ${worker.surname} (${workerType})`);
+// // console.log(`   👤 ${worker.name} ${worker.surname} (${workerType})`);
 
           let workerLaborableHours = 0;
           let workerHolidayHours = 0;
@@ -134,7 +134,7 @@ async function generateJuly2025Balance() {
             const hoursPerDay = assignment.assigned_hours_per_week / 5; // Asumiendo 5 días laborables por semana
             workerLaborableHours = laborableDays.length * hoursPerDay;
             totalLaborableHours += workerLaborableHours;
-            console.log(`      📅 Días laborables: ${laborableDays.length} × ${hoursPerDay.toFixed(1)}h = ${workerLaborableHours.toFixed(1)}h`);
+// // console.log(`      📅 Días laborables: ${laborableDays.length} × ${hoursPerDay.toFixed(1)}h = ${workerLaborableHours.toFixed(1)}h`);
           }
 
           if (workerType === 'holiday_weekend' || workerType === 'both') {
@@ -142,7 +142,7 @@ async function generateJuly2025Balance() {
             const hoursPerDay = 1.5; // Horas por día festivo/fin de semana
             workerHolidayHours = holidayWeekendDays.length * hoursPerDay;
             totalHolidayHours += workerHolidayHours;
-            console.log(`      🌟 Festivos/fines de semana: ${holidayWeekendDays.length} × ${hoursPerDay}h = ${workerHolidayHours.toFixed(1)}h`);
+// // console.log(`      🌟 Festivos/fines de semana: ${holidayWeekendDays.length} × ${hoursPerDay}h = ${workerHolidayHours.toFixed(1)}h`);
           }
 
           workerDetails.push({
@@ -154,20 +154,20 @@ async function generateJuly2025Balance() {
         }
 
         const totalHours = totalLaborableHours + totalHolidayHours;
-        console.log(`   📊 TOTAL: ${totalHours.toFixed(1)}h (${totalLaborableHours.toFixed(1)}h laborables + ${totalHolidayHours.toFixed(1)}h festivos)`);
+// // console.log(`   📊 TOTAL: ${totalHours.toFixed(1)}h (${totalLaborableHours.toFixed(1)}h laborables + ${totalHolidayHours.toFixed(1)}h festivos)`);
 
         // 7. Verificar si coincide con las horas asignadas
         const assignedHours = user.monthly_hours || 0;
         const difference = totalHours - assignedHours;
         
         if (Math.abs(difference) > 0.1) {
-          console.log(`   ⚠️  DIFERENCIA: ${difference > 0 ? '+' : ''}${difference.toFixed(1)}h respecto a las ${assignedHours}h asignadas`);
+// // console.log(`   ⚠️  DIFERENCIA: ${difference > 0 ? '+' : ''}${difference.toFixed(1)}h respecto a las ${assignedHours}h asignadas`);
         } else {
-          console.log(`   ✅ Coincide con las ${assignedHours}h asignadas`);
+// // console.log(`   ✅ Coincide con las ${assignedHours}h asignadas`);
         }
 
         // 8. Crear o actualizar el balance mensual
-        console.log(`   💾 Guardando balance en la base de datos...`);
+// // console.log(`   💾 Guardando balance en la base de datos...`);
         
         const balanceData = {
           user_id: user.id,
@@ -223,7 +223,7 @@ async function generateJuly2025Balance() {
           throw result.error;
         }
 
-        console.log(`   ✅ Balance ${existingBalance ? 'actualizado' : 'creado'} correctamente`);
+// // console.log(`   ✅ Balance ${existingBalance ? 'actualizado' : 'creado'} correctamente`);
         processedUsers++;
 
       } catch (error) {
@@ -231,17 +231,17 @@ async function generateJuly2025Balance() {
         errors++;
       }
 
-      console.log('');
+// // console.log('');
     }
 
     // 9. Resumen final
-    console.log('🎉 RESUMEN FINAL:');
-    console.log(`   ✅ Usuarios procesados: ${processedUsers}`);
-    console.log(`   ❌ Errores: ${errors}`);
-    console.log(`   📊 Total usuarios: ${users.length}`);
-    console.log('');
-    console.log('💡 El balance mensual de Julio 2025 ha sido generado con la nueva lógica de reasignación.');
-    console.log('   Los balances incluyen información detallada sobre festivos y reasignaciones.');
+// // console.log('🎉 RESUMEN FINAL:');
+// // console.log(`   ✅ Usuarios procesados: ${processedUsers}`);
+// // console.log(`   ❌ Errores: ${errors}`);
+// // console.log(`   📊 Total usuarios: ${users.length}`);
+// // console.log('');
+// // console.log('💡 El balance mensual de Julio 2025 ha sido generado con la nueva lógica de reasignación.');
+// // console.log('   Los balances incluyen información detallada sobre festivos y reasignaciones.');
 
   } catch (error) {
     console.error('❌ Error durante la generación del balance:', error.message);

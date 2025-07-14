@@ -14,11 +14,11 @@ if (!supabaseUrl || !supabaseServiceKey) {
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function applyMigration() {
-  console.log('🚀 Aplicando migración de campos de dirección para workers...')
+// // console.log('🚀 Aplicando migración de campos de dirección para workers...')
   
   try {
     // 1. Verificar estructura actual
-    console.log('🔍 Verificando estructura actual...')
+// // console.log('🔍 Verificando estructura actual...')
     
     const { data: workers, error: fetchError } = await supabase
       .from('workers')
@@ -30,11 +30,11 @@ async function applyMigration() {
       return
     }
     
-    console.log('✅ Conexión a base de datos exitosa')
-    console.log('📋 Campos disponibles:', Object.keys(workers[0] || {}))
+// // console.log('✅ Conexión a base de datos exitosa')
+// // console.log('📋 Campos disponibles:', Object.keys(workers[0] || {}))
     
     // 2. Intentar insertar un worker de prueba con los nuevos campos
-    console.log('🧪 Probando inserción con nuevos campos...')
+// // console.log('🧪 Probando inserción con nuevos campos...')
     
     const testWorker = {
       employee_code: 'TEST001',
@@ -60,16 +60,16 @@ async function applyMigration() {
     
     if (insertError) {
       console.error('❌ Error al insertar worker de prueba:', insertError)
-      console.log('💡 Los campos de dirección no están disponibles en la base de datos')
-      console.log('📝 Necesitas ejecutar la migración SQL manualmente en el dashboard de Supabase')
+// // console.log('💡 Los campos de dirección no están disponibles en la base de datos')
+// // console.log('📝 Necesitas ejecutar la migración SQL manualmente en el dashboard de Supabase')
       return
     }
     
-    console.log('✅ Campos de dirección disponibles')
-    console.log('📋 Worker insertado:', insertedWorker)
+// // console.log('✅ Campos de dirección disponibles')
+// // console.log('📋 Worker insertado:', insertedWorker)
     
     // 3. Limpiar worker de prueba
-    console.log('🧹 Limpiando worker de prueba...')
+// // console.log('🧹 Limpiando worker de prueba...')
     
     const { error: deleteError } = await supabase
       .from('workers')
@@ -79,11 +79,11 @@ async function applyMigration() {
     if (deleteError) {
       console.error('⚠️ Error al limpiar worker de prueba:', deleteError)
     } else {
-      console.log('✅ Worker de prueba eliminado')
+// // console.log('✅ Worker de prueba eliminado')
     }
     
-    console.log('🎉 ¡Migración completada exitosamente!')
-    console.log('📝 Los campos de dirección están disponibles en la base de datos')
+// // console.log('🎉 ¡Migración completada exitosamente!')
+// // console.log('📝 Los campos de dirección están disponibles en la base de datos')
     
   } catch (error) {
     console.error('❌ Error inesperado:', error)

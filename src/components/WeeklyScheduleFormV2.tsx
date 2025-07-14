@@ -56,7 +56,6 @@ export function WeeklyScheduleFormV2({
   onTotalHoursChange 
 }: WeeklyScheduleFormV2Props) {
   const [schedule, setSchedule] = useState<WeeklySchedule>(() => {
-    console.log('WeeklyScheduleFormV2 inicializando con value:', value);
     
     const initial: WeeklySchedule = {}
     
@@ -70,17 +69,14 @@ export function WeeklyScheduleFormV2({
     
     // Habilitar días que ya tienen horarios
     Object.entries(value).forEach(([day, timeSlots]) => {
-      console.log(`Verificando día ${day}:`, timeSlots);
       if (timeSlots && timeSlots.length > 0) {
         initial[day] = {
           enabled: true,
           timeSlots: timeSlots
         }
-        console.log(`Habilitado día ${day} con horarios:`, timeSlots);
       }
     })
     
-    console.log('Schedule inicial:', initial);
     return initial
   })
 

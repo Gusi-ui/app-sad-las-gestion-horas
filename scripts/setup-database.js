@@ -15,24 +15,24 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function setupDatabase() {
   try {
-    console.log('🚀 Iniciando configuración de la base de datos SAD LAS V2...')
+// // console.log('🚀 Iniciando configuración de la base de datos SAD LAS V2...')
     
     // =====================================================
     // 1. CREAR ROLES DEL SISTEMA
     // =====================================================
-    console.log('\n📝 1. Configurando roles del sistema...')
+// // console.log('\n📝 1. Configurando roles del sistema...')
     
     const { data: existingRoles, error: rolesError } = await supabase
       .from('system_roles')
       .select('*')
     
     if (rolesError) {
-      console.log('⚠️ Tabla system_roles no existe, creando...')
+// // console.log('⚠️ Tabla system_roles no existe, creando...')
       // Aquí podrías ejecutar el SQL para crear la tabla si no existe
     }
     
     if (!existingRoles || existingRoles.length === 0) {
-      console.log('➕ Creando roles del sistema...')
+// // console.log('➕ Creando roles del sistema...')
       
       const { data: superAdminRole, error: superAdminError } = await supabase
         .from('system_roles')
@@ -78,15 +78,15 @@ async function setupDatabase() {
         return
       }
       
-      console.log('✅ Roles del sistema creados')
+// // console.log('✅ Roles del sistema creados')
     } else {
-      console.log('✅ Roles del sistema ya existen')
+// // console.log('✅ Roles del sistema ya existen')
     }
     
     // =====================================================
     // 2. VERIFICAR/CREAR ADMINISTRADOR
     // =====================================================
-    console.log('\n👨‍💼 2. Configurando administrador...')
+// // console.log('\n👨‍💼 2. Configurando administrador...')
     
     const { data: existingAdmins, error: adminsError } = await supabase
       .from('admins')
@@ -98,12 +98,12 @@ async function setupDatabase() {
     }
     
     if (existingAdmins && existingAdmins.length > 0) {
-      console.log('✅ Ya existen administradores:')
+// // console.log('✅ Ya existen administradores:')
       existingAdmins.forEach(admin => {
-        console.log(`  - ${admin.email} (${admin.full_name})`)
+// // console.log(`  - ${admin.email} (${admin.full_name})`)
       })
     } else {
-      console.log('➕ Creando administrador de prueba...')
+// // console.log('➕ Creando administrador de prueba...')
       
       // Obtener el rol super_admin
       const { data: superAdminRole, error: roleError } = await supabase
@@ -132,7 +132,7 @@ async function setupDatabase() {
         return
       }
       
-      console.log('✅ Usuario creado en auth.users:', authUser.user.email)
+// // console.log('✅ Usuario creado en auth.users:', authUser.user.email)
       
       // Crear admin en la tabla admins
       const { data: admin, error: adminError } = await supabase
@@ -152,16 +152,16 @@ async function setupDatabase() {
         return
       }
       
-      console.log('✅ Administrador creado exitosamente!')
-      console.log('📧 Email:', testAdminEmail)
-      console.log('🔑 Contraseña:', testAdminPassword)
-      console.log('⚠️  IMPORTANTE: Cambia la contraseña después del primer login')
+// // console.log('✅ Administrador creado exitosamente!')
+// // console.log('📧 Email:', testAdminEmail)
+// // console.log('🔑 Contraseña:', testAdminPassword)
+// // console.log('⚠️  IMPORTANTE: Cambia la contraseña después del primer login')
     }
     
     // =====================================================
     // 3. VERIFICAR TABLAS PRINCIPALES
     // =====================================================
-    console.log('\n🗄️ 3. Verificando tablas principales...')
+// // console.log('\n🗄️ 3. Verificando tablas principales...')
     
     const tables = ['workers', 'users', 'assignments', 'monthly_plans', 'service_days', 'holidays']
     
@@ -173,28 +173,28 @@ async function setupDatabase() {
           .limit(1)
         
         if (error) {
-          console.log(`⚠️ Tabla ${table}: ${error.message}`)
+// // console.log(`⚠️ Tabla ${table}: ${error.message}`)
         } else {
-          console.log(`✅ Tabla ${table}: OK`)
+// // console.log(`✅ Tabla ${table}: OK`)
         }
       } catch (err) {
-        console.log(`❌ Tabla ${table}: No existe o error de acceso`)
+// // console.log(`❌ Tabla ${table}: No existe o error de acceso`)
       }
     }
     
     // =====================================================
     // 4. RESUMEN FINAL
     // =====================================================
-    console.log('\n🎉 Configuración completada!')
-    console.log('\n📋 Resumen:')
-    console.log('✅ Roles del sistema configurados')
-    console.log('✅ Administrador creado')
-    console.log('✅ Tablas principales verificadas')
-    console.log('\n🚀 Próximos pasos:')
-    console.log('1. Configura las variables de entorno en .env.local')
-    console.log('2. Reinicia el servidor de desarrollo')
-    console.log('3. Visita http://localhost:3000/admin/login')
-    console.log('4. Usa las credenciales mostradas arriba')
+// // console.log('\n🎉 Configuración completada!')
+// // console.log('\n📋 Resumen:')
+// // console.log('✅ Roles del sistema configurados')
+// // console.log('✅ Administrador creado')
+// // console.log('✅ Tablas principales verificadas')
+// // console.log('\n🚀 Próximos pasos:')
+// // console.log('1. Configura las variables de entorno en .env.local')
+// // console.log('2. Reinicia el servidor de desarrollo')
+// // console.log('3. Visita http://localhost:3000/admin/login')
+// // console.log('4. Usa las credenciales mostradas arriba')
     
   } catch (error) {
     console.error('❌ Error inesperado:', error)

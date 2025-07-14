@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function disableRLSForDevelopment() {
-  console.log('🔧 Deshabilitando RLS para desarrollo...\n')
+// // console.log('🔧 Deshabilitando RLS para desarrollo...\n')
 
   try {
     // Lista de todas las tablas que necesitan RLS deshabilitado
@@ -27,7 +27,7 @@ async function disableRLSForDevelopment() {
       'system_alerts'
     ]
 
-    console.log('📋 Deshabilitando RLS en todas las tablas...')
+// // console.log('📋 Deshabilitando RLS en todas las tablas...')
     
     for (const table of tables) {
       try {
@@ -47,17 +47,17 @@ async function disableRLSForDevelopment() {
           if (dropError) {
             console.warn(`⚠️ No se pudo eliminar políticas en ${table}:`, dropError.message)
           } else {
-            console.log(`✅ Políticas eliminadas en ${table}`)
+// // console.log(`✅ Políticas eliminadas en ${table}`)
           }
         } else {
-          console.log(`✅ RLS deshabilitado en ${table}`)
+// // console.log(`✅ RLS deshabilitado en ${table}`)
         }
       } catch (err) {
         console.warn(`⚠️ Error procesando ${table}:`, err.message)
       }
     }
 
-    console.log('\n🔍 Verificando acceso a tablas...')
+// // console.log('\n🔍 Verificando acceso a tablas...')
     
     // Verificar que podemos acceder a las tablas principales
     const testTables = ['workers', 'users', 'assignments']
@@ -71,23 +71,23 @@ async function disableRLSForDevelopment() {
       if (error) {
         console.error(`❌ Error al acceder a ${table}:`, error.message)
       } else {
-        console.log(`✅ Acceso a ${table} funcionando`)
+// // console.log(`✅ Acceso a ${table} funcionando`)
       }
     }
 
-    console.log('\n📊 Estado del sistema:')
-    console.log('🟢 Si todas las tablas muestran "funcionando", el desarrollo puede continuar')
-    console.log('🔴 Si hay errores, revisa los logs de arriba')
+// // console.log('\n📊 Estado del sistema:')
+// // console.log('🟢 Si todas las tablas muestran "funcionando", el desarrollo puede continuar')
+// // console.log('🔴 Si hay errores, revisa los logs de arriba')
     
-    console.log('\n⚠️ IMPORTANTE:')
-    console.log('• RLS está deshabilitado temporalmente para desarrollo')
-    console.log('• NO uses esta configuración en producción')
-    console.log('• Cuando estés listo para producción, ejecuta el script de políticas seguras')
+// // console.log('\n⚠️ IMPORTANTE:')
+// // console.log('• RLS está deshabilitado temporalmente para desarrollo')
+// // console.log('• NO uses esta configuración en producción')
+// // console.log('• Cuando estés listo para producción, ejecuta el script de políticas seguras')
     
-    console.log('\n📁 Archivos creados:')
-    console.log('• scripts/disable-rls-for-development.js (este script)')
-    console.log('• scripts/enable-secure-rls.js (para producción)')
-    console.log('• SECURE_RLS_POLICIES.md (documentación de políticas seguras)')
+// // console.log('\n📁 Archivos creados:')
+// // console.log('• scripts/disable-rls-for-development.js (este script)')
+// // console.log('• scripts/enable-secure-rls.js (para producción)')
+// // console.log('• SECURE_RLS_POLICIES.md (documentación de políticas seguras)')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

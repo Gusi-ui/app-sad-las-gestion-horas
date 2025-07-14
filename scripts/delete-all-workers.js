@@ -5,36 +5,36 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 async function deleteAllWorkers() {
   try {
-    console.log('🗑️  Borrando todas las trabajadoras existentes...\n');
+// // console.log('🗑️  Borrando todas las trabajadoras existentes...\n');
 
     // Verificar trabajadoras existentes antes de borrar
-    console.log('📋 Trabajadoras existentes antes del borrado:');
-    console.log('============================================');
+// // console.log('📋 Trabajadoras existentes antes del borrado:');
+// // console.log('============================================');
     const { data: existingWorkers, error: checkError } = await supabase
       .from('workers')
       .select('*')
       .order('name');
 
     if (checkError) {
-      console.log('   Error verificando trabajadoras:', checkError.message);
+// // console.log('   Error verificando trabajadoras:', checkError.message);
       return;
     }
 
     if (existingWorkers.length === 0) {
-      console.log('   No hay trabajadoras para borrar.');
-      console.log('   ✅ Puedes proceder a crear las nuevas trabajadoras.');
+// // console.log('   No hay trabajadoras para borrar.');
+// // console.log('   ✅ Puedes proceder a crear las nuevas trabajadoras.');
       return;
     }
 
     existingWorkers.forEach((worker, index) => {
-      console.log(`   ${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ID: ${worker.id}`);
+// // console.log(`   ${index + 1}. ${worker.name} ${worker.surname} (${worker.worker_type}) - ID: ${worker.id}`);
     });
 
-    console.log(`\n⚠️  Se van a borrar ${existingWorkers.length} trabajadora(s).`);
-    console.log('¿Estás seguro? (Ctrl+C para cancelar, Enter para continuar)');
+// // console.log(`\n⚠️  Se van a borrar ${existingWorkers.length} trabajadora(s).`);
+// // console.log('¿Estás seguro? (Ctrl+C para cancelar, Enter para continuar)');
     
     // Simular confirmación (en un script real podrías usar readline)
-    console.log('Procediendo con el borrado...\n');
+// // console.log('Procediendo con el borrado...\n');
 
     // Borrar todas las trabajadoras
     const { error: deleteError } = await supabase
@@ -47,24 +47,24 @@ async function deleteAllWorkers() {
       return;
     }
 
-    console.log('✅ Todas las trabajadoras han sido borradas exitosamente.');
+// // console.log('✅ Todas las trabajadoras han sido borradas exitosamente.');
 
     // Verificar que se borraron
-    console.log('\n📋 Verificación post-borrado:');
-    console.log('=============================');
+// // console.log('\n📋 Verificación post-borrado:');
+// // console.log('=============================');
     const { data: remainingWorkers, error: verifyError } = await supabase
       .from('workers')
       .select('*');
 
     if (verifyError) {
-      console.log('   Error verificando:', verifyError.message);
+// // console.log('   Error verificando:', verifyError.message);
     } else if (remainingWorkers.length === 0) {
-      console.log('   ✅ No quedan trabajadoras en la base de datos.');
-      console.log('\n🎉 Base de datos limpia. Puedes proceder a crear las nuevas trabajadoras.');
+// // console.log('   ✅ No quedan trabajadoras en la base de datos.');
+// // console.log('\n🎉 Base de datos limpia. Puedes proceder a crear las nuevas trabajadoras.');
     } else {
-      console.log(`   ⚠️  Quedan ${remainingWorkers.length} trabajadora(s):`);
+// // console.log(`   ⚠️  Quedan ${remainingWorkers.length} trabajadora(s):`);
       remainingWorkers.forEach((worker, index) => {
-        console.log(`      ${index + 1}. ${worker.name} ${worker.surname}`);
+// // console.log(`      ${index + 1}. ${worker.name} ${worker.surname}`);
       });
     }
 

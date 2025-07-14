@@ -6,9 +6,12 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Calendar, Clock, Users, MapPin, Phone, Mail, Edit, Trash2, RotateCcw } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { ArrowLeft, Edit, Calendar, Clock, Users, Trash2, RotateCcw, Mail, Phone, MapPin } from 'lucide-react'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
+import AssignmentCalendar from '@/components/AssignmentCalendar'
+import AssignmentHistoryCard from '@/components/AssignmentHistoryCard'
 import ConfirmModal from '@/components/ui/confirm-modal'
-import ToastNotification from '@/components/ui/toast-notification'
 
 interface Assignment {
   id: string
@@ -35,19 +38,11 @@ export default function AssignmentDetailPage() {
   const params = useParams()
   const router = useRouter()
   const assignmentId = params.id as string
+  const { success, error: showError, warning, info } = useNotificationHelpers()
   
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [loading, setLoading] = useState(true)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
-  })
 
   useEffect(() => {
     if (assignmentId) {
@@ -94,11 +89,7 @@ export default function AssignmentDetailPage() {
 
       if (error) {
         console.error('Error al cargar asignación:', error)
-        setToast({
-          message: 'Error al cargar asignación: ' + error.message,
-          type: 'error',
-          isVisible: true
-        })
+        showError('Error al cargar asignación: ' + error.message)
       } else {
         const formattedData: Assignment = {
           id: data.id,
@@ -125,11 +116,7 @@ export default function AssignmentDetailPage() {
       }
     } catch (error) {
       console.error('Error inesperado:', error)
-      setToast({
-        message: 'Error inesperado al cargar asignación',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error inesperado al cargar asignación')
     } finally {
       setLoading(false)
     }
@@ -140,29 +127,17 @@ export default function AssignmentDetailPage() {
     try {
       const { error } = await supabase.from('assignments').delete().eq('id', assignment.id)
       if (error) throw error
-      setToast({
-        message: 'Asignación eliminada correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Asignación eliminada correctamente')
       router.push('/admin/assignments')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error al eliminar asignación: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error al eliminar asignación: ' + errorMessage)
     }
   }
 
   const handleToggleStatus = async () => {
     if (!supabase || !assignment) {
-      setToast({
-        message: 'Error: Cliente Supabase no disponible',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error: Cliente Supabase no disponible')
       return
     }
     
@@ -185,19 +160,11 @@ export default function AssignmentDetailPage() {
       
       setAssignment({ ...assignment, status: newStatus })
       
-      setToast({
-        message: `Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`,
-        type: 'success',
-        isVisible: true
-      })
+      success(`Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`)
     } catch (error) {
       console.error('Error completo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: `Error al actualizar estado: ${errorMessage}`,
-        type: 'error',
-        isVisible: true
-      })
+      showError(`Error al actualizar estado: ${errorMessage}`)
     }
   }
 
@@ -463,14 +430,6 @@ export default function AssignmentDetailPage() {
         message="¿Estás seguro de que quieres eliminar esta asignación? Esta acción no se puede deshacer."
         confirmText="Eliminar"
         cancelText="Cancelar"
-      />
-
-      {/* Toast Notification */}
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast({ ...toast, isVisible: false })}
       />
     </div>
   )

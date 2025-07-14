@@ -12,7 +12,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function testAssignmentCreation() {
-  console.log('🧪 Probando creación de asignaciones...\n')
+// // console.log('🧪 Probando creación de asignaciones...\n')
 
   try {
     // Obtener una trabajadora y un usuario existentes
@@ -34,14 +34,14 @@ async function testAssignmentCreation() {
     const workerId = workers[0].id
     const userId = users[0].id
 
-    console.log(`👤 Usando trabajadora: ${workerId}`)
-    console.log(`👤 Usando usuario: ${userId}`)
+// // console.log(`👤 Usando trabajadora: ${workerId}`)
+// // console.log(`👤 Usando usuario: ${userId}`)
 
     // Probar diferentes tipos
     const testTypes = ['regular', 'holidays', 'weekends', 'temporary', 'laborables', 'festivos', 'flexible']
     
     for (const testType of testTypes) {
-      console.log(`\n🧪 Probando tipo: "${testType}"`)
+// // console.log(`\n🧪 Probando tipo: "${testType}"`)
       
       try {
         const { data, error } = await supabase
@@ -57,9 +57,9 @@ async function testAssignmentCreation() {
           .select()
 
         if (error) {
-          console.log(`    ❌ Error: ${error.message}`)
+// // console.log(`    ❌ Error: ${error.message}`)
         } else {
-          console.log(`    ✅ Creada correctamente: ${data[0].id}`)
+// // console.log(`    ✅ Creada correctamente: ${data[0].id}`)
           
           // Eliminar la asignación de prueba
           await supabase
@@ -68,11 +68,11 @@ async function testAssignmentCreation() {
             .eq('id', data[0].id)
         }
       } catch (err) {
-        console.log(`    ❌ Error: ${err.message}`)
+// // console.log(`    ❌ Error: ${err.message}`)
       }
     }
 
-    console.log('\n✅ Pruebas completadas')
+// // console.log('\n✅ Pruebas completadas')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

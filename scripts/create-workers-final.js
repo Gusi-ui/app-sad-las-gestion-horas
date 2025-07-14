@@ -13,7 +13,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function createWorkersFinal() {
   try {
-    console.log('👥 Creando trabajadoras con estructura correcta...\n');
+// // console.log('👥 Creando trabajadoras con estructura correcta...\n');
     
     // Definir las trabajadoras conocidas con la estructura correcta
     const workers = [
@@ -43,16 +43,16 @@ async function createWorkersFinal() {
       }
     ];
 
-    console.log('📋 Trabajadoras a crear:');
+// // console.log('📋 Trabajadoras a crear:');
     workers.forEach((worker, index) => {
-      console.log(`   ${index + 1}. ${worker.name} ${worker.surname}`);
-      console.log(`      Email: ${worker.email}`);
-      console.log(`      Teléfono: ${worker.phone}`);
-      console.log(`      Tipo: ${worker.worker_type}`);
-      console.log(`      Tarifa por hora: €${worker.hourly_rate}`);
-      console.log(`      Días disponibles: ${worker.availability_days.join(', ')}`);
+// // console.log(`   ${index + 1}. ${worker.name} ${worker.surname}`);
+// // console.log(`      Email: ${worker.email}`);
+// // console.log(`      Teléfono: ${worker.phone}`);
+// // console.log(`      Tipo: ${worker.worker_type}`);
+// // console.log(`      Tarifa por hora: €${worker.hourly_rate}`);
+// // console.log(`      Días disponibles: ${worker.availability_days.join(', ')}`);
     });
-    console.log('');
+// // console.log('');
 
     // Verificar trabajadoras existentes
     const { data: existingWorkers, error: fetchError } = await supabase
@@ -65,11 +65,11 @@ async function createWorkersFinal() {
       return;
     }
 
-    console.log('📊 Trabajadoras existentes:');
+// // console.log('📊 Trabajadoras existentes:');
     existingWorkers.forEach(worker => {
-      console.log(`   - ${worker.name} ${worker.surname} (${worker.worker_type})`);
+// // console.log(`   - ${worker.name} ${worker.surname} (${worker.worker_type})`);
     });
-    console.log('');
+// // console.log('');
 
     // Filtrar trabajadoras que no existen
     const workersToCreate = workers.filter(newWorker => 
@@ -80,11 +80,11 @@ async function createWorkersFinal() {
     );
 
     if (workersToCreate.length === 0) {
-      console.log('✅ Todas las trabajadoras ya existen');
+// // console.log('✅ Todas las trabajadoras ya existen');
       return;
     }
 
-    console.log(`📝 Creando ${workersToCreate.length} trabajadoras nuevas...`);
+// // console.log(`📝 Creando ${workersToCreate.length} trabajadoras nuevas...`);
 
     // Crear las trabajadoras
     const { data: createdWorkers, error: createError } = await supabase
@@ -97,13 +97,13 @@ async function createWorkersFinal() {
       return;
     }
 
-    console.log('✅ Trabajadoras creadas correctamente:');
+// // console.log('✅ Trabajadoras creadas correctamente:');
     createdWorkers.forEach(worker => {
-      console.log(`   - ${worker.name} ${worker.surname} (ID: ${worker.id})`);
-      console.log(`     Email: ${worker.email}`);
-      console.log(`     Tipo: ${worker.worker_type}`);
+// // console.log(`   - ${worker.name} ${worker.surname} (ID: ${worker.id})`);
+// // console.log(`     Email: ${worker.email}`);
+// // console.log(`     Tipo: ${worker.worker_type}`);
     });
-    console.log('');
+// // console.log('');
 
     // Obtener todas las trabajadoras para asignaciones
     const { data: allWorkers, error: allError } = await supabase
@@ -116,13 +116,13 @@ async function createWorkersFinal() {
       return;
     }
 
-    console.log(`📊 Total trabajadoras en la base de datos: ${allWorkers.length}`);
-    console.log('💡 Ahora puedes crear las asignaciones entre usuarios y trabajadoras');
+// // console.log(`📊 Total trabajadoras en la base de datos: ${allWorkers.length}`);
+// // console.log('💡 Ahora puedes crear las asignaciones entre usuarios y trabajadoras');
 
     // Mostrar IDs para asignaciones
-    console.log('\n📝 IDs de trabajadoras para asignaciones:');
+// // console.log('\n📝 IDs de trabajadoras para asignaciones:');
     allWorkers.forEach(worker => {
-      console.log(`   ${worker.name} ${worker.surname}: ${worker.id}`);
+// // console.log(`   ${worker.name} ${worker.surname}: ${worker.id}`);
     });
 
   } catch (err) {

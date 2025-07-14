@@ -52,7 +52,7 @@ const realAssignments = [
 ]
 
 async function createRealAssignments() {
-  console.log('🚀 Creando asignaciones reales entre trabajadoras y usuarios...\n')
+// // // console.log('🚀 Creando asignaciones reales entre trabajadoras y usuarios...\n')
 
   try {
     // Obtener trabajadoras
@@ -77,17 +77,17 @@ async function createRealAssignments() {
       return
     }
 
-    console.log(`👥 Trabajadoras disponibles: ${workers.length}`)
-    workers.forEach(w => console.log(`   - ${w.name} ${w.surname}`))
+// // // console.log(`👥 Trabajadoras disponibles: ${workers.length}`)
+    workers.forEach(w => // // console.log(`   - ${w.name} ${w.surname}`))
     
-    console.log(`\n👤 Usuarios disponibles: ${users.length}`)
-    users.forEach(u => console.log(`   - ${u.name} ${u.surname}`))
+// // // console.log(`\n👤 Usuarios disponibles: ${users.length}`)
+    users.forEach(u => // // console.log(`   - ${u.name} ${u.surname}`))
     
-    console.log('\n' + '─'.repeat(80))
+// // // console.log('\n' + '─'.repeat(80))
 
     // Crear cada asignación
     for (const assignment of realAssignments) {
-      console.log(`\n🔗 Creando asignación: ${assignment.worker_name} → ${assignment.user_name}`)
+// // // console.log(`\n🔗 Creando asignación: ${assignment.worker_name} → ${assignment.user_name}`)
       
       // Encontrar trabajadora
       const worker = workers.find(w => 
@@ -119,7 +119,7 @@ async function createRealAssignments() {
         .single()
 
       if (existingAssignment) {
-        console.log(`   ⚠️ Asignación ya existe entre ${assignment.worker_name} y ${assignment.user_name}`)
+// // // console.log(`   ⚠️ Asignación ya existe entre ${assignment.worker_name} y ${assignment.user_name}`)
         continue
       }
 
@@ -146,11 +146,11 @@ async function createRealAssignments() {
         continue
       }
 
-      console.log(`   ✅ Asignación creada correctamente`)
-      console.log(`      📅 Tipo: ${assignment.assignment_type}`)
-      console.log(`      ⏰ Horas semanales: ${assignment.weekly_hours}h`)
-      console.log(`      🗓️ Fecha inicio: ${assignment.start_date}`)
-      console.log(`      📝 Notas: ${assignment.notes}`)
+// // // console.log(`   ✅ Asignación creada correctamente`)
+// // // console.log(`      📅 Tipo: ${assignment.assignment_type}`)
+// // // console.log(`      ⏰ Horas semanales: ${assignment.weekly_hours}h`)
+// // // console.log(`      🗓️ Fecha inicio: ${assignment.start_date}`)
+// // // console.log(`      📝 Notas: ${assignment.notes}`)
       
       // Mostrar horario detallado
       const enabledDays = Object.entries(assignment.schedule)
@@ -164,11 +164,11 @@ async function createRealAssignments() {
           return `${dayNames[day]}: ${timeSlots}`
         })
       
-      console.log(`      📋 Horario: ${enabledDays.join(', ')}`)
+// // // console.log(`      📋 Horario: ${enabledDays.join(', ')}`)
     }
 
-    console.log('\n🎉 Proceso de creación de asignaciones completado!')
-    console.log('💡 Ejecuta "node scripts/check-assignments.js" para verificar los resultados')
+// // // console.log('\n🎉 Proceso de creación de asignaciones completado!')
+// // // console.log('💡 Ejecuta "node scripts/check-assignments.js" para verificar los resultados')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

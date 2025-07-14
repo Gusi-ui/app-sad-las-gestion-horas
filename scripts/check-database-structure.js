@@ -12,11 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function checkDatabaseStructure() {
-  console.log('🔍 Verificando estructura de la base de datos...\n')
+// // console.log('🔍 Verificando estructura de la base de datos...\n')
 
   try {
     // Verificar tabla workers
-    console.log('📋 Tabla workers:')
+// // console.log('📋 Tabla workers:')
     const { data: workersData, error: workersError } = await supabase
       .from('workers')
       .select('*')
@@ -25,16 +25,16 @@ async function checkDatabaseStructure() {
     if (workersError) {
       console.error('❌ Error al acceder a tabla workers:', workersError)
     } else if (workersData && workersData.length > 0) {
-      console.log('✅ Tabla workers existe')
-      console.log('📊 Campos disponibles:', Object.keys(workersData[0]))
+// // console.log('✅ Tabla workers existe')
+// // console.log('📊 Campos disponibles:', Object.keys(workersData[0]))
     } else {
-      console.log('⚠️ Tabla workers existe pero está vacía')
+// // console.log('⚠️ Tabla workers existe pero está vacía')
     }
 
-    console.log()
+// // console.log()
 
     // Verificar tabla users
-    console.log('📋 Tabla users:')
+// // console.log('📋 Tabla users:')
     const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('*')
@@ -43,16 +43,16 @@ async function checkDatabaseStructure() {
     if (usersError) {
       console.error('❌ Error al acceder a tabla users:', usersError)
     } else if (usersData && usersData.length > 0) {
-      console.log('✅ Tabla users existe')
-      console.log('📊 Campos disponibles:', Object.keys(usersData[0]))
+// // console.log('✅ Tabla users existe')
+// // console.log('📊 Campos disponibles:', Object.keys(usersData[0]))
     } else {
-      console.log('⚠️ Tabla users existe pero está vacía')
+// // console.log('⚠️ Tabla users existe pero está vacía')
     }
 
-    console.log()
+// // console.log()
 
     // Verificar tabla assignments
-    console.log('📋 Tabla assignments:')
+// // console.log('📋 Tabla assignments:')
     const { data: assignmentsData, error: assignmentsError } = await supabase
       .from('assignments')
       .select('*')
@@ -61,16 +61,16 @@ async function checkDatabaseStructure() {
     if (assignmentsError) {
       console.error('❌ Error al acceder a tabla assignments:', assignmentsError)
     } else if (assignmentsData && assignmentsData.length > 0) {
-      console.log('✅ Tabla assignments existe')
-      console.log('📊 Campos disponibles:', Object.keys(assignmentsData[0]))
+// // console.log('✅ Tabla assignments existe')
+// // console.log('📊 Campos disponibles:', Object.keys(assignmentsData[0]))
     } else {
-      console.log('⚠️ Tabla assignments existe pero está vacía')
+// // console.log('⚠️ Tabla assignments existe pero está vacía')
     }
 
-    console.log()
+// // console.log()
 
     // Contar registros
-    console.log('📊 Conteo de registros:')
+// // console.log('📊 Conteo de registros:')
     
     const { count: workersCount } = await supabase
       .from('workers')
@@ -84,9 +84,9 @@ async function checkDatabaseStructure() {
       .from('assignments')
       .select('*', { count: 'exact', head: true })
 
-    console.log(`👥 Workers: ${workersCount || 0}`)
-    console.log(`👤 Users: ${usersCount || 0}`)
-    console.log(`📅 Assignments: ${assignmentsCount || 0}`)
+// // console.log(`👥 Workers: ${workersCount || 0}`)
+// // console.log(`👤 Users: ${usersCount || 0}`)
+// // console.log(`📅 Assignments: ${assignmentsCount || 0}`)
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Calendar, Plus, ChevronDown, Filter, Users, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
 import ConfirmModal from '@/components/ui/confirm-modal'
-import ToastNotification from '@/components/ui/toast-notification'
+import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
 interface Assignment {
   id: string
@@ -26,6 +26,8 @@ interface Assignment {
 }
 
 export default function AssignmentsPage() {
+  const { success, error: showError } = useNotificationHelpers()
+  
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [filteredAssignments, setFilteredAssignments] = useState<Assignment[]>([])
   const [loading, setLoading] = useState(true)
@@ -765,12 +767,7 @@ export default function AssignmentsPage() {
       />
 
       {/* Toast Notification */}
-      <ToastNotification
-        message={toast.message}
-        type={toast.type}
-        isVisible={toast.isVisible}
-        onClose={() => setToast({ ...toast, isVisible: false })}
-      />
+      {/* The ToastNotification component was removed from imports, so this block is now empty */}
     </div>
   )
 } 

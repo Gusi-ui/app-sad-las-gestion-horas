@@ -14,19 +14,19 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function runMigration() {
-  console.log('🚀 Ejecutando migración de tipos de asignación...\n')
+// // console.log('🚀 Ejecutando migración de tipos de asignación...\n')
 
   try {
     // Leer el archivo de migración
     const migrationPath = path.join(__dirname, '../supabase/migration-update-assignment-types.sql')
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8')
 
-    console.log('📄 Contenido de la migración:')
-    console.log(migrationSQL)
-    console.log()
+// // console.log('📄 Contenido de la migración:')
+// // console.log(migrationSQL)
+// // console.log()
 
     // Ejecutar la migración
-    console.log('🔧 Ejecutando migración...')
+// // console.log('🔧 Ejecutando migración...')
     const { error } = await supabase.rpc('exec_sql', { sql: migrationSQL })
 
     if (error) {
@@ -34,10 +34,10 @@ async function runMigration() {
       return
     }
 
-    console.log('✅ Migración ejecutada correctamente')
+// // console.log('✅ Migración ejecutada correctamente')
 
     // Verificar el resultado
-    console.log('\n🔍 Verificando resultado...')
+// // console.log('\n🔍 Verificando resultado...')
     const { data: assignments, error: checkError } = await supabase
       .from('assignments')
       .select('id, assignment_type')
@@ -48,12 +48,12 @@ async function runMigration() {
       return
     }
 
-    console.log('📊 Asignaciones después de la migración:')
+// // console.log('📊 Asignaciones después de la migración:')
     assignments.forEach(assignment => {
-      console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
+// // console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
     })
 
-    console.log('\n✅ Migración completada exitosamente')
+// // console.log('\n✅ Migración completada exitosamente')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)

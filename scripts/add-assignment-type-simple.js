@@ -17,7 +17,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
 async function addAssignmentTypeColumn() {
   try {
-    console.log('🚀 Agregando columna assignment_type a la tabla assignments...');
+// // console.log('🚀 Agregando columna assignment_type a la tabla assignments...');
     
     // Primero, verificar si la columna ya existe
     const { data: existingColumns, error: checkError } = await supabase
@@ -30,10 +30,10 @@ async function addAssignmentTypeColumn() {
       return;
     }
 
-    console.log('✅ Tabla assignments accesible');
+// // console.log('✅ Tabla assignments accesible');
     
     // Intentar agregar la columna usando una consulta directa
-    console.log('📝 Agregando columna assignment_type...');
+// // console.log('📝 Agregando columna assignment_type...');
     
     // Como no podemos usar exec_sql, vamos a intentar una actualización simple
     // para ver si la columna ya existe
@@ -43,9 +43,9 @@ async function addAssignmentTypeColumn() {
       .limit(1);
 
     if (testError && testError.message.includes('column "assignment_type" does not exist')) {
-      console.log('❌ La columna assignment_type no existe. Necesitas ejecutar esto en el SQL Editor de Supabase:');
-      console.log('\n' + '='.repeat(60));
-      console.log(`
+// // console.log('❌ La columna assignment_type no existe. Necesitas ejecutar esto en el SQL Editor de Supabase:');
+// // console.log('\n' + '='.repeat(60));
+// // console.log(`
 -- Ejecuta esto en el SQL Editor de Supabase:
 
 ALTER TABLE assignments 
@@ -57,7 +57,7 @@ SELECT column_name, data_type, column_default
 FROM information_schema.columns 
 WHERE table_name = 'assignments' AND column_name = 'assignment_type';
       `);
-      console.log('='.repeat(60));
+// // console.log('='.repeat(60));
       return;
     }
 
@@ -66,7 +66,7 @@ WHERE table_name = 'assignments' AND column_name = 'assignment_type';
       return;
     }
 
-    console.log('✅ La columna assignment_type ya existe!');
+// // console.log('✅ La columna assignment_type ya existe!');
     
     // Verificar el estado actual
     const { data: assignments, error: selectError } = await supabase
@@ -79,9 +79,9 @@ WHERE table_name = 'assignments' AND column_name = 'assignment_type';
       return;
     }
 
-    console.log('📊 Estado actual de assignment_type:');
+// // console.log('📊 Estado actual de assignment_type:');
     assignments.forEach(assignment => {
-      console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type || 'NULL'}`);
+// // console.log(`  - ID: ${assignment.id}, Tipo: ${assignment.assignment_type || 'NULL'}`);
     });
 
   } catch (error) {

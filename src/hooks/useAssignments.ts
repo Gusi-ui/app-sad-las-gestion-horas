@@ -42,10 +42,10 @@ export function useAssignments() {
       // if (assignmentData.specific_schedule) {
       //   const conflicts = await checkAssignmentConflicts(assignmentData)
       //   if (conflicts.length > 0) {
-      //     return { 
-      //       data: null, 
+      //     return {
+      //       data: null,
       //       error: `Conflicto detectado: La trabajadora ya tiene asignaciones en horarios similares`,
-      //       conflicts 
+      //       conflicts
       //     }
       //   }
       // }
@@ -66,13 +66,13 @@ export function useAssignments() {
         console.error('Error constructor:', error?.constructor?.name)
         console.error('Error keys:', error && typeof error === 'object' ? Object.keys(error) : 'N/A')
         console.error('Error stringified:', JSON.stringify(error, null, 2))
-        
+
         let errorMsg = 'Error al crear asignación'
-        
+
         // Handle specific error codes
         if (error && typeof error === 'object' && 'code' in error) {
           const errorObj = error as { code: string; message?: string; details?: string; hint?: string }
-          
+
           switch (errorObj.code) {
             case '23505':
               if (typeof errorObj.message === 'string' && errorObj.message.includes('assignments_worker_id_user_id_start_date_key')) {
@@ -112,9 +112,9 @@ export function useAssignments() {
         } else if (typeof error === 'string') {
           errorMsg = error
         }
-        
-        return { 
-          data: null, 
+
+        return {
+          data: null,
           error: errorMsg,
           conflicts: []
         }
@@ -129,13 +129,13 @@ export function useAssignments() {
       console.error('Error constructor:', err?.constructor?.name)
       console.error('Error keys:', err && typeof err === 'object' ? Object.keys(err) : 'N/A')
       console.error('Error stringified:', JSON.stringify(err, null, 2))
-      
+
       let errorMsg = 'Error al crear asignación'
-      
+
       // Handle specific error codes
       if (err && typeof err === 'object' && 'code' in err) {
         const errorObj = err as { code: string; message?: string; details?: string; hint?: string }
-        
+
         switch (errorObj.code) {
           case '23505':
             if (typeof errorObj.message === 'string' && errorObj.message.includes('assignments_worker_id_user_id_start_date_key')) {
@@ -175,9 +175,9 @@ export function useAssignments() {
       } else if (typeof err === 'string') {
         errorMsg = err
       }
-      
-      return { 
-        data: null, 
+
+      return {
+        data: null,
         error: errorMsg,
         conflicts: []
       }
@@ -186,9 +186,7 @@ export function useAssignments() {
 
   const updateAssignment = useCallback(async (id: string, updates: Partial<Assignment>) => {
     try {
-      console.log('🔧 [UPDATE] Iniciando actualización de asignación:', { id, updates })
-      
-      const { data, error } = await supabase
+      // // const { data, error } = await supabase
         .from('assignments')
         .update(updates)
         .eq('id', id)
@@ -199,22 +197,19 @@ export function useAssignments() {
         `)
         .single()
 
-      console.log('🔧 [UPDATE] Respuesta de Supabase:', { data, error })
-
-      if (error) {
+      // // if (error) {
         console.error('🔧 [UPDATE] Error de Supabase:', error)
         throw error
       }
 
-      console.log('🔧 [UPDATE] Actualización exitosa, refrescando lista...')
-      // Refresh the list
+      // // // Refresh the list
       await fetchAssignments()
       return { data, error: null }
     } catch (err) {
       console.error('🔧 [UPDATE] Error updating assignment:', err)
-      return { 
-        data: null, 
-        error: err instanceof Error ? err.message : 'Error al actualizar asignación' 
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error al actualizar asignación'
       }
     }
   }, [fetchAssignments])
@@ -233,8 +228,8 @@ export function useAssignments() {
       return { error: null }
     } catch (err) {
       console.error('Error deleting assignment:', err)
-      return { 
-        error: err instanceof Error ? err.message : 'Error al eliminar asignación' 
+      return {
+        error: err instanceof Error ? err.message : 'Error al eliminar asignación'
       }
     }
   }, [fetchAssignments])
@@ -255,9 +250,9 @@ export function useAssignments() {
       return { data, error: null }
     } catch (err) {
       console.error('Error fetching assignment by ID:', err)
-      return { 
-        data: null, 
-        error: err instanceof Error ? err.message : 'Error al obtener asignación' 
+      return {
+        data: null,
+        error: err instanceof Error ? err.message : 'Error al obtener asignación'
       }
     }
   }, [])
@@ -307,7 +302,7 @@ export function useAssignments() {
     const workerAssignments = getAssignmentsByWorker(workerId)
     const activeAssignments = workerAssignments.filter(a => a.status === 'active')
     const totalHours = activeAssignments.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
-    
+
     return {
       totalAssignments: workerAssignments.length,
       activeAssignments: activeAssignments.length,
@@ -320,7 +315,7 @@ export function useAssignments() {
     const userAssignments = getAssignmentsByUser(userId)
     const activeAssignments = userAssignments.filter(a => a.status === 'active')
     const totalHours = activeAssignments.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
-    
+
     return {
       totalAssignments: userAssignments.length,
       activeAssignments: activeAssignments.length,
@@ -334,9 +329,9 @@ export function useAssignments() {
     const paused = assignments.filter(a => a.status === 'paused')
     const completed = assignments.filter(a => a.status === 'completed')
     const cancelled = assignments.filter(a => a.status === 'cancelled')
-    
+
     const totalHours = active.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
-    
+
     return {
       total: assignments.length,
       active: active.length,
@@ -369,4 +364,4 @@ export function useAssignments() {
     getAssignmentStats,
     refetch: fetchAssignments
   }
-} 
+}

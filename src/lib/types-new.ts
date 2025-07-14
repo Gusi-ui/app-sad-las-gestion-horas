@@ -198,6 +198,27 @@ export interface Assignment {
   user?: User
   created_by_admin?: Admin
   monthly_plans?: MonthlyPlan[]
+  history?: AssignmentHistory[]
+}
+
+// =====================================================
+// HISTORIAL DE ASIGNACIONES
+// =====================================================
+
+export interface AssignmentHistory {
+  id: string
+  assignment_id: string
+  previous_worker_id?: string
+  new_worker_id: string
+  changed_by: string
+  change_reason?: string
+  created_at: string
+  
+  // Relaciones
+  assignment?: Assignment
+  previous_worker?: Worker
+  new_worker?: Worker
+  changed_by_user?: Admin
 }
 
 // =====================================================

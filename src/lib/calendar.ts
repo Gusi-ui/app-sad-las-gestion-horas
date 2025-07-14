@@ -20,7 +20,7 @@ export async function getHolidaysFromDatabase(year: number, month?: number): Pro
     const holidays = data.holidays || [];
     
     return holidays.map((holiday: any) => ({
-      date: `${holiday.year}-${holiday.month.toString().padStart(2, '0')}-${holiday.day.toString().padStart(2, '0')}`,
+      date: holiday.date, // La API ya devuelve la fecha en formato YYYY-MM-DD
       name: holiday.name,
       type: holiday.type as 'national' | 'regional' | 'local'
     }));

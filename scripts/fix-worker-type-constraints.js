@@ -5,11 +5,11 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 
 async function fixWorkerTypeConstraints() {
   try {
-    console.log('🔧 Arreglando restricciones de worker_type...\n');
+// // console.log('🔧 Arreglando restricciones de worker_type...\n');
 
     // 1. Verificar estructura real de worker_profiles
-    console.log('📋 Verificando estructura de worker_profiles:');
-    console.log('=============================================');
+// // console.log('📋 Verificando estructura de worker_profiles:');
+// // console.log('=============================================');
     
     // Intentar diferentes estructuras
     const possibleStructures = [
@@ -26,12 +26,12 @@ async function fixWorkerTypeConstraints() {
           .insert([structure]);
         
         if (error) {
-          console.log(`   ❌ Estructura ${i + 1}: ${error.message}`);
+// // console.log(`   ❌ Estructura ${i + 1}: ${error.message}`);
           if (error.message.includes('name')) {
-            console.log(`      La tabla no tiene columna 'name'`);
+// // console.log(`      La tabla no tiene columna 'name'`);
           }
         } else {
-          console.log(`   ✅ Estructura ${i + 1}: Funciona`);
+// // console.log(`   ✅ Estructura ${i + 1}: Funciona`);
           // Limpiar
           await supabase
             .from('worker_profiles')
@@ -40,15 +40,15 @@ async function fixWorkerTypeConstraints() {
           break;
         }
       } catch (e) {
-        console.log(`   ❌ Estructura ${i + 1}: Error inesperado`);
+// // console.log(`   ❌ Estructura ${i + 1}: Error inesperado`);
       }
     }
 
-    console.log('\n' + '='.repeat(60) + '\n');
+// // console.log('\n' + '='.repeat(60) + '\n');
 
     // 2. Verificar qué valores están permitidos en worker_profiles
-    console.log('🔍 Verificando valores permitidos en worker_profiles:');
-    console.log('===================================================');
+// // console.log('🔍 Verificando valores permitidos en worker_profiles:');
+// // console.log('===================================================');
     
     const testValues = ['laborable', 'holiday_weekend', 'both', 'worker', 'admin'];
     
@@ -65,12 +65,12 @@ async function fixWorkerTypeConstraints() {
           }]);
         
         if (error) {
-          console.log(`   ❌ "${value}": ${error.message}`);
+// // console.log(`   ❌ "${value}": ${error.message}`);
           if (error.code === '23514') {
-            console.log(`      ❌ VALOR NO PERMITIDO - Restricción check constraint`);
+// // console.log(`      ❌ VALOR NO PERMITIDO - Restricción check constraint`);
           }
         } else {
-          console.log(`   ✅ "${value}": PERMITIDO`);
+// // console.log(`   ✅ "${value}": PERMITIDO`);
           // Limpiar
           await supabase
             .from('worker_profiles')
@@ -78,26 +78,26 @@ async function fixWorkerTypeConstraints() {
             .eq('email', `test_${value}@test.com`);
         }
       } catch (e) {
-        console.log(`   ❌ "${value}": Error inesperado`);
+// // console.log(`   ❌ "${value}": Error inesperado`);
       }
     }
 
-    console.log('\n' + '='.repeat(60) + '\n');
+// // console.log('\n' + '='.repeat(60) + '\n');
 
     // 3. Verificar si necesitamos actualizar las restricciones
-    console.log('🔧 Recomendaciones:');
-    console.log('===================');
-    console.log('   1. Si "laborable" no está permitido, necesitamos actualizar');
-    console.log('      la restricción check constraint en worker_profiles');
-    console.log('');
-    console.log('   2. Los valores que deberían estar permitidos son:');
-    console.log('      - laborable');
-    console.log('      - holiday_weekend');
-    console.log('      - both');
-    console.log('');
-    console.log('   3. Si hay problemas, podemos:');
-    console.log('      - Actualizar la restricción en Supabase Dashboard');
-    console.log('      - O crear una migración SQL');
+// // console.log('🔧 Recomendaciones:');
+// // console.log('===================');
+// // console.log('   1. Si "laborable" no está permitido, necesitamos actualizar');
+// // console.log('      la restricción check constraint en worker_profiles');
+// // console.log('');
+// // console.log('   2. Los valores que deberían estar permitidos son:');
+// // console.log('      - laborable');
+// // console.log('      - holiday_weekend');
+// // console.log('      - both');
+// // console.log('');
+// // console.log('   3. Si hay problemas, podemos:');
+// // console.log('      - Actualizar la restricción en Supabase Dashboard');
+// // console.log('      - O crear una migración SQL');
 
   } catch (error) {
     console.error('Error general:', error);

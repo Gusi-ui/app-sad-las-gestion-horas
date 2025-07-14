@@ -8,10 +8,10 @@ const {
 
 // Función para probar las validaciones del DNI
 function testDNIValidation() {
-  console.log('🧪 Probando validaciones de DNI español...\n')
+// // console.log('🧪 Probando validaciones de DNI español...\n')
 
   // Test 1: Formato de DNI
-  console.log('📋 Test 1: Validación de formato')
+// // console.log('📋 Test 1: Validación de formato')
   const formatTests = [
     { dni: '12345678A', expected: true, description: 'DNI válido de 8 dígitos + letra' },
     { dni: '1234567A', expected: false, description: 'DNI de 7 dígitos + letra' },
@@ -27,11 +27,11 @@ function testDNIValidation() {
   formatTests.forEach(test => {
     const result = isValidDNIFormat(test.dni)
     const status = result === test.expected ? '✅' : '❌'
-    console.log(`${status} ${test.description}: "${test.dni}" -> ${result}`)
+// // console.log(`${status} ${test.description}: "${test.dni}" -> ${result}`)
   })
 
   // Test 2: Cálculo de letra de control
-  console.log('\n📋 Test 2: Cálculo de letra de control')
+// // console.log('\n📋 Test 2: Cálculo de letra de control')
   const letterTests = [
     { numbers: '12345678', expected: 'Z', description: 'DNI 12345678' },
     { numbers: '00000000', expected: 'T', description: 'DNI 00000000' },
@@ -44,11 +44,11 @@ function testDNIValidation() {
   letterTests.forEach(test => {
     const result = getCorrectDNILetter(test.numbers)
     const status = result === test.expected ? '✅' : '❌'
-    console.log(`${status} ${test.description}: "${test.numbers}" -> "${result}"`)
+// // console.log(`${status} ${test.description}: "${test.numbers}" -> "${result}"`)
   })
 
   // Test 3: DNI completos válidos
-  console.log('\n📋 Test 3: DNI completos válidos')
+// // console.log('\n📋 Test 3: DNI completos válidos')
   const validDNITests = [
     { dni: '12345678Z', expected: true, description: 'DNI válido 12345678Z' },
     { dni: '00000000T', expected: true, description: 'DNI válido 00000000T' },
@@ -62,11 +62,11 @@ function testDNIValidation() {
   validDNITests.forEach(test => {
     const result = isValidDNI(test.dni)
     const status = result === test.expected ? '✅' : '❌'
-    console.log(`${status} ${test.description}: "${test.dni}" -> ${result}`)
+// // console.log(`${status} ${test.description}: "${test.dni}" -> ${result}`)
   })
 
   // Test 4: Formateo de DNI
-  console.log('\n📋 Test 4: Formateo de DNI')
+// // console.log('\n📋 Test 4: Formateo de DNI')
   const formatDNITests = [
     { input: '12345678', expected: '12345678-Z', description: 'Solo números' },
     { input: '12345678A', expected: '12345678-A', description: 'Números + letra' },
@@ -80,11 +80,11 @@ function testDNIValidation() {
   formatDNITests.forEach(test => {
     const result = formatDNI(test.input)
     const status = result === test.expected ? '✅' : '❌'
-    console.log(`${status} ${test.description}: "${test.input}" -> "${result}"`)
+// // console.log(`${status} ${test.description}: "${test.input}" -> "${result}"`)
   })
 
   // Test 5: Ejemplos reales de DNI
-  console.log('\n📋 Test 5: Ejemplos reales de DNI')
+// // console.log('\n📋 Test 5: Ejemplos reales de DNI')
   const realDNIs = [
     '12345678Z',
     '87654321X',
@@ -101,10 +101,10 @@ function testDNIValidation() {
   realDNIs.forEach(dni => {
     const isValid = isValidDNI(dni)
     const status = isValid ? '✅' : '❌'
-    console.log(`${status} DNI: ${dni} -> ${isValid ? 'Válido' : 'Inválido'}`)
+// // console.log(`${status} DNI: ${dni} -> ${isValid ? 'Válido' : 'Inválido'}`)
   })
 
-  console.log('\n🎉 Pruebas de DNI completadas!')
+// // console.log('\n🎉 Pruebas de DNI completadas!')
 }
 
 // Ejecutar las pruebas

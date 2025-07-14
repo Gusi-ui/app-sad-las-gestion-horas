@@ -12,11 +12,11 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 async function runMigration() {
-  console.log('🚀 Ejecutando migración de tipos de asignación...\n')
+// // console.log('🚀 Ejecutando migración de tipos de asignación...\n')
 
   try {
     // Paso 1: Actualizar los datos existentes
-    console.log('📝 Actualizando datos existentes...')
+// // console.log('📝 Actualizando datos existentes...')
     
     const { error: updateError } = await supabase
       .from('assignments')
@@ -26,11 +26,11 @@ async function runMigration() {
     if (updateError) {
       console.error('❌ Error al actualizar holidays:', updateError)
     } else {
-      console.log('✅ Datos actualizados correctamente')
+// // console.log('✅ Datos actualizados correctamente')
     }
 
     // Verificar el resultado
-    console.log('\n🔍 Verificando resultado...')
+// // console.log('\n🔍 Verificando resultado...')
     const { data: assignments, error: checkError } = await supabase
       .from('assignments')
       .select('id, assignment_type')
@@ -41,12 +41,12 @@ async function runMigration() {
       return
     }
 
-    console.log('📊 Asignaciones después de la migración:')
+// // console.log('📊 Asignaciones después de la migración:')
     assignments.forEach(assignment => {
-      console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
+// // console.log(`  - ID: ${assignment.id}, Tipo: "${assignment.assignment_type}"`)
     })
 
-    console.log('\n✅ Migración completada exitosamente')
+// // console.log('\n✅ Migración completada exitosamente')
 
   } catch (error) {
     console.error('❌ Error inesperado:', error)
