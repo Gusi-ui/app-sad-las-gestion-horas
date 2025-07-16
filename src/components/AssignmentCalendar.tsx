@@ -60,20 +60,17 @@ export default function AssignmentCalendar({
   }, [initialYear, initialMonth])
 
   useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        const holidaysData = await getHolidaysForYear(selectedYear)
+        const holidayDates = holidaysData.map(h => h.date)
+        setHolidays(holidayDates)
+      } finally {
+        setLoading(false)
+      }
+    }
     loadHolidays()
   }, [selectedYear])
-
-  const loadHolidays = async () => {
-    try {
-      const holidaysData = await getHolidaysForYear(selectedYear)
-      const holidayDates = holidaysData.map(h => h.date)
-      setHolidays(holidayDates)
-    } catch (error) {
-      console.error('Error al cargar festivos:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getDaysInMonth = () => {
     return new Date(selectedYear, selectedMonth, 0).getDate()
@@ -267,8 +264,8 @@ export default function AssignmentCalendar({
             if (!isNaN(hours) && hours > 0) {
               totalHours += hours
             }
-          } catch (error) {
-            console.error('Error al calcular horas:', error)
+          } catch {
+            // Silenciar error
           }
         })
       }

@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase'
 import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, Search } from 'lucide-react'
 import { MonthlyBalancesTable } from '@/components/MonthlyBalancesTable'
 import { useMonthlyBalances } from '@/hooks/useMonthlyBalances'
+import type { MonthlyBalance } from '@/components/MonthlyBalancesTable'
 
 interface User {
   id: string
@@ -52,28 +53,28 @@ export default function UsersPage() {
   // Hook para obtener balances mensuales
   const {
     balances: monthlyBalances,
-    users: balanceUsers,
-    loading: balancesLoading,
-    error: balancesError,
-    refetch: refetchBalances
-  } = useMonthlyBalances();
+    users: balanceUsers = [],
+    loading: balancesLoading
+  } = useMonthlyBalances() as unknown as { balances: unknown[]; users: unknown[]; loading: boolean }
+
+  const typedMonthlyBalances = monthlyBalances as MonthlyBalance[];
+  const typedBalanceUsers = balanceUsers as User[];
 
   const fetchUsers = useCallback(async () => {
     try {
+      if (!supabase) return
       const { data, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching users:', error)
         showToast('Error al cargar usuarios', 'error')
         return
       }
 
       setUsers(data || [])
-    } catch (error) {
-      console.error('Error fetching users:', error)
+    } catch {
       showToast('Error inesperado al cargar usuarios', 'error')
     } finally {
       setLoading(false)
@@ -111,7 +112,7 @@ export default function UsersPage() {
   }
 
   const handleDeactivateUser = async () => {
-    if (!modalState.user) return
+    if (!modalState.user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -120,21 +121,19 @@ export default function UsersPage() {
         .eq('id', modalState.user.id)
 
       if (error) {
-        console.error('Error deactivating user:', error)
-        showToast('Error al desactivar usuario', 'error')
+        showToast('Error de desactivar usuario', 'error')
         return
       }
 
       showToast('Usuario desactivado correctamente', 'success')
       fetchUsers()
-    } catch (error) {
-      console.error('Error deactivating user:', error)
+    } catch {
       showToast('Error inesperado al desactivar usuario', 'error')
     }
   }
 
   const handleDeleteUser = async () => {
-    if (!modalState.user) return
+    if (!modalState.user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -143,21 +142,19 @@ export default function UsersPage() {
         .eq('id', modalState.user.id)
 
       if (error) {
-        console.error('Error deleting user:', error)
         showToast('Error al eliminar usuario', 'error')
         return
       }
 
       showToast('Usuario eliminado definitivamente', 'success')
       fetchUsers()
-    } catch (error) {
-      console.error('Error deleting user:', error)
+    } catch {
       showToast('Error inesperado al eliminar usuario', 'error')
     }
   }
 
   const handleRestoreUser = async () => {
-    if (!modalState.user) return
+    if (!modalState.user || !supabase) return
 
     try {
       const { error } = await supabase
@@ -166,20 +163,19 @@ export default function UsersPage() {
         .eq('id', modalState.user.id)
 
       if (error) {
-        console.error('Error restoring user:', error)
         showToast('Error al reactivar usuario', 'error')
         return
       }
 
       showToast('Usuario reactivado correctamente', 'success')
       fetchUsers()
-    } catch (error) {
-      console.error('Error restoring user:', error)
+    } catch {
       showToast('Error inesperado al reactivar usuario', 'error')
     }
   }
 
   const handleLogout = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     router.push('/')
   }
@@ -832,8 +828,8 @@ export default function UsersPage() {
 
         {/* BALANCES MENSUALES */}
         <MonthlyBalancesTable
-          balances={monthlyBalances}
-          users={balanceUsers}
+          balances={typedMonthlyBalances}
+          users={typedBalanceUsers}
           loading={balancesLoading}
           className="mt-6 sm:mt-8"
         />

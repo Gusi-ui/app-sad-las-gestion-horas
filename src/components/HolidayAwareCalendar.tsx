@@ -2,13 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Calendar, AlertTriangle, CheckCircle, XCircle } from 'lucide-react'
+import { Calendar, AlertTriangle } from 'lucide-react'
 import { 
   getAvailableDaysForWorker, 
   getBlockedDaysForWorker, 
-  getDayInfo, 
   getHolidaysForYear,
   getShortDayName,
   type DayInfo,
@@ -38,27 +35,25 @@ export default function HolidayAwareCalendar({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const loadCalendarData = async () => {
+      setLoading(true)
+      try {
+        const [available, blocked, holidaysData] = await Promise.all([
+          getAvailableDaysForWorker(workerType, year, month),
+          getBlockedDaysForWorker(workerType, year, month),
+          getHolidaysForYear(year)
+        ])
+        setAvailableDays(available)
+        setBlockedDays(blocked)
+        setHolidays(holidaysData)
+      } catch {
+        // Silenciar error
+      } finally {
+        setLoading(false)
+      }
+    }
     loadCalendarData()
   }, [workerType, year, month])
-
-  const loadCalendarData = async () => {
-    setLoading(true)
-    try {
-      const [available, blocked, holidaysData] = await Promise.all([
-        getAvailableDaysForWorker(workerType, year, month),
-        getBlockedDaysForWorker(workerType, year, month),
-        getHolidaysForYear(year)
-      ])
-      
-      setAvailableDays(available)
-      setBlockedDays(blocked)
-      setHolidays(holidaysData)
-    } catch (error) {
-      console.error('Error al cargar datos del calendario:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const getDaysInMonth = () => {
     return new Date(year, month, 0).getDate()
@@ -71,16 +66,6 @@ export default function HolidayAwareCalendar({
     return jsDay === 0 ? 6 : jsDay - 1
   }
 
-  const getDayInfo = (day: number): DayInfo | null => {
-    const date = new Date(year, month - 1, day)
-    const dateString = date.toISOString().split('T')[0]
-    
-    const availableDay = availableDays.find(d => d.date === dateString)
-    const blockedDay = blockedDays.find(d => d.date === dateString)
-    
-    return availableDay || blockedDay || null
-  }
-
   const isDaySelected = (day: number): boolean => {
     const date = new Date(year, month - 1, day)
     const dateString = date.toISOString().split('T')[0]
@@ -88,17 +73,22 @@ export default function HolidayAwareCalendar({
   }
 
   const isDayBlocked = (day: number): boolean => {
-    const dayInfo = getDayInfo(day)
-    if (!dayInfo) return false
+    const date = new Date(year, month - 1, day)
+    const dateString = date.toISOString().split('T')[0]
+    
+    const availableDay = availableDays.find(d => d.date === dateString)
+    const blockedDay = blockedDays.find(d => d.date === dateString)
+    
+    if (!availableDay && !blockedDay) return false
     
     // Para trabajadoras laborables: bloquear fines de semana y festivos
     if (workerType === 'laborables') {
-      return dayInfo.isWeekend || dayInfo.isHoliday
+      return blockedDay ? blockedDay.isWeekend || blockedDay.isHoliday : false
     }
     
     // Para trabajadoras festivas: bloquear días laborables (no fines de semana, no festivos)
     if (workerType === 'festivos') {
-      return dayInfo.isWorkingDay
+      return blockedDay ? blockedDay.isWorkingDay : false
     }
     
     // Para trabajadoras flexibles: no bloquear ningún día
@@ -106,12 +96,16 @@ export default function HolidayAwareCalendar({
   }
 
   const isDayHoliday = (day: number): boolean => {
-    const dayInfo = getDayInfo(day)
+    const date = new Date(year, month - 1, day)
+    const dateString = date.toISOString().split('T')[0]
+    const dayInfo = availableDays.find(d => d.date === dateString) || blockedDays.find(d => d.date === dateString)
     return dayInfo ? dayInfo.isHoliday : false
   }
 
   const isDayWeekend = (day: number): boolean => {
-    const dayInfo = getDayInfo(day)
+    const date = new Date(year, month - 1, day)
+    const dateString = date.toISOString().split('T')[0]
+    const dayInfo = availableDays.find(d => d.date === dateString) || blockedDays.find(d => d.date === dateString)
     return dayInfo ? dayInfo.isWeekend : false
   }
 
@@ -138,14 +132,16 @@ export default function HolidayAwareCalendar({
   }
 
   const getDayTooltip = (day: number): string => {
-    const dayInfo = getDayInfo(day)
+    const date = new Date(year, month - 1, day)
+    const dateString = date.toISOString().split('T')[0]
+    const dayInfo = availableDays.find(d => d.date === dateString) || blockedDays.find(d => d.date === dateString)
+
     if (!dayInfo) return ''
     
     const dayName = getShortDayName(dayInfo.dayOfWeek)
-    const date = new Date(year, month - 1, day)
-    const dateString = date.toLocaleDateString('es-ES')
+    const dateStringFormatted = date.toLocaleDateString('es-ES')
     
-    let tooltip = `${dayName}, ${dateString}`
+    let tooltip = `${dayName}, ${dateStringFormatted}`
     
     if (dayInfo.isHoliday && dayInfo.holidayInfo) {
       tooltip += ` - ${dayInfo.holidayInfo.name}`
@@ -163,7 +159,10 @@ export default function HolidayAwareCalendar({
   }
 
   const handleDayClick = (day: number) => {
-    const dayInfo = getDayInfo(day)
+    const date = new Date(year, month - 1, day)
+    const dateString = date.toISOString().split('T')[0]
+    const dayInfo = availableDays.find(d => d.date === dateString) || blockedDays.find(d => d.date === dateString)
+
     if (dayInfo && !isDayBlocked(day) && onDayClick) {
       onDayClick(dayInfo)
     }
@@ -319,10 +318,10 @@ export default function HolidayAwareCalendar({
               <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div className="text-sm">
                 <p className="font-medium text-yellow-800">
-                  Días no disponibles para trabajadoras de tipo "{workerType}"
+                  Días no disponibles para trabajadoras de tipo &quot;{workerType}&quot;
                 </p>
                 <p className="text-yellow-700 mt-1">
-                  Estos días serán atendidos por trabajadoras de tipo "{workerType === 'laborables' ? 'festivos' : 'laborables'}"
+                  Estos días serán atendidos por trabajadoras de tipo &quot;{workerType === 'laborables' ? 'festivos' : 'laborables'}&quot;
                 </p>
               </div>
             </div>

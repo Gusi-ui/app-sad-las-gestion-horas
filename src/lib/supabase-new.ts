@@ -360,7 +360,7 @@ export const users = {
     medical_conditions: string[]
     allergies: string[]
     medications: string[]
-    emergency_contacts: any[]
+    emergency_contacts: unknown[]
     created_by: string
   }) {
     const { data, error } = await supabase
@@ -477,7 +477,7 @@ export const assignments = {
     start_date: string
     end_date?: string
     weekly_hours: number
-    schedule: any
+    schedule: unknown
     priority: number
     created_by: string
   }) {
@@ -496,7 +496,7 @@ export const assignments = {
     assignment_type: string
     end_date: string
     weekly_hours: number
-    schedule: any
+    schedule: unknown
     status: string
     priority: number
   }>) {
@@ -597,9 +597,9 @@ export const monthlyPlans = {
     assignment_id: string
     month: number
     year: number
-    schedule_config: any
-    holiday_hours?: any
-    weekend_hours?: any
+    schedule_config: unknown
+    holiday_hours?: unknown
+    weekend_hours?: unknown
     created_by: string
   }) {
     const { data, error } = await supabase
@@ -614,9 +614,9 @@ export const monthlyPlans = {
 
   // Actualizar plan mensual
   async update(id: string, updates: Partial<{
-    schedule_config: any
-    holiday_hours: any
-    weekend_hours: any
+    schedule_config: unknown
+    holiday_hours: unknown
+    weekend_hours: unknown
     status: string
     actual_hours: number
   }>) {

@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Clock, User, ArrowRight, AlertTriangle, CheckCircle } from "lucide-react";
+import { Calendar, Clock, User, ArrowRight, CheckCircle } from "lucide-react";
 import { ReassignedService } from "@/lib/holidayReassignment";
 
 interface HolidayReassignmentCardProps {
@@ -14,7 +14,6 @@ export function HolidayReassignmentCard({ reassignments, className = "" }: Holid
 
   const totalReassignedHours = reassignments.reduce((sum, r) => sum + Math.abs(r.reassignedHours - r.originalHours), 0);
   const laborableToHoliday = reassignments.filter(r => r.originalHours > r.reassignedHours).length;
-  const holidayToLaborable = reassignments.filter(r => r.originalHours < r.reassignedHours).length;
 
   return (
     <Card className={`border-orange-200 bg-orange-50 ${className}`}>
@@ -55,9 +54,9 @@ export function HolidayReassignmentCard({ reassignments, className = "" }: Holid
                       month: 'long' 
                     })}
                   </span>
-                  {reassignment.holidayName && (
+                  {reassignment.reason && (
                     <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">
-                      {reassignment.holidayName}
+                      {reassignment.reason}
                     </span>
                   )}
                 </div>

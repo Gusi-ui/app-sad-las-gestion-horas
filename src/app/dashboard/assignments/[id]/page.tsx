@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAssignments } from '@/hooks/useAssignments'
 import { useToast } from '@/components/ui/toast'
 import { formatScheduleOrdered } from '@/lib/utils'
-import { ScheduleDisplay, ScheduleCards } from '@/components/ScheduleDisplay'
+import { ScheduleDisplay } from '@/components/ScheduleDisplay'
 import { 
   ArrowLeft, 
   Edit, 
@@ -136,7 +136,7 @@ export default function AssignmentDetailPage() {
     }
   }
 
-  const formatSchedule = (schedule: Record<string, any[]> | undefined) => {
+  const formatSchedule = (schedule: Record<string, string[][]> | undefined) => {
     const dayNames: Record<string, string> = {
       monday: 'Lunes',
       tuesday: 'Martes',
@@ -239,7 +239,7 @@ export default function AssignmentDetailPage() {
                     <div className="flex items-center text-sm">
                       <Clock className="w-4 h-4 mr-2 text-slate-500" />
                       <span className="text-slate-600">Horas por semana:</span>
-                      <span className="ml-2 font-medium">{assignment.assigned_hours_per_week}h</span>
+                      <span className="ml-2 font-medium">{assignment.weekly_hours}h</span>
                     </div>
                     <div className="flex items-center text-sm">
                       <Calendar className="w-4 h-4 mr-2 text-slate-500" />
@@ -268,7 +268,20 @@ export default function AssignmentDetailPage() {
                 <div>
                   <h4 className="font-medium text-slate-900 mb-3">Horario Específico</h4>
                   <div className="bg-slate-50 rounded-lg p-3">
-                    <ScheduleDisplay schedule={assignment.specific_schedule} showIcon={false} layout="rows" />
+                    <ScheduleDisplay
+                      schedule={
+                        assignment.schedule
+                          ? Object.fromEntries(
+                              Object.entries(assignment.schedule).map(([day, value]) => [
+                                day,
+                                value.enabled ? value.timeSlots : []
+                              ])
+                            )
+                          : undefined
+                      }
+                      showIcon={false}
+                      layout="rows"
+                    />
                   </div>
                 </div>
               </div>

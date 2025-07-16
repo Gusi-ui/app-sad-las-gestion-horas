@@ -3,11 +3,27 @@
 import { Clock } from 'lucide-react'
 import { formatScheduleOrdered } from '@/lib/utils'
 
+interface TimeSlot {
+  start: string;
+  end: string;
+}
+
+interface DaySchedule {
+  enabled: boolean;
+  timeSlots: TimeSlot[];
+}
+
+type WeeklySchedule = {
+  [key: string]: DaySchedule;
+};
+
 interface ScheduleDisplayProps {
-  schedule: Record<string, any[]> | undefined
-  className?: string
-  showIcon?: boolean
-  layout?: 'inline' | 'rows' | 'cards'
+  schedule: WeeklySchedule;
+  editable?: boolean;
+  onChange?: (schedule: WeeklySchedule) => void;
+  className?: string;
+  showIcon?: boolean;
+  layout?: 'inline' | 'rows' | 'cards';
 }
 
 export function ScheduleDisplay({ schedule, className = '', showIcon = true, layout = 'rows' }: ScheduleDisplayProps) {
@@ -62,8 +78,8 @@ export function ScheduleDisplay({ schedule, className = '', showIcon = true, lay
                 timeLines = timeSlots
               }
             } else if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-              timeDisplay = slots.map((slot: any) => `${slot.start} - ${slot.end}`).join(' y ')
-              timeLines = slots.map((slot: any) => `${slot.start} - ${slot.end}`)
+              timeDisplay = slots.map((slot: { start: string; end: string }) => `${slot.start} - ${slot.end}`).join(' y ')
+              timeLines = slots.map((slot: { start: string; end: string }) => `${slot.start} - ${slot.end}`)
             }
 
             return (
@@ -114,7 +130,7 @@ export function ScheduleDisplay({ schedule, className = '', showIcon = true, lay
   }
 
   // Layout inline (formato original)
-  const formattedSchedule = formatScheduleOrdered(schedule, {
+  const formattedSchedule = formatScheduleOrdered(schedule as unknown as Record<string, { start: string; end: string }[]>, {
     monday: 'Lun',
     tuesday: 'Mar',
     wednesday: 'Mié',
@@ -144,7 +160,7 @@ export function ScheduleDisplay({ schedule, className = '', showIcon = true, lay
 }
 
 // Componente para mostrar horarios en formato de tarjetas
-export function ScheduleCards({ schedule }: { schedule: Record<string, any[]> | undefined }) {
+export function ScheduleCards({ schedule }: { schedule: WeeklySchedule }) {
   if (!schedule) {
     return (
       <div className="text-sm text-slate-500 italic">
@@ -184,20 +200,8 @@ export function ScheduleCards({ schedule }: { schedule: Record<string, any[]> | 
         let timeDisplay = ''
 
         // Formatear los horarios
-        if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'string') {
-          if (slots.length === 2) {
-            timeDisplay = `${slots[0]} - ${slots[1]}`
-          } else if (slots.length > 2 && slots.length % 2 === 0) {
-            const timeSlots = []
-            for (let i = 0; i < slots.length; i += 2) {
-              if (typeof slots[i] === 'string' && typeof slots[i+1] === 'string') {
-                timeSlots.push(`${slots[i]} - ${slots[i+1]}`)
-              }
-            }
-            timeDisplay = timeSlots.join(' y ')
-          }
-        } else if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-          timeDisplay = slots.map((slot: any) => `${slot.start} - ${slot.end}`).join(' y ')
+        if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
+          timeDisplay = slots.map((slot: { start: string; end: string }) => `${slot.start} - ${slot.end}`).join(' y ')
         }
 
         return (

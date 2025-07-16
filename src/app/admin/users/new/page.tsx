@@ -139,7 +139,7 @@ export default function NewUserPage() {
 
     try {
       // Preparar datos para guardar (añadir +34 al teléfono)
-      let dataToSave: any = {
+      const dataToSave: any = {
         ...formData,
         phone: formData.phone ? `+34${formData.phone}` : '',
         is_active: formData.status === 'active'

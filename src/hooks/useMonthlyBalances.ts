@@ -36,8 +36,12 @@ export function useMonthlyBalances(options: UseMonthlyBalancesOptions = {}) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Error al cargar balances');
       setBalances(data.balances || []);
-    } catch (err: any) {
-      setError(err.message || 'Error inesperado al cargar balances');
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Error inesperado al cargar balances');
+      } else {
+        setError('Error inesperado al cargar balances');
+      }
       setBalances([]);
     } finally {
       setLoading(false);

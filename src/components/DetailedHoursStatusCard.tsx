@@ -1,11 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Clock, TrendingUp, TrendingDown, CheckCircle, AlertTriangle, Calendar, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, CheckCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { calculateUserHoursStatus } from "@/lib/utils";
-import { Assignment, User } from "@/lib/types";
-
-interface AssignmentWithUser extends Assignment {
-  users?: User;
-}
 
 interface DetailedHoursStatusCardProps {
   monthlyHours: number;
@@ -15,7 +10,6 @@ interface DetailedHoursStatusCardProps {
   userAddress?: string;
   userPhone?: string;
   totalWorkers: number;
-  assignments: AssignmentWithUser[];
   className?: string;
   reassignmentInfo?: {
     hasReassignments: boolean;
@@ -32,7 +26,6 @@ export function DetailedHoursStatusCard({
   userAddress,
   userPhone,
   totalWorkers,
-  assignments,
   className = "",
   reassignmentInfo
 }: DetailedHoursStatusCardProps) {

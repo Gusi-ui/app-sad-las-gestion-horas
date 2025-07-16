@@ -4,44 +4,68 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { 
   ArrowLeft, 
   UserPlus, 
-  Clock, 
   AlertTriangle, 
   CheckCircle,
   User,
   Calendar,
   Users,
-  ArrowRight
+  ArrowRight,
+  Clock
 } from 'lucide-react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useNotificationHelpers } from '@/components/ui/toast-notification'
+import { Input as InputComponent } from '@/components/ui/input'
 
+interface DaySchedule {
+  enabled: boolean;
+  timeSlots: { start: string; end: string }[];
+}
+interface WeeklySchedule {
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
+  holiday: DaySchedule;
+}
 interface Assignment {
-  id: string
-  worker_id: string
-  user_id: string
-  weekly_hours: number
-  status: string
-  start_date: string
-  end_date?: string
-  assignment_type?: string
-  schedule?: any
+  id: string;
+  worker_id: string;
+  user_id: string;
+  weekly_hours: number;
+  status: string;
+  start_date: string;
+  end_date?: string;
+  assignment_type?: string;
+  schedule?: WeeklySchedule;
   worker: {
-    id: string
-    name: string
-    surname: string
-    worker_type: string
-  }
+    id: string;
+    name: string;
+    surname: string;
+    worker_type: string;
+  } | {
+    id: string;
+    name: string;
+    surname: string;
+    worker_type: string;
+  }[];
   user: {
-    id: string
-    name: string
-    surname: string
-    client_code: string
-  }
+    id: string;
+    name: string;
+    surname: string;
+    client_code: string;
+  } | {
+    id: string;
+    name: string;
+    surname: string;
+    client_code: string;
+  }[];
 }
 
 interface Worker {
@@ -74,6 +98,7 @@ export default function ReassignAssignmentPage() {
   }, [assignmentId])
 
   const loadAssignment = async () => {
+    if (!supabase) return;
     try {
       const { data, error } = await supabase
         .from('assignments')
@@ -101,6 +126,7 @@ export default function ReassignAssignmentPage() {
   }
 
   const loadAvailableWorkers = async () => {
+    if (!supabase) return;
     try {
       // Cargar trabajadoras activas
       const { data: workers, error } = await supabase
@@ -140,6 +166,7 @@ export default function ReassignAssignmentPage() {
     if (!selectedWorkerId || !assignment) return
 
     setReassigning(true)
+    if (!supabase) return;
     try {
       // 1. Actualizar la asignación con la nueva trabajadora
       const { error: updateError } = await supabase
@@ -164,9 +191,11 @@ export default function ReassignAssignmentPage() {
         console.warn('Error al registrar historial:', historyError)
         warning('Reasignación exitosa', 'No se pudo registrar en el historial')
       } else {
+        const workerObj = Array.isArray(assignment.worker) ? assignment.worker[0] : assignment.worker;
+        const newWorker = availableWorkers.find(w => w.id === selectedWorkerId);
         success(
-          'Reasignación exitosa', 
-          `Asignación reasignada de ${assignment.worker.name} ${assignment.worker.surname} a ${availableWorkers.find(w => w.id === selectedWorkerId)?.name} ${availableWorkers.find(w => w.id === selectedWorkerId)?.surname}`
+          'Reasignación exitosa',
+          `Asignación reasignada de ${workerObj?.name || ''} ${workerObj?.surname || ''} a ${newWorker?.name || ''} ${newWorker?.surname || ''}`
         )
       }
 
@@ -190,7 +219,7 @@ export default function ReassignAssignmentPage() {
 
   const selectedWorker = availableWorkers.find(w => w.id === selectedWorkerId)
   const canAssign = selectedWorker && 
-    (selectedWorker.current_weekly_hours + (assignment?.weekly_hours || 0)) <= selectedWorker.max_weekly_hours
+    ((selectedWorker.current_weekly_hours || 0) + (assignment?.weekly_hours || 0)) <= selectedWorker.max_weekly_hours
 
   if (loading) {
     return (
@@ -224,6 +253,9 @@ export default function ReassignAssignmentPage() {
       </div>
     )
   }
+
+  const workerObj = Array.isArray(assignment.worker) ? assignment.worker[0] : assignment.worker;
+  const userObj = Array.isArray(assignment.user) ? assignment.user[0] : assignment.user;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -262,9 +294,9 @@ export default function ReassignAssignmentPage() {
                 <User className="w-5 h-5 text-slate-400" />
                 <div>
                   <p className="font-medium text-slate-900">
-                    {assignment.worker.name} {assignment.worker.surname}
+                    {workerObj?.name} {workerObj?.surname}
                   </p>
-                  <p className="text-sm text-slate-500">{assignment.worker.worker_type}</p>
+                  <p className="text-sm text-slate-500">{workerObj?.worker_type}</p>
                 </div>
               </div>
 
@@ -272,9 +304,9 @@ export default function ReassignAssignmentPage() {
                 <Users className="w-5 h-5 text-slate-400" />
                 <div>
                   <p className="font-medium text-slate-900">
-                    {assignment.user.name} {assignment.user.surname}
+                    {userObj?.name} {userObj?.surname}
                   </p>
-                  <p className="text-sm text-slate-500">{assignment.user.client_code}</p>
+                  <p className="text-sm text-slate-500">{userObj?.client_code}</p>
                 </div>
               </div>
 
@@ -314,10 +346,10 @@ export default function ReassignAssignmentPage() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">
                   Buscar trabajadora
                 </label>
-                <Input
+                <InputComponent
                   placeholder="Buscar por nombre..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                 />
               </div>
 
@@ -344,7 +376,7 @@ export default function ReassignAssignmentPage() {
                         </div>
                         <div className="text-right">
                           <p className="text-sm font-medium text-slate-900">
-                            {worker.current_weekly_hours}h / {worker.max_weekly_hours}h
+                            {(Array.isArray(worker.current_weekly_hours) ? worker.current_weekly_hours[0] : worker.current_weekly_hours) || 0}h / {worker.max_weekly_hours}h
                           </p>
                           <p className="text-xs text-slate-500">horas semanales</p>
                         </div>
@@ -355,7 +387,7 @@ export default function ReassignAssignmentPage() {
                           <div className="flex items-center space-x-2">
                             <ArrowRight className="w-4 h-4 text-purple-600" />
                             <span className="text-sm text-purple-600 font-medium">
-                              Nueva carga: {worker.current_weekly_hours + assignment.weekly_hours}h/semana
+                              Nueva carga: {((worker.current_weekly_hours || 0) + (assignment?.weekly_hours || 0))}h/semana
                             </span>
                           </div>
                           {!canAssign && (
@@ -386,10 +418,10 @@ export default function ReassignAssignmentPage() {
                     <label className="block text-sm font-medium text-slate-700 mb-2">
                       Motivo del cambio (opcional)
                     </label>
-                    <Input
+                    <InputComponent
                       placeholder="Ej: Disponibilidad, preferencia del usuario, etc."
                       value={changeReason}
-                      onChange={(e) => setChangeReason(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setChangeReason(e.target.value)}
                     />
                   </div>
                   

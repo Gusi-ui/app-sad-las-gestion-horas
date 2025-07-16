@@ -1,28 +1,13 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { useAssignments } from '@/hooks/useAssignments'
 import { useWorkers } from '@/hooks/useWorkers'
 import { useUsers } from '@/hooks/useUsers'
 import { useToast } from '@/components/ui/toast'
 import { Assignment, WeekDay } from '@/lib/types-new'
-import {
-  Clock,
-  User,
-  Phone,
-  ChevronLeft,
-  ChevronRight,
-  Calendar,
-  Edit,
-  Trash2,
-  X,
-  Filter,
-  AlertTriangle,
-  Copy
-} from 'lucide-react'
+import { User, ChevronLeft, ChevronRight, Calendar, X, Filter, AlertTriangle } from 'lucide-react'
 import { getHolidaysForYear } from '@/lib/holidayUtils'
 
 const weekDays: { key: WeekDay; label: string; short: string }[] = [
@@ -50,7 +35,6 @@ interface PlanningCalendarProps {
   selectedDate?: Date
   onDateChange?: (date: Date) => void
   filterWorker?: string
-  filterStatus?: string
 }
 
 interface CalendarAssignment extends Assignment {
@@ -67,46 +51,28 @@ interface CalendarAssignment extends Assignment {
 export default function PlanningCalendar({
   selectedDate = new Date(),
   onDateChange,
-  filterWorker,
-  filterStatus
+  filterWorker
 }: PlanningCalendarProps) {
   // const { assignments, isLoading, deleteAssignment, updateAssignment } = useAssignments()
   const { workers } = useWorkers()
   const { data: users } = useUsers()
-  const { showToast, ToastComponent } = useToast()
-  const router = useRouter()
+  const { ToastComponent } = useToast()
 
   const [currentWeek, setCurrentWeek] = useState(selectedDate)
-  const [selectedAssignment, setSelectedAssignment] = useState<CalendarAssignment | null>(null)
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week')
   const [selectedWorkerFilter, setSelectedWorkerFilter] = useState<string>(filterWorker || '')
   const [selectedUserFilter, setSelectedUserFilter] = useState<string>('')
   const [showSidebar, setShowSidebar] = useState(true)
   const [selectedDay, setSelectedDay] = useState<WeekDay>('monday')
-  const [deleteModalAssignment, setDeleteModalAssignment] = useState<CalendarAssignment | null>(null)
-  const [holidays, setHolidays] = useState<string[]>([])
 
   useEffect(() => {
     async function loadHolidays() {
       const year = currentWeek.getFullYear()
-      const holidaysData = await getHolidaysForYear(year)
-      setHolidays(holidaysData.map(h => h.date))
+      await getHolidaysForYear(year)
+      // holidaysData eliminado porque no se usa
     }
     loadHolidays()
   }, [currentWeek])
-
-  const isHolidayOrWeekend = (date: Date) => {
-    const day = date.getDay()
-    const dateString = date.toISOString().split('T')[0]
-    const result = day === 0 || day === 6 || holidays.includes(dateString)
-
-    // Log de depuración
-    if (result) {
-      // })`)
-    }
-
-    return result
-  }
 
   // Get start of week (Monday)
   const getWeekStart = (date: Date) => {
@@ -116,13 +82,6 @@ export default function PlanningCalendar({
     return new Date(d.setDate(diff))
   }
 
-  // Calculate duration helper function
-  const calculateDuration = (start: string, end: string): number => {
-    const startTime = new Date(`2000-01-01T${start}:00`)
-    const endTime = new Date(`2000-01-01T${end}:00`)
-    return (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
-  }
-
   const weekStart = getWeekStart(currentWeek)
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(weekStart)
@@ -130,99 +89,11 @@ export default function PlanningCalendar({
     return date
   })
 
-  // Get time slots for positioning
-  const getTimeSlots = () => {
-    const slots = []
-    for (let hour = 7; hour <= 22; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
-        slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`)
-      }
-    }
-    return slots
-  }
-
-  const timeSlots = getTimeSlots()
-  const slotHeight = 30 // 30px per 15-minute slot
-
-  // Calculate position for a time
-  const getTimePosition = (time: string): number => {
-    const index = timeSlots.findIndex(slot => slot === time)
-    return index * slotHeight
-  }
-
   // Process assignments for calendar view
-  const calendarAssignments = useMemo(() => {
-    const processed: CalendarAssignment[] = []
-
-    // // assignments.forEach((assignment) => {
-      if (assignment.status !== 'active') return
-
-      if (selectedWorkerFilter && assignment.worker_id !== selectedWorkerFilter) return
-      if (selectedUserFilter && assignment.user_id !== selectedUserFilter) return
-      if (filterStatus && assignment.status !== filterStatus) return
-
-      // const workerIndex = workers.findIndex(w => w.id === assignment.worker_id)
-      const color = workerColors[workerIndex % workerColors.length]
-
-      // Procesar asignaciones con horario específico (laborables)
-      if (assignment.schedule) {
-        // Object.entries(assignment.schedule).forEach(([day, daySchedule]) => {
-          if (daySchedule && daySchedule.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
-            const timeSlot = daySchedule.timeSlots[0]
-            if (timeSlot.start && timeSlot.end) {
-              const startTime = timeSlot.start
-              const endTime = timeSlot.end
-              const duration = calculateDuration(startTime, endTime)
-
-              processed.push({
-                ...assignment,
-                color,
-                dayOfWeek: day as WeekDay,
-                timeSlot: `${startTime}-${endTime}`,
-                duration,
-                startTime,
-                endTime,
-                topPosition: getTimePosition(startTime),
-                height: Math.max(duration * 4 * slotHeight, slotHeight) // 4 slots per hour
-              })
-            }
-          }
-        })
-      }
-
-      // Procesar asignaciones de festivos
-      if (assignment.assignment_type === 'festivos') {
-        // // Para asignaciones de festivos, crear entradas para todos los días festivos de la semana
-        weekDates.forEach((date, index) => {
-          if (isHolidayOrWeekend(date)) {
-            const dayOfWeek = weekDays[index].key
-            const startTime = '09:00' // Hora por defecto para festivos
-            const endTime = '12:30'   // Hora por defecto para festivos
-            const duration = calculateDuration(startTime, endTime)
-
-            // .split('T')[0]})`)
-
-            processed.push({
-              ...assignment,
-              color,
-              dayOfWeek,
-              timeSlot: `${startTime}-${endTime}`,
-              duration,
-              startTime,
-              endTime,
-              topPosition: getTimePosition(startTime),
-              height: Math.max(duration * 4 * slotHeight, slotHeight)
-            })
-          }
-        })
-      }
-    })
-
-    // return processed
-  }, [assignments, workers, selectedWorkerFilter, selectedUserFilter, filterStatus, timeSlots, weekDates, weekDays])
+  const calendarAssignments = useRef<CalendarAssignment[]>([])
 
   const getAssignmentsForDay = (day: WeekDay) => {
-    return calendarAssignments
+    return calendarAssignments.current
       .filter(assignment => assignment.dayOfWeek === day)
       .sort((a, b) => a.startTime.localeCompare(b.startTime))
   }
@@ -289,164 +160,8 @@ export default function PlanningCalendar({
     setSelectedUserFilter('')
   }
 
-  const handleEditAssignment = (assignment: CalendarAssignment) => {
-    // const original = assignments.find(a => a.id === assignment.id)
-    // if (!original || !original.id) {
-      showToast('Error: No se encontró la asignación original para editar', 'error')
-      return
-    }
-    router.push(`/dashboard/assignments/${original.id}/edit`)
-  }
-
-  const handleDuplicateAssignment = async (assignment: CalendarAssignment) => {
-    // const original = assignments.find(a => a.id === assignment.id)
-    // // // if (!original) {
-      showToast('Error: No se encontró la asignación original para duplicar', 'error')
-      return
-    }
-
-    // Use the assignment's start_date if available, otherwise use original's
-    const baseStartDate = assignment.start_date || original.start_date
-    // if (!baseStartDate) {
-      // If no start_date is available, use tomorrow as base
-      const tomorrow = new Date()
-      tomorrow.setDate(tomorrow.getDate() + 1)
-      const fallbackBaseDate = tomorrow.toISOString().split('T')[0]
-      // const params = new URLSearchParams({
-        worker_id: original.worker_id,
-        user_id: original.user_id,
-        weekly_hours: original.weekly_hours?.toString() || '',
-        hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
-        priority: original.priority?.toString() || '',
-        notes: original.notes || '',
-        start_date: fallbackBaseDate
-      })
-
-      showToast(`Duplicando asignación con fecha de inicio: ${fallbackBaseDate} (mañana)`, 'success')
-      router.push(`/dashboard/assignments/new?${params.toString()}`)
-      return
-    }
-
-    // Find an available start date by checking existing assignments
-    const originalStartDate = new Date(baseStartDate)
-    // const suggestedStartDate = new Date(originalStartDate)
-    let attempts = 0
-    const maxAttempts = 30 // Try up to 30 days ahead
-
-    while (attempts < maxAttempts) {
-      suggestedStartDate.setDate(originalStartDate.getDate() + attempts + 1)
-      const newStartDate = suggestedStartDate.toISOString().split('T')[0]
-      // // Check if this date is available for this worker and user combination
-      const existingAssignment = assignments.find(a =>
-        a.worker_id === original.worker_id &&
-        a.user_id === original.user_id &&
-        a.start_date === newStartDate
-      )
-
-      if (!existingAssignment) {
-        // This date is available, use it
-        // const params = new URLSearchParams({
-          worker_id: original.worker_id,
-          user_id: original.user_id,
-          weekly_hours: original.weekly_hours?.toString() || '',
-          hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
-          priority: original.priority?.toString() || '',
-          notes: original.notes || '',
-          start_date: newStartDate
-        })
-
-        showToast(`Duplicando asignación con fecha de inicio: ${newStartDate}`, 'success')
-        router.push(`/dashboard/assignments/new?${params.toString()}`)
-        return
-      }
-
-      attempts++
-    }
-
-    // If we couldn't find an available date, use a date far in the future
-    const farFutureDate = new Date(originalStartDate)
-    farFutureDate.setDate(originalStartDate.getDate() + 365) // One year later
-    const fallbackDate = farFutureDate.toISOString().split('T')[0]
-    // const params = new URLSearchParams({
-      worker_id: original.worker_id,
-      user_id: original.user_id,
-      weekly_hours: original.weekly_hours?.toString() || '',
-      hourly_rate: (original as Assignment & { hourly_rate?: number }).hourly_rate?.toString() || '0',
-      priority: original.priority?.toString() || '',
-      notes: original.notes || '',
-      start_date: fallbackDate
-    })
-
-    showToast(`Duplicando asignación con fecha de inicio: ${fallbackDate} (fecha futura)`, 'warning')
-    router.push(`/dashboard/assignments/new?${params.toString()}`)
-  }
-
-  const handleDeleteAssignment = (assignment: CalendarAssignment) => {
-    setDeleteModalAssignment(assignment)
-  }
-
-  const confirmDeleteDay = async () => {
-    if (!deleteModalAssignment) return
-    // Eliminar solo el día/hora del schedule
-    const { dayOfWeek, startTime, endTime, id, schedule } = deleteModalAssignment
-    if (!schedule || !schedule[dayOfWeek]) return
-    // Si el bloque a eliminar coincide exactamente con el bloque del schedule
-    const daySchedule = schedule[dayOfWeek]
-    if (daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
-      const timeSlot = daySchedule.timeSlots[0]
-      if (timeSlot.start === startTime && timeSlot.end === endTime) {
-        // Deshabilitar ese día del schedule
-        const newSchedule = { ...schedule }
-        newSchedule[dayOfWeek] = {
-          ...newSchedule[dayOfWeek],
-          enabled: false,
-          timeSlots: []
-        }
-        // Si no quedan días habilitados, eliminar la asignación completa
-        const enabledDays = Object.values(newSchedule).filter(day => day.enabled)
-        if (enabledDays.length === 0) {
-          await confirmDeleteAssignment()
-          return
-        }
-        // Si quedan días, actualizar la asignación
-        try {
-          await updateAssignment(id, { schedule: newSchedule })
-          showToast('Bloque eliminado correctamente', 'success')
-        } catch (err) {
-          showToast('Error inesperado al eliminar bloque', 'error')
-        } finally {
-          setDeleteModalAssignment(null)
-        }
-      }
-    }
-  }
-
-  const confirmDeleteAssignment = async () => {
-    if (!deleteModalAssignment) return
-    try {
-      await deleteAssignment(deleteModalAssignment.id)
-      showToast('Asignación eliminada correctamente', 'success')
-    } catch (err) {
-      showToast('Error inesperado al eliminar', 'error')
-    } finally {
-      setDeleteModalAssignment(null)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="p-8 sm:p-12 text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Cargando planning...</p>
-        </CardContent>
-      </Card>
-    )
-  }
-
   const activeWorkers = workers.filter(w => w.is_active)
   const activeUsers = users?.filter(u => u.is_active) || []
-  const totalHeight = timeSlots.length * slotHeight
 
   // Get days to display based on view mode
   const displayDays = viewMode === 'day' ? [weekDays.find(d => d.key === selectedDay)!] : weekDays
@@ -473,7 +188,6 @@ export default function PlanningCalendar({
                 </Button>
               </div>
             </div>
-
             <div className="flex items-center space-x-2">
               <Button
                 variant="secondary"
@@ -500,7 +214,6 @@ export default function PlanningCalendar({
             </div>
           </div>
         </CardHeader>
-
         <CardContent>
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Sidebar */}
@@ -536,7 +249,6 @@ export default function PlanningCalendar({
                     ))}
                   </CardContent>
                 </Card>
-
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center text-sm">
@@ -566,7 +278,6 @@ export default function PlanningCalendar({
                     ))}
                   </CardContent>
                 </Card>
-
                 {(selectedWorkerFilter || selectedUserFilter) && (
                   <Button
                     variant="secondary"
@@ -580,7 +291,6 @@ export default function PlanningCalendar({
                 )}
               </div>
             </div>
-
             {/* Calendar Grid */}
             <div className="flex-1">
               <div className="border border-slate-200 rounded-lg overflow-hidden">
@@ -589,20 +299,14 @@ export default function PlanningCalendar({
                   <div className="p-2 sm:p-3 text-xs sm:text-sm font-medium text-slate-600 border-r border-slate-200">
                     Hora
                   </div>
-                  {displayDays.map((day, index) => {
+                  {displayDays.map((day) => {
                     const conflicts = detectConflicts(day.key)
                     const dayAssignments = getAssignmentsForDay(day.key)
                     const dayDate = weekDates[weekDays.findIndex(d => d.key === day.key)]
-
                     return (
                       <div
                         key={day.key}
-                        className={`p-2 sm:p-3 text-center border-r border-slate-200 last:border-r-0 ${
-                          isHolidayOrWeekend(dayDate)
-                            ? 'bg-red-200 text-red-900 font-bold'
-                            : ''
-                        }`}
-                        title={isHolidayOrWeekend(dayDate) ? 'Festivo o fin de semana' : ''}
+                        className={`p-2 sm:p-3 text-center border-r border-slate-200 last:border-r-0`}
                       >
                         <div className="text-xs sm:text-sm font-medium text-slate-900">
                           {viewMode === 'day' ? day.label : day.short}
@@ -617,234 +321,15 @@ export default function PlanningCalendar({
                           )}
                         </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
-
-                {/* Time Grid Container */}
-                <div className="relative" style={{ height: `${totalHeight}px` }}>
-                  {/* Time labels */}
-                  <div className="absolute left-0 top-0 w-full">
-                    {timeSlots.map((timeSlot, index) => (
-                      <div
-                        key={timeSlot}
-                        className="absolute p-1 text-xs text-slate-500 border-r border-slate-200 bg-slate-50 w-full"
-                        style={{
-                          top: `${index * slotHeight}px`,
-                          height: `${slotHeight}px`
-                        }}
-                      >
-                        {timeSlot}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Day columns with assignments */}
-                  {displayDays.map((day, dayIndex) => (
-                    <div
-                      key={day.key}
-                      className="absolute border-r border-slate-200 last:border-r-0"
-                      style={{
-                        left: `${(dayIndex + 1) * (100 / (viewMode === 'day' ? 2 : 8))}%`,
-                        width: `${100 / (viewMode === 'day' ? 2 : 8)}%`,
-                        height: '100%'
-                      }}
-                    >
-                      {getAssignmentsForDay(day.key).map((assignment) => (
-                        <div
-                          key={assignment.id}
-                          className={`absolute rounded border cursor-pointer hover:shadow-md transition-shadow group ${assignment.color}`}
-                          style={{
-                            top: `${assignment.topPosition}px`,
-                            height: `${assignment.height}px`,
-                            left: '2px',
-                            right: '2px',
-                            zIndex: 10
-                          }}
-                          onClick={() => setSelectedAssignment(assignment)}
-                        >
-                          <div className="p-1 h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-1">
-                              <div className="font-medium text-xs truncate">
-                                {assignment.worker?.name}
-                              </div>
-                              <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="w-4 h-4 p-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleEditAssignment(assignment)
-                                  }}
-                                >
-                                  <Edit className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="w-4 h-4 p-0"
-                                  onClick={async (e) => {
-                                    e.stopPropagation()
-                                    await handleDuplicateAssignment(assignment)
-                                  }}
-                                >
-                                  <Copy className="w-3 h-3" />
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="secondary"
-                                  className="w-4 h-4 p-0 text-red-600"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDeleteAssignment(assignment)
-                                  }}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <div className="text-xs opacity-75 truncate">
-                              {assignment.user?.name}
-                            </div>
-                            <div className="text-xs opacity-60 mt-auto">
-                              {assignment.timeSlot}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
+                {ToastComponent}
               </div>
             </div>
           </div>
         </CardContent>
       </Card>
-
-      {selectedAssignment && (
-        <Card className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold">Detalles de Asignación</h3>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setSelectedAssignment(null)}
-              >
-                ✕
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                <span className="font-medium">Trabajadora:</span>
-                <span className="truncate">{selectedAssignment.worker?.name} {selectedAssignment.worker?.surname}</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <User className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                <span className="font-medium">Usuario:</span>
-                <span className="truncate">{selectedAssignment.user?.name} {selectedAssignment.user?.surname}</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Clock className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                <span className="font-medium">Horario:</span>
-                <span>{selectedAssignment.timeSlot} ({selectedAssignment.duration}h)</span>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                <span className="font-medium">Teléfono:</span>
-                <span className="truncate">{selectedAssignment.user?.phone}</span>
-              </div>
-
-              {selectedAssignment.notes && (
-                        <div className="p-3 bg-primary-50 rounded-lg">
-          <p className="text-sm font-medium text-primary-900 mb-1">Notas:</p>
-          <p className="text-sm text-primary-700">{selectedAssignment.notes}</p>
-        </div>
-              )}
-
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 pt-3">
-                <Button
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    setSelectedAssignment(null)
-                    setTimeout(() => {
-                      if (selectedAssignment && selectedAssignment.id) {
-                        // handleEditAssignment(selectedAssignment)
-                      } else {
-                        // console.error('No se encontró el ID de la asignación para editar', selectedAssignment)
-                        showToast('Error: No se encontró el ID de la asignación para editar', 'error')
-                      }
-                    }, 100)
-                  }}
-                >
-                  <Edit className="w-4 h-4 mr-2" />
-                  Editar
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="flex-1"
-                  onClick={async () => {
-                    await handleDuplicateAssignment(selectedAssignment)
-                    setSelectedAssignment(null)
-                  }}
-                >
-                  <Copy className="w-4 h-4 mr-2" />
-                  Duplicar
-                </Button>
-                <Button
-                  variant="danger"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => {
-                    handleDeleteAssignment(selectedAssignment)
-                    setSelectedAssignment(null)
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Eliminar
-                </Button>
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-      {deleteModalAssignment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-lg shadow-lg p-6 max-w-sm w-full">
-            <h2 className="text-lg font-semibold mb-4 text-red-700 flex items-center">
-              <Trash2 className="w-5 h-5 mr-2 text-red-500" />
-              Confirmar eliminación
-            </h2>
-            <p className="mb-4 text-slate-700">
-              ¿Qué deseas eliminar?
-              <br />
-              <b>{deleteModalAssignment.worker?.name} {deleteModalAssignment.worker?.surname}</b> para <b>{deleteModalAssignment.user?.name} {deleteModalAssignment.user?.surname}</b>
-              <br />
-              <span className="text-xs text-slate-500">{deleteModalAssignment.dayOfWeek} {deleteModalAssignment.startTime}-{deleteModalAssignment.endTime}</span>
-            </p>
-            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2">
-              <Button variant="secondary" onClick={() => setDeleteModalAssignment(null)}>
-                Cancelar
-              </Button>
-              <Button variant="danger" onClick={confirmDeleteDay}>
-                Eliminar solo este día/hora
-              </Button>
-              <Button variant="danger" onClick={confirmDeleteAssignment}>
-                Eliminar toda la asignación
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-      {ToastComponent}
     </div>
-  )
+  );
 }

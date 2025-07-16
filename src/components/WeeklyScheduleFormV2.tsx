@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock } from 'lucide-react'
 import { TimeRangeSelector } from './TimeRangeSelector'
@@ -35,18 +35,16 @@ interface WeeklyScheduleFormV2Props {
   onTotalHoursChange: (totalHours: number) => void
 }
 
-// Función para comparar dos schedules
-function isScheduleEqual(a: Record<string, TimeSlot[]>, b: Record<string, TimeSlot[]>) {
-  const days = Object.keys(a)
-  for (const day of days) {
-    const slotsA = a[day] || []
-    const slotsB = b[day] || []
-    if (slotsA.length !== slotsB.length) return false
-    for (let i = 0; i < slotsA.length; i++) {
-      if (slotsA[i].start !== slotsB[i].start || slotsA[i].end !== slotsB[i].end) return false
-    }
-  }
-  return true
+// Función para construir el estado inicial del schedule
+function buildInitialSchedule(value: Record<string, TimeSlot[]>): WeeklySchedule {
+  const initial: WeeklySchedule = {};
+  DAYS_OF_WEEK.forEach(day => {
+    initial[day.value] = {
+      enabled: value[day.value] && value[day.value].length > 0,
+      timeSlots: value[day.value] || []
+    };
+  });
+  return initial;
 }
 
 export function WeeklyScheduleFormV2({ 
@@ -55,36 +53,13 @@ export function WeeklyScheduleFormV2({
   totalHours, 
   onTotalHoursChange 
 }: WeeklyScheduleFormV2Props) {
-  const [schedule, setSchedule] = useState<WeeklySchedule>(() => {
-    
-    const initial: WeeklySchedule = {}
-    
-    // Inicializar todos los días como deshabilitados
-    DAYS_OF_WEEK.forEach(day => {
-      initial[day.value] = { 
-        enabled: false, 
-        timeSlots: value[day.value] || []
-      }
-    })
-    
-    // Habilitar días que ya tienen horarios
-    Object.entries(value).forEach(([day, timeSlots]) => {
-      if (timeSlots && timeSlots.length > 0) {
-        initial[day] = {
-          enabled: true,
-          timeSlots: timeSlots
-        }
-      }
-    })
-    
-    return initial
-  })
+  const [schedule, setSchedule] = useState<WeeklySchedule>(() => buildInitialSchedule(value))
 
   // Calcular total de horas automáticamente
-  const calculateTotalHours = () => {
+  const calculateTotalHours = useCallback(() => {
     const weeklyTotal = Object.entries(schedule)
-      .filter(([_, config]) => config.enabled)
-      .reduce((sum, [_, config]) => {
+      .filter(([, config]) => config.enabled)
+      .reduce((sum, [, config]) => {
         const dayHours = config.timeSlots.reduce((daySum, slot) => {
           const [startHour, startMinute] = slot.start.split(':').map(Number)
           const [endHour, endMinute] = slot.end.split(':').map(Number)
@@ -98,45 +73,30 @@ export function WeeklyScheduleFormV2({
     
     // Aproximadamente 4.3 semanas por mes
     return Math.round(weeklyTotal * 4.3)
-  }
+  }, [schedule])
 
   // Actualizar cuando cambia el value (datos iniciales)
   useEffect(() => {
-    // Solo sincronizar si el value es diferente al schedule actual
-    const currentSchedule: Record<string, TimeSlot[]> = {}
-    Object.entries(schedule).forEach(([day, config]) => {
-      currentSchedule[day] = config.timeSlots
-    })
-    if (!isScheduleEqual(value, currentSchedule)) {
-      const newSchedule: WeeklySchedule = {}
-      DAYS_OF_WEEK.forEach(day => {
-        newSchedule[day.value] = {
-          enabled: value[day.value] && value[day.value].length > 0,
-          timeSlots: value[day.value] || []
-        }
-      })
-      setSchedule(newSchedule)
-    }
+    setSchedule(
+      buildInitialSchedule(value)
+    )
   }, [value])
 
   // Actualizar cuando cambia el schedule
   useEffect(() => {
-    const newSchedule: Record<string, TimeSlot[]> = {}
-    
-    Object.entries(schedule).forEach(([day, config]) => {
+    const newSchedule: Record<string, TimeSlot[]> = {};
+    Object.entries(schedule).forEach(([dayOfWeek, config]) => {
       if (config.enabled && config.timeSlots.length > 0) {
-        newSchedule[day] = config.timeSlots
+        newSchedule[dayOfWeek] = config.timeSlots;
       }
-    })
-    
-    onChange(newSchedule)
-    
+    });
+    onChange(newSchedule);
     // Auto-calcular horas totales
     const autoTotal = calculateTotalHours()
     if (autoTotal !== totalHours) {
       onTotalHoursChange(autoTotal)
     }
-  }, [schedule])
+  }, [schedule, onChange, onTotalHoursChange, calculateTotalHours, totalHours])
 
   const toggleDay = (dayOfWeek: string) => {
     setSchedule(prev => {
@@ -163,8 +123,8 @@ export function WeeklyScheduleFormV2({
   }
 
   const weeklyTotal = Object.entries(schedule)
-    .filter(([_, config]) => config.enabled)
-    .reduce((sum, [_, config]) => {
+    .filter(([, config]) => config.enabled)
+    .reduce((sum, [, config]) => {
       const dayHours = config.timeSlots.reduce((daySum, slot) => {
         const [startHour, startMinute] = slot.start.split(':').map(Number)
         const [endHour, endMinute] = slot.end.split(':').map(Number)
@@ -176,7 +136,7 @@ export function WeeklyScheduleFormV2({
       return sum + dayHours
     }, 0)
 
-  const enabledDays = Object.entries(schedule).filter(([_, config]) => config.enabled).length
+  const enabledDays = Object.entries(schedule).filter(([, config]) => config.enabled).length
 
   return (
     <Card>

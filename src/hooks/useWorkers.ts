@@ -30,7 +30,7 @@ export function useWorkers() {
         .order('name', { ascending: true })
 
       if (statsError) {
-        console.warn('Error fetching worker stats:', statsError)
+        setError('Error fetching worker stats: ' + statsError.message)
         // Don't throw, stats are optional
       }
 
@@ -42,9 +42,8 @@ export function useWorkers() {
       }))
       setWorkers(processedWorkers)
       setWorkerStats(statsData || [])
-    } catch (err) {
-      console.error('Error fetching workers:', err)
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+    } catch (err: unknown) {
+      setError('Error fetching workers: ' + (err instanceof Error ? err.message : 'Error desconocido'))
     } finally {
       setIsLoading(false)
     }
@@ -63,8 +62,8 @@ export function useWorkers() {
       // Refresh the list
       await fetchWorkers()
       return { data, error: null }
-    } catch (err) {
-      console.error('Error creating worker:', err)
+    } catch (err: unknown) {
+      setError('Error creating worker: ' + (err instanceof Error ? err.message : 'Error al crear trabajadora'))
       return { data: null, error: err instanceof Error ? err.message : 'Error al crear trabajadora' }
     }
   }, [fetchWorkers])
@@ -83,8 +82,8 @@ export function useWorkers() {
       // Refresh the list
       await fetchWorkers()
       return { data, error: null }
-    } catch (err) {
-      console.error('Error updating worker:', err)
+    } catch (err: unknown) {
+      setError('Error updating worker: ' + (err instanceof Error ? err.message : 'Error al actualizar trabajadora'))
       return { data: null, error: err instanceof Error ? err.message : 'Error al actualizar trabajadora' }
     }
   }, [fetchWorkers])
@@ -101,8 +100,8 @@ export function useWorkers() {
       // Refresh the list
       await fetchWorkers()
       return { error: null }
-    } catch (err) {
-      console.error('Error deleting worker:', err)
+    } catch (err: unknown) {
+      setError('Error deleting worker: ' + (err instanceof Error ? err.message : 'Error al eliminar trabajadora'))
       return { error: err instanceof Error ? err.message : 'Error al eliminar trabajadora' }
     }
   }, [fetchWorkers])
@@ -117,8 +116,8 @@ export function useWorkers() {
 
       if (error) throw error
       return { data, error: null }
-    } catch (err) {
-      console.error('Error fetching worker:', err)
+    } catch (err: unknown) {
+      setError('Error fetching worker: ' + (err instanceof Error ? err.message : 'Error al obtener trabajadora'))
       return { data: null, error: err instanceof Error ? err.message : 'Error al obtener trabajadora' }
     }
   }, [])

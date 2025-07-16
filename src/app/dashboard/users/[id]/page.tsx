@@ -32,6 +32,10 @@ export default function UserDetailPage() {
   const [loading, setLoading] = useState(true)
 
   const fetchUser = useCallback(async () => {
+    if (!userId || !supabase) {
+      setLoading(false)
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('users')
@@ -40,15 +44,13 @@ export default function UserDetailPage() {
         .single()
 
       if (error) {
-        console.error('Error fetching user:', error)
         showToast('Error al cargar usuario', 'error')
         router.push('/dashboard/users')
         return
       }
 
       setUser(data)
-    } catch (error) {
-      console.error('Error fetching user:', error)
+    } catch {
       showToast('Error inesperado al cargar usuario', 'error')
       router.push('/dashboard/users')
     } finally {

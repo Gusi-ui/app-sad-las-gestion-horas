@@ -11,7 +11,8 @@ export default function NewUserPage() {
 
   const handleSubmit = async (formData: UserFormData) => {
     try {
-      // const userData = {
+      if (!supabase) return
+      const userData = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
         phone: formData.phone.replace(/\s/g, ''),
@@ -21,33 +22,25 @@ export default function NewUserPage() {
         monthly_hours: formData.monthly_hours
       }
 
-      // const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .insert([userData])
         .select()
         .single()
 
-      // if (error) {
-        console.error('❌ Supabase error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        })
+      if (error) {
         showToast(`Error al crear usuario: ${error.message}`, 'error')
         return
       }
 
       if (!data) {
-        console.error('❌ No data returned from insert')
         showToast('Error: No se recibieron datos del servidor', 'error')
         return
       }
 
-      // showToast('Usuario creado correctamente', 'success')
+      showToast('Usuario creado correctamente', 'success')
       router.push('/dashboard/users')
     } catch (error) {
-      console.error('❌ Unexpected error creating user:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       showToast(`Error inesperado al crear usuario: ${errorMessage}`, 'error')
     }

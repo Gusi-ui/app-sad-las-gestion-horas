@@ -50,7 +50,7 @@ export default function WorkerDashboard() {
           return;
         }
         setWorker(workerData);
-      } catch (err) {
+      } catch {
         setError('Error al cargar los datos de la trabajadora');
       } finally {
         setLoading(false);

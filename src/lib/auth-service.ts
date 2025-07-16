@@ -3,7 +3,7 @@
 // =====================================================
 
 import { createClient } from './supabase'
-import { AuthUser, AdminUser, WorkerUser, LoginCredentials, UserRole, RolePermissions, ROLE_PERMISSIONS } from './auth-types'
+import { AuthUser, AdminUser, WorkerUser, LoginCredentials, RolePermissions, ROLE_PERMISSIONS } from './auth-types'
 
 export class AuthService {
   private supabase = createClient()
@@ -92,8 +92,7 @@ export class AuthService {
       }
 
       return { user: adminUser, error: null }
-    } catch (error) {
-      console.error('Error inesperado en loginAdmin:', error)
+    } catch {
       return { user: null, error: 'Error interno del servidor' }
     }
   }
@@ -158,8 +157,7 @@ export class AuthService {
       }
 
       return { user: workerUser, error: null }
-    } catch (error) {
-      console.error('Error en loginWorker:', error)
+    } catch {
       return { user: null, error: 'Error interno del servidor' }
     }
   }
@@ -248,8 +246,7 @@ export class AuthService {
       }
 
       return { user: null, error: 'Usuario no encontrado en el sistema' }
-    } catch (error) {
-      console.error('Error en getCurrentUser:', error)
+    } catch {
       return { user: null, error: 'Error interno del servidor' }
     }
   }
@@ -266,8 +263,7 @@ export class AuthService {
 
       const { error } = await this.supabase.auth.signOut()
       return { error: error?.message || null }
-    } catch (error) {
-      console.error('Error en logout:', error)
+    } catch {
       return { error: 'Error interno del servidor' }
     }
   }

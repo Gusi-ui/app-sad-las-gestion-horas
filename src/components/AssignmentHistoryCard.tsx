@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
   History,
   User,
   Calendar,
-  Clock,
   ChevronDown,
   ChevronUp,
   ArrowRight,
@@ -43,18 +42,10 @@ export default function AssignmentHistoryCard({ assignmentId, className = '' }: 
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState(false)
 
-  useEffect(() => {
-    // assignmentId para depuración
-    if (assignmentId) {
-      fetchAssignmentHistory();
-    }
-  }, [assignmentId]);
-
-  const loadHistory = async () => {
+  const loadHistory = useCallback(async () => {
     try {
       // assignmentId para depuración
       if (!supabase) {
-        console.error('Cliente Supabase no disponible')
         setLoading(false)
         return
       }
@@ -75,7 +66,6 @@ export default function AssignmentHistoryCard({ assignmentId, className = '' }: 
         .order('created_at', { ascending: false })
 
       if (historyError) {
-        console.error('Error al cargar historial:', historyError)
         // No mostrar error al usuario, simplemente mostrar historial vacío
         setHistory([])
         setLoading(false)
@@ -113,7 +103,6 @@ export default function AssignmentHistoryCard({ assignmentId, className = '' }: 
         .in('id', Array.from(workerIds))
 
       if (workersError) {
-        console.error('Error al cargar trabajadores:', workersError)
         // Mostrar historial sin datos de trabajadores
         const enrichedHistory = historyData.map(item => ({
           ...item,
@@ -139,14 +128,20 @@ export default function AssignmentHistoryCard({ assignmentId, className = '' }: 
       }))
 
       setHistory(enrichedHistory)
-    } catch (error) {
-      console.error('Error inesperado en loadHistory:', error, 'assignmentId:', assignmentId);
+    } catch {
       // En caso de error, mostrar historial vacío
       setHistory([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [assignmentId])
+
+  useEffect(() => {
+    // assignmentId para depuración
+    if (assignmentId) {
+      loadHistory();
+    }
+  }, [assignmentId, loadHistory]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('es-ES', {

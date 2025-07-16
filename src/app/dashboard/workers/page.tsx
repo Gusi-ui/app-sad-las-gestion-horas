@@ -9,7 +9,7 @@ import { Modal } from '@/components/ui/modal'
 import { useToast } from '@/components/ui/toast'
 import { useWorkers } from '@/hooks/useWorkers'
 import { supabase } from '@/lib/supabase'
-import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, AlertTriangle, Mail, Award, Search } from 'lucide-react'
+import { Plus, Edit, Eye, Phone, MapPin, Clock, Trash2, ArrowLeft, Settings, LogOut, Menu, Filter, Users, UserX, UserCheck, User, Calendar, Mail, Award, Search } from 'lucide-react'
 import { Worker } from '@/lib/types'
 
 // Configuración para evitar el prerender estático
@@ -25,7 +25,7 @@ interface ModalState {
 export default function WorkersPage() {
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
-  const { workers, isLoading, error, deleteWorker } = useWorkers()
+  const { workers, isLoading, deleteWorker } = useWorkers()
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [showInactiveWorkers, setShowInactiveWorkers] = useState(false)
   const [modalState, setModalState] = useState<ModalState>({
@@ -65,16 +65,15 @@ export default function WorkersPage() {
     if (!modalState.worker) return
 
     try {
-      const { error } = await deleteWorker(modalState.worker.id)
+      const { error: apiError } = await deleteWorker(modalState.worker.id)
 
-      if (error) {
+      if (apiError) {
         showToast('Error al desactivar trabajadora', 'error')
         return
       }
 
       showToast('Trabajadora desactivada correctamente', 'success')
-    } catch (error) {
-      console.error('Error deactivating worker:', error)
+    } catch {
       showToast('Error inesperado al desactivar trabajadora', 'error')
     }
   }
@@ -83,16 +82,15 @@ export default function WorkersPage() {
     if (!modalState.worker) return
 
     try {
-      const { error } = await deleteWorker(modalState.worker.id)
+      const { error: apiError } = await deleteWorker(modalState.worker.id)
 
-      if (error) {
+      if (apiError) {
         showToast('Error al eliminar trabajadora', 'error')
         return
       }
 
       showToast('Trabajadora eliminada definitivamente', 'success')
-    } catch (error) {
-      console.error('Error deleting worker:', error)
+    } catch {
       showToast('Error inesperado al eliminar trabajadora', 'error')
     }
   }
@@ -103,13 +101,13 @@ export default function WorkersPage() {
     try {
       // Implementar reactivación de trabajadora
       showToast('Trabajadora reactivada correctamente', 'success')
-    } catch (error) {
-      console.error('Error restoring worker:', error)
+    } catch {
       showToast('Error inesperado al reactivar trabajadora', 'error')
     }
   }
 
   const handleLogout = async () => {
+    if (!supabase) return
     await supabase.auth.signOut()
     router.push('/')
   }
@@ -196,22 +194,6 @@ export default function WorkersPage() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-slate-600">Cargando trabajadoras...</p>
         </div>
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-4">Error al cargar trabajadoras: {error}</p>
-            <Link href="/dashboard">
-              <Button>Volver al Dashboard</Button>
-            </Link>
-          </CardContent>
-        </Card>
       </div>
     )
   }

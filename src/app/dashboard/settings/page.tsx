@@ -24,7 +24,6 @@ export default function SettingsPage() {
   const router = useRouter()
   const { showToast, ToastComponent } = useToast()
   const [user, setUser] = useState<SupabaseUser | null>(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   
   const [settings, setSettings] = useState({
@@ -41,12 +40,12 @@ export default function SettingsPage() {
 
   useEffect(() => {
     const getUser = async () => {
+      if (!supabase) return
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
       } else {
         setUser(user)
-        setLoading(false)
       }
     }
     getUser()
@@ -55,12 +54,12 @@ export default function SettingsPage() {
   const handleSave = async () => {
     setSaving(true)
     try {
+      if (!supabase) return
       // Aquí guardaríamos la configuración en la base de datos
       // await supabase.from('app_settings').upsert(settings)
       
       showToast('Configuración guardada correctamente', 'success')
     } catch {
-      console.error('Error saving settings')
       showToast('Error al guardar la configuración', 'error')
     } finally {
       setSaving(false)
@@ -69,6 +68,7 @@ export default function SettingsPage() {
 
   const exportData = async () => {
     try {
+      if (!supabase) return
       const { data: users } = await supabase
         .from('users')
         .select('*')

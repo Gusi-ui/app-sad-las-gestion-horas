@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { AuthUser, AuthState } from '@/lib/auth-types'
+import { AuthState } from '@/lib/auth-types'
 import { authService } from '@/lib/auth-service'
 
 interface AuthContextType extends AuthState {
@@ -28,13 +28,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
       
-      const { user, error } = await authService.loginAdmin({ email, password })
+      const { user } = await authService.loginAdmin({ email, password })
       
-      if (error) {
-        setAuthState(prev => ({ ...prev, isLoading: false }))
-        return { success: false, error }
-      }
-
       if (user) {
         setAuthState({
           user,
@@ -46,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthState(prev => ({ ...prev, isLoading: false }))
       return { success: false, error: 'Error de autenticación' }
-    } catch (error) {
+    } catch {
       setAuthState(prev => ({ ...prev, isLoading: false }))
       return { success: false, error: 'Error interno del servidor' }
     }
@@ -56,13 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
       
-      const { user, error } = await authService.loginWorker({ email, password })
+      const { user } = await authService.loginWorker({ email, password })
       
-      if (error) {
-        setAuthState(prev => ({ ...prev, isLoading: false }))
-        return { success: false, error }
-      }
-
       if (user) {
         setAuthState({
           user,
@@ -74,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setAuthState(prev => ({ ...prev, isLoading: false }))
       return { success: false, error: 'Error de autenticación' }
-    } catch (error) {
+    } catch {
       setAuthState(prev => ({ ...prev, isLoading: false }))
       return { success: false, error: 'Error interno del servidor' }
     }
@@ -91,8 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isLoading: false,
         isAuthenticated: false,
       })
-    } catch (error) {
-      console.error('Error en logout:', error)
+    } catch {
       setAuthState(prev => ({ ...prev, isLoading: false }))
     }
   }
@@ -101,17 +90,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setAuthState(prev => ({ ...prev, isLoading: true }))
       
-      const { user, error } = await authService.getCurrentUser()
+      const { user } = await authService.getCurrentUser()
       
-      if (error) {
-        setAuthState({
-          user: null,
-          isLoading: false,
-          isAuthenticated: false,
-        })
-        return
-      }
-
       if (user) {
         setAuthState({
           user,
@@ -125,8 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           isAuthenticated: false,
         })
       }
-    } catch (error) {
-      console.error('Error al refrescar usuario:', error)
+    } catch {
       setAuthState({
         user: null,
         isLoading: false,

@@ -36,6 +36,19 @@ export interface AssignmentFormData {
   specific_schedule: Record<WeekDay, TimeSlot[]>
 }
 
+// Añadir tipo local compatible para edición
+interface AssignmentFormCompatible {
+  worker_id: string
+  user_id: string
+  assigned_hours_per_week: number
+  start_date: string
+  end_date?: string
+  priority: AssignmentPriority
+  status: AssignmentStatus
+  notes?: string
+  specific_schedule: Record<string, string[]>;
+}
+
 export function AssignmentForm({
   assignment,
   isEditing = false,
@@ -78,15 +91,17 @@ export function AssignmentForm({
   // Cargar datos de la asignación si estamos editando
   useEffect(() => {
     if (assignment && isEditing) {
-      // setFormData({
-        worker_id: assignment.worker_id,
-        user_id: assignment.user_id,
-        assigned_hours_per_week: assignment.assigned_hours_per_week,
-        start_date: assignment.start_date,
-        end_date: assignment.end_date || '',
-        priority: assignment.priority,
-        status: assignment.status,
-        notes: assignment.notes || '',
+      // Forzar conversión segura
+      const a = assignment as unknown as AssignmentFormCompatible;
+      setFormData({
+        worker_id: a.worker_id,
+        user_id: a.user_id,
+        assigned_hours_per_week: a.assigned_hours_per_week,
+        start_date: a.start_date,
+        end_date: a.end_date || '',
+        priority: a.priority,
+        status: a.status,
+        notes: a.notes || '',
         specific_schedule: {
           monday: [], tuesday: [], wednesday: [], thursday: [],
           friday: [], saturday: [], sunday: []
@@ -95,39 +110,32 @@ export function AssignmentForm({
 
       // Convertir el specific_schedule al nuevo formato
       const newSchedule: Record<string, TimeSlot[]> = {}
-      if (assignment.specific_schedule) {
-        // Object.entries(assignment.specific_schedule).forEach(([day, timeData]) => {
-          // if (timeData && Array.isArray(timeData)) {
-            // Si es formato antiguo: array de strings (puede ser más de dos)
-            if (timeData.length > 0 && typeof timeData[0] === 'string') {
-              const slots: TimeSlot[] = [];
-              for (let i = 0; i < timeData.length - 1; i += 2) {
-                if (typeof timeData[i] === 'string' && typeof timeData[i+1] === 'string') {
-                  slots.push({
-                    id: `${day}-${i/2}`,
-                    start: timeData[i],
-                    end: timeData[i+1]
-                  });
-                }
+      if (a && a.specific_schedule) {
+        Object.entries(a.specific_schedule).forEach(([day, timeData]) => {
+          if (Array.isArray(timeData) && timeData.length > 0 && typeof timeData[0] === 'string') {
+            const slots: TimeSlot[] = [];
+            for (let i = 0; i < timeData.length - 1; i += 2) {
+              if (typeof timeData[i] === 'string' && typeof timeData[i+1] === 'string') {
+                slots.push({
+                  id: `${day}-${i/2}`,
+                  start: timeData[i],
+                  end: timeData[i+1]
+                });
               }
-              newSchedule[day] = slots;
-              // } else if (timeData.length > 0 && typeof timeData[0] === 'object') {
-              // Formato nuevo: TimeSlot[]
-              newSchedule[day] = timeData as unknown as TimeSlot[]
-              // } else {
-              newSchedule[day] = []
-              // }
+            }
+            newSchedule[day] = slots;
+          } else if (Array.isArray(timeData) && timeData.length > 0 && typeof timeData[0] === 'object') {
+            newSchedule[day] = timeData as unknown as TimeSlot[];
           } else {
-            newSchedule[day] = []
-            // }
-        })
+            newSchedule[day] = [];
+          }
+        });
       }
       // Asegurar que todos los días existen en el objeto
       ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'].forEach(day => {
         if (!newSchedule[day]) newSchedule[day] = []
       })
-
-      // setWeeklySchedule(newSchedule)
+      setWeeklySchedule(newSchedule)
 
       // Calcular horas totales
       const total = Object.values(newSchedule).reduce((sum, slots) => {

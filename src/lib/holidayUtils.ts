@@ -51,7 +51,6 @@ export async function getHolidaysForYear(year: number): Promise<Holiday[]> {
     const endDate = `${year}-12-31`
     
     if (!supabase) {
-      console.error('Supabase client no disponible')
       return []
     }
     const { data, error } = await supabase
@@ -62,17 +61,15 @@ export async function getHolidaysForYear(year: number): Promise<Holiday[]> {
       .eq('is_active', true)
       .order('date')
 
-    if (error) {
-      console.error('Error al obtener festivos:', error)
+      if (error) {
+        return []
+      }
+  
+      return data || []
+    } catch {
       return []
     }
-
-    return data || []
-  } catch (error) {
-    console.error('Error inesperado al obtener festivos:', error)
-    return []
   }
-}
 
 /**
  * Verifica si una fecha es fin de semana
@@ -142,8 +139,7 @@ export async function generateMonthCalendar(year: number, month: number): Promis
   const holidays = await getHolidaysForYear(year)
   const days: DayInfo[] = []
   
-  // Obtener el primer día del mes
-  const firstDay = new Date(year, month - 1, 1)
+  // Eliminar variable no usada 'firstDay'
   // Obtener el último día del mes
   const lastDay = new Date(year, month, 0)
   
@@ -229,6 +225,7 @@ export async function calculateMonthlyHoursForWorker(
   month: number
 ): Promise<number> {
   const availableDays = await getAvailableDaysForWorker(workerType, year, month)
+  // Eliminar variable no usada 'weeksInMonth'
   const weeksInMonth = Math.ceil(availableDays.length / 7)
   
   // Para trabajadoras flexibles, usar todas las semanas del mes

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Assignment } from '@/lib/types'
+import { Assignment } from '@/lib/types-new'
 
 export function useAssignments() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
@@ -28,7 +28,6 @@ export function useAssignments() {
 
       setAssignments(assignmentsData || [])
     } catch (err) {
-      console.error('Error fetching assignments:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
       setIsLoading(false)
@@ -61,12 +60,6 @@ export function useAssignments() {
         .single()
 
       if (error) {
-        console.error('Error creating assignment:', error)
-        console.error('Error type:', typeof error)
-        console.error('Error constructor:', error?.constructor?.name)
-        console.error('Error keys:', error && typeof error === 'object' ? Object.keys(error) : 'N/A')
-        console.error('Error stringified:', JSON.stringify(error, null, 2))
-
         let errorMsg = 'Error al crear asignación'
 
         // Handle specific error codes
@@ -124,12 +117,6 @@ export function useAssignments() {
       await fetchAssignments()
       return { data, error: null, conflicts: [] }
     } catch (err) {
-      console.error('Error creating assignment:', err)
-      console.error('Error type:', typeof err)
-      console.error('Error constructor:', err?.constructor?.name)
-      console.error('Error keys:', err && typeof err === 'object' ? Object.keys(err) : 'N/A')
-      console.error('Error stringified:', JSON.stringify(err, null, 2))
-
       let errorMsg = 'Error al crear asignación'
 
       // Handle specific error codes
@@ -186,7 +173,7 @@ export function useAssignments() {
 
   const updateAssignment = useCallback(async (id: string, updates: Partial<Assignment>) => {
     try {
-      // // const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('assignments')
         .update(updates)
         .eq('id', id)
@@ -197,16 +184,14 @@ export function useAssignments() {
         `)
         .single()
 
-      // // if (error) {
-        console.error('🔧 [UPDATE] Error de Supabase:', error)
+      if (error) {
         throw error
       }
 
-      // // // Refresh the list
+      // Refresh the list
       await fetchAssignments()
       return { data, error: null }
     } catch (err) {
-      console.error('🔧 [UPDATE] Error updating assignment:', err)
       return {
         data: null,
         error: err instanceof Error ? err.message : 'Error al actualizar asignación'
@@ -227,7 +212,6 @@ export function useAssignments() {
       await fetchAssignments()
       return { error: null }
     } catch (err) {
-      console.error('Error deleting assignment:', err)
       return {
         error: err instanceof Error ? err.message : 'Error al eliminar asignación'
       }
@@ -249,7 +233,6 @@ export function useAssignments() {
       if (error) throw error
       return { data, error: null }
     } catch (err) {
-      console.error('Error fetching assignment by ID:', err)
       return {
         data: null,
         error: err instanceof Error ? err.message : 'Error al obtener asignación'
@@ -285,8 +268,7 @@ export function useAssignments() {
       }
 
       return existingAssignment || null
-    } catch (err) {
-      console.error('Error checking duplicate assignment:', err)
+    } catch {
       return null
     }
   }, [])
@@ -301,7 +283,7 @@ export function useAssignments() {
   const getWorkerWorkload = useCallback((workerId: string) => {
     const workerAssignments = getAssignmentsByWorker(workerId)
     const activeAssignments = workerAssignments.filter(a => a.status === 'active')
-    const totalHours = activeAssignments.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
+    const totalHours = activeAssignments.reduce((sum, a) => sum + a.weekly_hours, 0)
 
     return {
       totalAssignments: workerAssignments.length,
@@ -314,7 +296,7 @@ export function useAssignments() {
   const getUserAssignments = useCallback((userId: string) => {
     const userAssignments = getAssignmentsByUser(userId)
     const activeAssignments = userAssignments.filter(a => a.status === 'active')
-    const totalHours = activeAssignments.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
+    const totalHours = activeAssignments.reduce((sum, a) => sum + a.weekly_hours, 0)
 
     return {
       totalAssignments: userAssignments.length,
@@ -330,7 +312,7 @@ export function useAssignments() {
     const completed = assignments.filter(a => a.status === 'completed')
     const cancelled = assignments.filter(a => a.status === 'cancelled')
 
-    const totalHours = active.reduce((sum, a) => sum + a.assigned_hours_per_week, 0)
+    const totalHours = active.reduce((sum, a) => sum + a.weekly_hours, 0)
 
     return {
       total: assignments.length,

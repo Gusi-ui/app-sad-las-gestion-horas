@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, TrendingUp, TrendingDown, CheckCircle, AlertTriangle, User, MapPin, Calendar, RefreshCw } from "lucide-react";
+import { TrendingUp, TrendingDown, CheckCircle, AlertTriangle, User, MapPin, RefreshCw } from "lucide-react";
 
 interface MonthlyBalance {
   id: string;
@@ -12,7 +12,7 @@ interface MonthlyBalance {
   balance: number;
   status: 'on_track' | 'over_scheduled' | 'under_scheduled' | 'completed';
   message: string;
-  planning: any;
+  planning: Record<string, unknown>;
   created_at: string;
   updated_at: string;
   users?: {
@@ -89,7 +89,7 @@ export function MonthlyBalanceCard({ balance, className = "" }: MonthlyBalanceCa
           color: 'text-slate-600',
           bgColor: 'bg-slate-50',
           borderColor: 'border-slate-200',
-          icon: <Clock className="w-4 h-4" />,
+          icon: <RefreshCw className="w-4 h-4" />,
           label: 'Sin estado',
           description: 'Estado no definido'
         };

@@ -1,11 +1,11 @@
 "use client"
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, ChevronDown, ChevronUp, Filter, Calendar, Users, UserCheck, UserX, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { BarChart3, ChevronDown, ChevronUp, Filter, Calendar, Clock, TrendingUp, TrendingDown, UserCheck, UserX } from 'lucide-react';
 
-interface MonthlyBalance {
+export interface MonthlyBalance {
   id: string;
   user_id: string;
   month: number;
@@ -15,7 +15,11 @@ interface MonthlyBalance {
   holiday_hours: number;
   assigned_hours: number;
   difference: number;
-  holiday_info: any;
+  holiday_info: {
+    date: string;
+    type: string;
+    description: string;
+  }[];
   notes: string | null;
   created_at: string;
   updated_at: string;

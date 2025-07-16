@@ -1,4 +1,4 @@
-import { Assignment, Worker } from '@/lib/types';
+import { Assignment } from '@/lib/types';
 import { getHolidaysForMonthFromDatabase } from './calendar';
 
 export interface ReassignedService {
@@ -17,7 +17,7 @@ export type WeekDay = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday'
 /**
  * Calcula las horas basándose en el horario específico
  */
-function calculateHoursFromSchedule(schedule: any[]): number {
+function calculateHoursFromSchedule(schedule: unknown[]): number {
   if (!Array.isArray(schedule) || schedule.length < 2) return 0;
   
   // Si es un array de strings (formato antiguo)
@@ -115,7 +115,7 @@ export async function detectHolidayReassignments(
     for (const laborableAssignment of laborableWorkers) {
       const daySchedule = laborableAssignment.specific_schedule?.[dayName];
       if (daySchedule && Array.isArray(daySchedule) && daySchedule.length > 0) {
-        const originalHours = calculateHoursFromSchedule(daySchedule);
+        const originalHours = calculateHoursFromSchedule(daySchedule as { start: string; end: string }[]);
         
         if (originalHours > 0) {
           // Buscar una trabajadora de festivos/fines de semana disponible

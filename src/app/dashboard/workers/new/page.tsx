@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X } from 'lucide-react'
 import { WorkerSpecialization, WeekDay } from '@/lib/types'
@@ -36,7 +35,6 @@ const workerTypeOptions = [
 
 export default function NewWorkerPage() {
   const router = useRouter()
-  const { createWorker } = useWorkers()
   const { showToast, ToastComponent } = useToast()
 
   const [formData, setFormData] = useState({
@@ -217,7 +215,7 @@ export default function NewWorkerPage() {
         showToast(`${formData.name} ${formData.surname} creada correctamente`, 'success')
         // No redirigimos automáticamente para que el admin pueda copiar la contraseña
       }
-    } catch (err) {
+    } catch {
       showToast('Error de red o del servidor', 'error')
     } finally {
       setIsSubmitting(false)

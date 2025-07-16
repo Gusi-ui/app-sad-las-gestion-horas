@@ -33,7 +33,7 @@ export function getOrderedWeekDays(): string[] {
 }
 
 // Función para formatear horarios ordenados cronológicamente
-export function formatScheduleOrdered(schedule: Record<string, any[]> | undefined, dayNames: Record<string, string>): string {
+export function formatScheduleOrdered(schedule: Record<string, unknown[]> | undefined, dayNames: Record<string, string>): string {
   if (!schedule) return 'No configurado'
   
   const dayOrder = getOrderedWeekDays()
@@ -52,7 +52,6 @@ export function formatScheduleOrdered(schedule: Record<string, any[]> | undefine
           // Un solo tramo: ['08:00', '10:00']
           return `${dayNames[day]}: ${slots[0]} - ${slots[1]}`
         } else if (slots.length > 2 && slots.length % 2 === 0) {
-          // Múltiples tramos: ['08:00', '10:00', '13:00', '15:00']
           const timeSlots = [];
           for (let i = 0; i < slots.length; i += 2) {
             if (typeof slots[i] === 'string' && typeof slots[i+1] === 'string') {
@@ -67,7 +66,7 @@ export function formatScheduleOrdered(schedule: Record<string, any[]> | undefine
       } 
       // Caso 2: Array de objetos {start, end} (formato nuevo)
       else if (Array.isArray(slots) && slots.length > 0 && typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
-        const timeSlots = slots.map((slot: any) => `${slot.start} - ${slot.end}`);
+        const timeSlots = (slots as { start: string; end: string }[]).map((slot) => `${slot.start} - ${slot.end}`);
         return `${dayNames[day]}: ${timeSlots.join(' y ')}`
       } 
       // Caso 3: Otros formatos
@@ -93,7 +92,7 @@ export interface HoursCalculation {
 /**
  * Calcula las horas semanales basadas en el horario específico
  */
-export function calculateWeeklyHours(schedule: Record<string, any[]> | undefined): number {
+export function calculateWeeklyHours(schedule: Record<string, unknown[]> | undefined): number {
   if (!schedule) return 0;
   
   let totalHours = 0;
@@ -103,7 +102,7 @@ export function calculateWeeklyHours(schedule: Record<string, any[]> | undefined
     
     // Caso 1: Array de objetos {start, end} (formato nuevo)
     if (typeof daySchedule[0] === 'object' && daySchedule[0] !== null && 'start' in daySchedule[0] && 'end' in daySchedule[0]) {
-      daySchedule.forEach((slot: any) => {
+      (daySchedule as { start: string; end: string }[]).forEach((slot) => {
         const [startHour, startMin] = slot.start.split(':').map(Number);
         const [endHour, endMin] = slot.end.split(':').map(Number);
         const startTime = startHour + startMin / 60;
@@ -113,15 +112,15 @@ export function calculateWeeklyHours(schedule: Record<string, any[]> | undefined
     }
     // Caso 2: Array de strings (formato antiguo) - ['08:00', '10:00']
     else if (daySchedule.length === 2 && typeof daySchedule[0] === 'string' && typeof daySchedule[1] === 'string') {
-      const [startHour, startMin] = daySchedule[0].split(':').map(Number);
-      const [endHour, endMin] = daySchedule[1].split(':').map(Number);
+      const [startHour, startMin] = (daySchedule[0] as string).split(':').map(Number);
+      const [endHour, endMin] = (daySchedule[1] as string).split(':').map(Number);
       const startTime = startHour + startMin / 60;
       const endTime = endHour + endMin / 60;
       totalHours += Math.max(0, endTime - startTime);
     }
     // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
     else if (Array.isArray(daySchedule) && daySchedule.length > 0 && typeof daySchedule[0] === 'string') {
-      daySchedule.forEach((slot: string) => {
+      (daySchedule as string[]).forEach((slot) => {
         if (slot.includes('-')) {
           const parts = slot.split('-');
           if (parts.length === 2) {
@@ -180,7 +179,7 @@ export function calculateUserHoursStatus(
  * Calcula las horas utilizadas hasta el día actual del mes
  */
 export function calculateUsedHoursUntilToday(
-  schedule: Record<string, any[]> | undefined,
+  schedule: Record<string, unknown[]> | undefined,
   year: number,
   month: number
 ): number {
@@ -206,7 +205,7 @@ export function calculateUsedHoursUntilToday(
       
       // Caso 1: Array de objetos {start, end}
       if (typeof daySchedule[0] === 'object' && daySchedule[0] !== null && 'start' in daySchedule[0] && 'end' in daySchedule[0]) {
-        daySchedule.forEach((slot: any) => {
+        (daySchedule as { start: string; end: string }[]).forEach((slot) => {
           const [startHour, startMin] = slot.start.split(':').map(Number);
           const [endHour, endMin] = slot.end.split(':').map(Number);
           const startTime = startHour + startMin / 60;
@@ -216,15 +215,15 @@ export function calculateUsedHoursUntilToday(
       }
       // Caso 2: Array de strings - ['08:00', '10:00']
       else if (daySchedule.length === 2 && typeof daySchedule[0] === 'string' && typeof daySchedule[1] === 'string') {
-        const [startHour, startMin] = daySchedule[0].split(':').map(Number);
-        const [endHour, endMin] = daySchedule[1].split(':').map(Number);
+        const [startHour, startMin] = (daySchedule[0] as string).split(':').map(Number);
+        const [endHour, endMin] = (daySchedule[1] as string).split(':').map(Number);
         const startTime = startHour + startMin / 60;
         const endTime = endHour + endMin / 60;
         dayHours = Math.max(0, endTime - startTime);
       }
       // Caso 3: Array de strings múltiples - ['08:00-10:00', '13:00-15:00']
       else if (Array.isArray(daySchedule) && daySchedule.length > 0 && typeof daySchedule[0] === 'string') {
-        daySchedule.forEach((slot: string) => {
+        (daySchedule as string[]).forEach((slot) => {
           if (slot.includes('-')) {
             const parts = slot.split('-');
             if (parts.length === 2) {
@@ -448,7 +447,12 @@ export function validateAddress(address: {
     province?: string
   }
 } {
-  const errors: any = {}
+  const errors: {
+    street_address?: string
+    postal_code?: string
+    city?: string
+    province?: string
+  } = {}
   
   // Validar código postal
   if (address.postal_code) {
@@ -457,70 +461,27 @@ export function validateAddress(address: {
     } else if (!isValidSpanishPostalCode(address.postal_code)) {
       errors.postal_code = 'Código postal no válido en España'
     } else if (address.province && !isValidPostalCodeForProvince(address.postal_code, address.province)) {
-      errors.postal_code = `El código postal no corresponde a ${address.province}`
+      errors.postal_code = `El código postal no corresponde a la provincia seleccionada`;
     }
   }
-  
-  // Validar que si hay código postal, haya calle
-  if (address.postal_code && !address.street_address?.trim()) {
-    errors.street_address = 'La dirección es obligatoria si se especifica código postal'
-  }
-  
-  // Validar que si hay calle, haya código postal
-  if (address.street_address?.trim() && !address.postal_code) {
-    errors.postal_code = 'El código postal es obligatorio si se especifica dirección'
-  }
-  
-  return {
-    isValid: Object.keys(errors).length === 0,
-    errors
-  }
-}
 
-// Validación completa de trabajadora
-export function validateWorker(worker: {
-  dni?: string
-  street_address?: string
-  postal_code?: string
-  city?: string
-  province?: string
-}): {
-  isValid: boolean
-  errors: {
-    dni?: string
-    street_address?: string
-    postal_code?: string
-    city?: string
-    province?: string
-  }
-} {
-  const errors: any = {}
-  
-  // Validar DNI
-  if (worker.dni) {
-    if (!isValidDNIFormat(worker.dni)) {
-      errors.dni = 'El DNI debe tener 8 dígitos seguidos de una letra'
-    } else if (!isValidDNI(worker.dni)) {
-      const numbers = worker.dni.substring(0, 8)
-      const correctLetter = getCorrectDNILetter(numbers)
-      errors.dni = `Letra incorrecta. La letra correcta es: ${correctLetter}`
-    }
-  }
-  
   // Validar dirección
-  const addressValidation = validateAddress({
-    street_address: worker.street_address,
-    postal_code: worker.postal_code,
-    city: worker.city,
-    province: worker.province
-  })
-  
-  if (!addressValidation.isValid) {
-    Object.assign(errors, addressValidation.errors)
+  if (address.street_address && address.street_address.length < 5) {
+    errors.street_address = 'La dirección es demasiado corta';
   }
-  
+
+  // Validar ciudad
+  if (address.city && address.city.length < 2) {
+    errors.city = 'La ciudad es demasiado corta';
+  }
+
+  // Validar provincia
+  if (address.province && !(address.province in POSTAL_CODE_RANGES)) {
+    errors.province = 'Provincia no válida';
+  }
+
   return {
     isValid: Object.keys(errors).length === 0,
-    errors
-  }
-} 
+    errors,
+  };
+}

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     ? `${year}-${month.toString().padStart(2, '0')}-31`
     : `${year}-12-31`;
   
-  let query = supabase
+  const query = supabase
     .from("holidays")
     .select("*")
     .gte("date", startDate)

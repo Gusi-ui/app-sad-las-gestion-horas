@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Clock } from 'lucide-react'
 import { TimeSelector } from '@/components/TimeSelector'
@@ -55,19 +55,19 @@ export function WeeklyScheduleForm({
   })
 
   // Calcular total de horas automáticamente
-  const calculateTotalHours = () => {
+  const calculateTotalHours = useCallback(() => {
     const weeklyTotal = Object.entries(schedule)
-      .filter(([_, config]) => config.enabled)
-      .reduce((sum, [_, config]) => sum + config.hours, 0)
+      .filter(([, config]) => config.enabled)
+      .reduce((sum, [, config]) => sum + config.hours, 0)
     
     // Aproximadamente 4.3 semanas por mes
     return Math.round(weeklyTotal * 4.3)
-  }
+  }, [schedule])
 
   // Actualizar cuando cambia el schedule
   useEffect(() => {
     const newSchedule = Object.entries(schedule)
-      .filter(([_, config]) => config.enabled)
+      .filter(([, config]) => config.enabled)
       .map(([dayOfWeek, config]) => ({
         day_of_week: Number(dayOfWeek),
         hours: config.hours
@@ -80,7 +80,7 @@ export function WeeklyScheduleForm({
     if (autoTotal !== totalHours) {
       onTotalHoursChange(autoTotal)
     }
-  }, [schedule])
+  }, [schedule, onChange, onTotalHoursChange, calculateTotalHours, totalHours])
 
   const toggleDay = (dayOfWeek: number) => {
     
@@ -108,10 +108,10 @@ export function WeeklyScheduleForm({
   }
 
   const weeklyTotal = Object.entries(schedule)
-    .filter(([_, config]) => config.enabled)
-    .reduce((sum, [_, config]) => sum + config.hours, 0)
+    .filter(([, config]) => config.enabled)
+    .reduce((sum, [, config]) => sum + config.hours, 0)
 
-  const enabledDays = Object.entries(schedule).filter(([_, config]) => config.enabled).length
+  const enabledDays = Object.entries(schedule).filter(([, config]) => config.enabled).length
 
   return (
     <Card>

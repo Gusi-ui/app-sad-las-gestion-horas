@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -50,7 +50,6 @@ interface AssignmentForm {
 }
 
 export default function UserAssignmentsPage() {
-  const router = useRouter()
   const params = useParams()
   const userId = params.id as string
   const { showToast, ToastComponent } = useToast()
@@ -79,11 +78,7 @@ export default function UserAssignmentsPage() {
     { key: 'sunday', label: 'Domingo' }
   ]
 
-  useEffect(() => {
-    fetchData()
-  }, [userId])
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -100,7 +95,6 @@ export default function UserAssignmentsPage() {
         .single()
 
       if (userError) {
-        console.error('Error fetching user:', userError)
         showToast('Error al cargar usuario', 'error')
         return
       }
@@ -115,7 +109,6 @@ export default function UserAssignmentsPage() {
         .order('name')
 
       if (workersError) {
-        console.error('Error fetching workers:', workersError)
         showToast('Error al cargar trabajadoras', 'error')
         return
       }
@@ -133,20 +126,22 @@ export default function UserAssignmentsPage() {
         .order('created_at')
 
       if (assignmentsError) {
-        console.error('Error fetching assignments:', assignmentsError)
         showToast('Error al cargar asignaciones', 'error')
         return
       }
 
       setAssignments(assignmentsData || [])
 
-    } catch (error) {
-      console.error('Error fetching data:', error)
+    } catch {
       showToast('Error inesperado al cargar datos', 'error')
     } finally {
       setLoading(false)
     }
-  }
+  }, [supabase, showToast, userId])
+
+  useEffect(() => {
+    fetchData()
+  }, [fetchData, userId])
 
   const openModal = (assignment?: Assignment) => {
     if (assignment) {
@@ -236,7 +231,6 @@ export default function UserAssignmentsPage() {
           .eq('id', editingAssignment.id)
 
         if (error) {
-          console.error('Error updating assignment:', error)
           showToast('Error al actualizar asignación', 'error')
           return
         }
@@ -249,7 +243,6 @@ export default function UserAssignmentsPage() {
           .insert([assignmentData])
 
         if (error) {
-          console.error('Error creating assignment:', error)
           showToast('Error al crear asignación', 'error')
           return
         }
@@ -260,7 +253,6 @@ export default function UserAssignmentsPage() {
       closeModal()
       fetchData()
     } catch (error) {
-      console.error('Error saving assignment:', error)
       showToast('Error inesperado al guardar asignación', 'error')
     }
   }
@@ -282,7 +274,6 @@ export default function UserAssignmentsPage() {
         .eq('id', assignmentId)
 
       if (error) {
-        console.error('Error deleting assignment:', error)
         showToast('Error al eliminar asignación', 'error')
         return
       }
@@ -290,7 +281,6 @@ export default function UserAssignmentsPage() {
       showToast('Asignación eliminada correctamente', 'success')
       fetchData()
     } catch (error) {
-      console.error('Error deleting assignment:', error)
       showToast('Error inesperado al eliminar asignación', 'error')
     }
   }

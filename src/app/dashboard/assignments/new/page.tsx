@@ -51,7 +51,7 @@ function NewAssignmentContent() {
       const { error, conflicts } = await createAssignment({
         worker_id: formData.worker_id,
         user_id: formData.user_id,
-        assigned_hours_per_week: formData.assigned_hours_per_week,
+        weekly_hours: formData.assigned_hours_per_week,
         start_date: formData.start_date,
         end_date: formData.end_date || undefined,
         priority: formData.priority,
@@ -61,7 +61,7 @@ function NewAssignmentContent() {
       })
 
       if (conflicts && conflicts.length > 0) {
-        const conflictDetails = conflicts.map((conflict: Assignment) => {
+        const conflictDetails = conflicts.map((conflict) => {
           return `• Usuario: ${conflict.user?.name} ${conflict.user?.surname}`
         }).join('\n')
         

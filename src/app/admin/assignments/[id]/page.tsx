@@ -6,11 +6,8 @@ import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Edit, Calendar, Clock, Users, Trash2, RotateCcw, Mail, Phone, MapPin } from 'lucide-react'
+import { ArrowLeft, Edit, Calendar, RotateCcw, Trash2, Users, Mail, Phone, MapPin } from 'lucide-react'
 import { useNotificationHelpers } from '@/components/ui/toast-notification'
-import AssignmentCalendar from '@/components/AssignmentCalendar'
-import AssignmentHistoryCard from '@/components/AssignmentHistoryCard'
 import ConfirmModal from '@/components/ui/confirm-modal'
 
 interface Assignment {
@@ -38,7 +35,7 @@ export default function AssignmentDetailPage() {
   const params = useParams()
   const router = useRouter()
   const assignmentId = params.id as string
-  const { success, error: showError, warning, info } = useNotificationHelpers()
+  const { success, error: showError } = useNotificationHelpers()
   
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [loading, setLoading] = useState(true)
@@ -52,7 +49,6 @@ export default function AssignmentDetailPage() {
 
   const fetchAssignment = async () => {
     if (!supabase) {
-      console.error('Supabase client no disponible')
       setLoading(false)
       return
     }
@@ -88,9 +84,14 @@ export default function AssignmentDetailPage() {
         .single()
 
       if (error) {
-        console.error('Error al cargar asignación:', error)
         showError('Error al cargar asignación: ' + error.message)
       } else {
+        type AssignmentDB = Omit<Assignment, 'worker_name' | 'worker_surname' | 'worker_email' | 'worker_phone' | 'worker_address' | 'user_name' | 'user_surname' | 'user_email' | 'user_phone' | 'user_address'> & {
+          workers?: { name: string; surname: string; email: string; phone: string; address: string }[] | { name: string; surname: string; email: string; phone: string; address: string } | null;
+          users?: { name: string; surname: string; email: string; phone: string; address: string }[] | { name: string; surname: string; email: string; phone: string; address: string } | null;
+        };
+        const worker = getFirst((data as AssignmentDB).workers);
+        const user = getFirst((data as AssignmentDB).users);
         const formattedData: Assignment = {
           id: data.id,
           worker_id: data.worker_id,
@@ -100,22 +101,21 @@ export default function AssignmentDetailPage() {
           end_date: data.end_date,
           weekly_hours: data.weekly_hours,
           status: data.status,
-          worker_name: (data.workers as any)?.name || '',
-          worker_surname: (data.workers as any)?.surname || '',
-          worker_email: (data.workers as any)?.email || '',
-          worker_phone: (data.workers as any)?.phone || '',
-          worker_address: (data.workers as any)?.address || '',
-          user_name: (data.users as any)?.name || '',
-          user_surname: (data.users as any)?.surname || '',
-          user_email: (data.users as any)?.email || '',
-          user_phone: (data.users as any)?.phone || '',
-          user_address: (data.users as any)?.address || ''
-        }
+          worker_name: worker?.name || '',
+          worker_surname: worker?.surname || '',
+          worker_email: worker?.email || '',
+          worker_phone: worker?.phone || '',
+          worker_address: worker?.address || '',
+          user_name: user?.name || '',
+          user_surname: user?.surname || '',
+          user_email: user?.email || '',
+          user_phone: user?.phone || '',
+          user_address: user?.address || ''
+        };
         
         setAssignment(formattedData)
       }
     } catch (error) {
-      console.error('Error inesperado:', error)
       showError('Error inesperado al cargar asignación')
     } finally {
       setLoading(false)
@@ -162,7 +162,6 @@ export default function AssignmentDetailPage() {
       
       success(`Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`)
     } catch (error) {
-      console.error('Error completo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
       showError(`Error al actualizar estado: ${errorMessage}`)
     }
@@ -202,6 +201,11 @@ export default function AssignmentDetailPage() {
       month: '2-digit',
       year: 'numeric'
     })
+  }
+
+  function getFirst<T>(value: T | T[] | null | undefined): T | undefined {
+    if (Array.isArray(value)) return value[0];
+    return value ?? undefined;
   }
 
   if (loading) {

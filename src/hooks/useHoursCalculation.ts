@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { calculateWeeklyHours, calculateUsedHoursUntilToday, calculateUserHoursStatus } from '@/lib/utils';
+import { calculateUsedHoursUntilToday, calculateUserHoursStatus } from '@/lib/utils';
 import { Assignment, User } from '@/lib/types';
 import { generateMonthlyPlanningWithHolidayReassignment } from '@/lib/holidayReassignment';
 
@@ -70,25 +70,35 @@ export function useHoursCalculation(workerId: string | null) {
   };
 
   // Función para convertir el nuevo formato de schedule al formato esperado por calculateWeeklyHours
-  const calculateWeeklyHoursFromNewFormat = (schedule: any) => {
+  function isDaySchedule(obj: unknown): obj is { enabled: boolean; timeSlots: { start: string; end: string }[] } {
+    return (
+      typeof obj === 'object' &&
+      obj !== null &&
+      'enabled' in obj &&
+      'timeSlots' in obj &&
+      Array.isArray((obj as { timeSlots?: unknown[] }).timeSlots)
+    );
+  }
+
+  // Envolver calculateWeeklyHoursFromNewFormat en useCallback
+  const calculateWeeklyHoursFromNewFormat = useCallback((schedule: unknown) => {
     if (!schedule) return 0;
-
     let totalHours = 0;
-
-    Object.values(schedule).forEach((daySchedule: any) => {
-      if (!daySchedule?.enabled || !daySchedule.timeSlots || daySchedule.timeSlots.length === 0) return;
-
-      daySchedule.timeSlots.forEach((slot: any) => {
-        const [startHour, startMin] = slot.start.split(':').map(Number);
-        const [endHour, endMin] = slot.end.split(':').map(Number);
-        const startTime = startHour + startMin / 60;
-        const endTime = endHour + endMin / 60;
-        totalHours += Math.max(0, endTime - startTime);
+    Object.values(schedule).forEach((daySchedule: unknown) => {
+      if (!isDaySchedule(daySchedule) || !daySchedule.enabled || daySchedule.timeSlots.length === 0) return;
+      daySchedule.timeSlots.forEach((slot: unknown) => {
+        if (typeof slot === 'object' && slot !== null && 'start' in slot && 'end' in slot) {
+          const slotObj = slot as { start: string; end: string };
+          const [startHour, startMin] = slotObj.start.split(':').map(Number);
+          const [endHour, endMin] = slotObj.end.split(':').map(Number);
+          const startTime = startHour + startMin / 60;
+          const endTime = endHour + endMin / 60;
+          totalHours += Math.max(0, endTime - startTime);
+        }
       });
     });
-
     return Math.round(totalHours * 10) / 10;
-  };
+  }, []);
 
   // Función para obtener el horario de hoy de una asignación
   const getTodaySchedule = (assignment: AssignmentWithUser) => {
@@ -109,7 +119,13 @@ export function useHoursCalculation(workerId: string | null) {
     if (!todaySchedule?.enabled || !todaySchedule.timeSlots || todaySchedule.timeSlots.length === 0) return null;
 
     // Formatear los timeSlots
-    return todaySchedule.timeSlots.map((slot: any) => `${slot.start}-${slot.end}`).join(', ');
+    return todaySchedule.timeSlots.map((slot: unknown) => {
+      if (typeof slot === 'object' && slot !== null && 'start' in slot && 'end' in slot) {
+        const slotObj = slot as { start: string; end: string };
+        return `${slotObj.start}-${slotObj.end}`;
+      }
+      return '';
+    }).join(', ');
   };
 
   // Función para obtener el estado de un servicio basado en la hora
@@ -194,7 +210,7 @@ export function useHoursCalculation(workerId: string | null) {
         assignmentsToShow,
         totalAssignments: assignments.length
       };
-  }, [assignments]);
+  }, [assignments, calculateWeeklyHoursFromNewFormat]);
 
   // Cargar datos
   useEffect(() => {
@@ -226,7 +242,6 @@ export function useHoursCalculation(workerId: string | null) {
           .eq('status', 'active');
 
         if (assignmentsError) {
-          console.error('Error fetching assignments:', assignmentsError);
           setError('Error al cargar asignaciones');
           setLoading(false);
           return;
@@ -289,7 +304,6 @@ export function useHoursCalculation(workerId: string | null) {
               .eq('status', 'active');
 
             if (allAssignmentsError) {
-              console.error('Error fetching all assignments for user:', userId, allAssignmentsError);
               continue; // Continuar con el siguiente usuario en lugar de fallar completamente
             }
 
@@ -328,8 +342,7 @@ export function useHoursCalculation(workerId: string | null) {
                 try {
                   const hoursCalculation = calculateUserHoursStatus(userStatus.monthlyHours, userStatus.usedHours);
                   userStatus.status = hoursCalculation.status;
-                } catch (statusError) {
-                  console.error('Error calculating status for user:', userId, statusError);
+                } catch {
                   userStatus.status = 'perfect'; // Estado por defecto
                 }
 
@@ -337,9 +350,7 @@ export function useHoursCalculation(workerId: string | null) {
                 // if (planningResult.reassignments.length > 0) {
                 //   // // }
 
-              } catch (reassignmentError) {
-                console.error('Error calculating hours with reassignment for user:', userId, reassignmentError);
-
+              } catch {
                 // Fallback al método anterior si hay error
                 let totalUsedHours = 0;
 
@@ -352,8 +363,7 @@ export function useHoursCalculation(workerId: string | null) {
                       currentMonth
                     );
                     totalUsedHours += usedHoursForAssignment;
-                  } catch (calcError) {
-                    console.error('Error calculating hours for assignment:', assignment.id, calcError);
+                  } catch {
                     // Continuar con la siguiente asignación
                   }
                 });
@@ -367,34 +377,30 @@ export function useHoursCalculation(workerId: string | null) {
                 try {
                   const hoursCalculation = calculateUserHoursStatus(userStatus.monthlyHours, userStatus.usedHours);
                   userStatus.status = hoursCalculation.status;
-                } catch (statusError) {
-                  console.error('Error calculating status for user:', userId, statusError);
+                } catch {
                   userStatus.status = 'perfect'; // Estado por defecto
                 }
               }
             }
           }
-        } catch (userCalcError) {
-          console.error('Error calculating user hours:', userCalcError);
+        } catch {
           // No establecer error aquí, continuar con los datos que tengamos
         }
 
         setUserHoursStatus(Array.from(userStatusMap.values()));
 
-      } catch (err) {
-        console.error('Error fetching data:', err);
+      } catch {
         setError('Error al cargar los datos');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData().catch(err => {
-      console.error('Unhandled error in fetchData:', err);
+    fetchData().catch(() => {
       setError('Error inesperado al cargar los datos');
       setLoading(false);
     });
-  }, [workerId]);
+  }, [workerId, calculateWeeklyHoursFromNewFormat]);
 
   // Efecto para actualizar automáticamente el estado de los servicios cada minuto
   useEffect(() => {
@@ -404,7 +410,7 @@ export function useHoursCalculation(workerId: string | null) {
     }, 60000); // Cada minuto
 
     return () => clearInterval(interval);
-  }, []);
+  }, [calculateWeeklyHoursFromNewFormat]);
 
   return {
     assignments,

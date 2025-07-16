@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Search, Calendar, Plus, ChevronDown, Filter, Users, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react'
+import { Search, Calendar, Plus, ChevronDown, Filter, Users, Clock, CheckCircle, XCircle } from 'lucide-react'
 import ConfirmModal from '@/components/ui/confirm-modal'
 import { useNotificationHelpers } from '@/components/ui/toast-notification'
 
@@ -38,15 +38,6 @@ export default function AssignmentsPage() {
   const [showTypeDropdown, setShowTypeDropdown] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null)
-  const [toast, setToast] = useState<{
-    message: string
-    type: 'success' | 'error' | 'warning' | 'info'
-    isVisible: boolean
-  }>({
-    message: '',
-    type: 'info',
-    isVisible: false
-  })
 
   useEffect(() => {
     fetchAssignments()
@@ -98,30 +89,30 @@ export default function AssignmentsPage() {
 
       if (error) {
         console.error('Error al cargar asignaciones:', error)
-        setToast({
-          message: 'Error al cargar asignaciones: ' + error.message,
-          type: 'error',
-          isVisible: true
-        })
+        showError('Error al cargar asignaciones: ' + error.message)
       } else {
-        const formattedData = data?.map((assignment: any) => ({
-          ...assignment,
-          worker_name: assignment.workers?.name || '',
-          worker_surname: assignment.workers?.surname || '',
-          user_name: assignment.users?.name || '',
-          user_surname: assignment.users?.surname || ''
-        })) || []
+        type AssignmentDB = Omit<Assignment, 'worker_name' | 'worker_surname' | 'user_name' | 'user_surname'> & {
+          workers?: { name: string; surname: string }[] | { name: string; surname: string } | null;
+          users?: { name: string; surname: string }[] | { name: string; surname: string } | null;
+        };
+        const formattedData = (data as AssignmentDB[] | null)?.map((assignment) => {
+          const worker = Array.isArray(assignment.workers) ? assignment.workers[0] : assignment.workers;
+          const user = Array.isArray(assignment.users) ? assignment.users[0] : assignment.users;
+          return {
+            ...assignment,
+            worker_name: worker?.name || '',
+            worker_surname: worker?.surname || '',
+            user_name: user?.name || '',
+            user_surname: user?.surname || ''
+          };
+        }) || [];
         
         setAssignments(formattedData)
         setFilteredAssignments(formattedData)
       }
     } catch (error) {
       console.error('Error inesperado:', error)
-      setToast({
-        message: 'Error inesperado al cargar asignaciones',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error inesperado al cargar asignaciones')
     } finally {
       setLoading(false)
     }
@@ -166,28 +157,16 @@ export default function AssignmentsPage() {
       if (error) throw error
       setAssignments(assignments.filter(a => a.id !== assignmentToDelete))
       setFilteredAssignments(filteredAssignments.filter(a => a.id !== assignmentToDelete))
-      setToast({
-        message: 'Asignación eliminada correctamente',
-        type: 'success',
-        isVisible: true
-      })
+      success('Asignación eliminada correctamente')
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: 'Error al eliminar asignación: ' + errorMessage,
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error al eliminar asignación: ' + errorMessage)
     }
   }
 
   const handleToggleStatus = async (assignmentId: string, currentStatus: string) => {
     if (!supabase) {
-      setToast({
-        message: 'Error: Cliente Supabase no disponible',
-        type: 'error',
-        isVisible: true
-      })
+      showError('Error: Cliente Supabase no disponible')
       return
     }
     
@@ -213,19 +192,11 @@ export default function AssignmentsPage() {
       setAssignments(assignments.map(a => a.id === assignmentId ? { ...a, status: newStatus } : a))
       setFilteredAssignments(filteredAssignments.map(a => a.id === assignmentId ? { ...a, status: newStatus } : a))
       
-      setToast({
-        message: `Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`,
-        type: 'success',
-        isVisible: true
-      })
+      success(`Estado cambiado correctamente a: ${getStatusLabel(newStatus)}`)
     } catch (error) {
       console.error('Error completo:', error)
       const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setToast({
-        message: `Error al actualizar estado: ${errorMessage}`,
-        type: 'error',
-        isVisible: true
-      })
+      showError(`Error al actualizar estado: ${errorMessage}`)
     }
   }
 

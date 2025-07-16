@@ -156,14 +156,12 @@ export function UserForm({
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // // if (!validateForm()) {
-      // // return
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
     }
-
-    // await onSubmit(formData)
-  }
+    await onSubmit(formData);
+  };
 
   return (
     <div className="min-h-screen bg-secondary">

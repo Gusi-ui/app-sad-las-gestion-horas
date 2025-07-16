@@ -6,11 +6,9 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ArrowLeft, Save, Calendar, Clock, Users, Plus, X, Zap } from 'lucide-react'
+import { ArrowLeft, Calendar, Zap } from 'lucide-react'
 import { useNotificationHelpers } from '@/components/ui/toast-notification'
 import { getHolidaysForYear } from '@/lib/holidayUtils'
-import AssignmentCalendar from '@/components/AssignmentCalendar'
 import AssignmentHistoryCard from '@/components/AssignmentHistoryCard'
 
 interface Assignment {
@@ -22,7 +20,7 @@ interface Assignment {
   end_date: string | null
   weekly_hours: number
   status: string
-  schedule?: any
+  schedule?: WeeklySchedule
 }
 
 interface Worker {
@@ -52,14 +50,14 @@ interface DaySchedule {
 }
 
 interface WeeklySchedule {
-  monday: DaySchedule
-  tuesday: DaySchedule
-  wednesday: DaySchedule
-  thursday: DaySchedule
-  friday: DaySchedule
-  saturday: DaySchedule
-  sunday: DaySchedule
-  holiday: DaySchedule // Festivos entre semana
+  monday: DaySchedule;
+  tuesday: DaySchedule;
+  wednesday: DaySchedule;
+  thursday: DaySchedule;
+  friday: DaySchedule;
+  saturday: DaySchedule;
+  sunday: DaySchedule;
+  holiday: DaySchedule;
 }
 
 interface FormData {
@@ -97,7 +95,7 @@ export default function EditAssignmentPage() {
   const params = useParams()
   const router = useRouter()
   const assignmentId = params.id as string
-  const { success, error: showError, warning, info } = useNotificationHelpers()
+  const { success, error: showError } = useNotificationHelpers()
   
   const [assignment, setAssignment] = useState<Assignment | null>(null)
   const [workers, setWorkers] = useState<Worker[]>([])
@@ -131,24 +129,12 @@ export default function EditAssignmentPage() {
     setFormData(prev => ({ ...prev, weekly_hours: totalHours }))
   }, [formData.schedule])
 
-  const dayNames = {
-    monday: 'Lunes',
-    tuesday: 'Martes',
-    wednesday: 'Miércoles',
-    thursday: 'Jueves',
-    friday: 'Viernes',
-    saturday: 'Sábado',
-    sunday: 'Domingo'
-  }
-
-  const [holidays, setHolidays] = useState<string[]>([])
-
   useEffect(() => {
     // Cargar festivos del año de la asignación
     if (formData.start_date) {
       const year = new Date(formData.start_date).getFullYear()
       getHolidaysForYear(year).then(festivos => {
-        setHolidays(festivos.map(f => f.date))
+        // setHolidays(festivos.map(f => f.date)) // Eliminado: holidays no se usa
       })
     }
   }, [formData.start_date])
@@ -247,7 +233,6 @@ export default function EditAssignmentPage() {
             
             // Verificar que las fechas son válidas
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-              console.warn(`Horario inválido para ${day}: ${slot.start} - ${slot.end}`)
               return
             }
             
@@ -255,7 +240,6 @@ export default function EditAssignmentPage() {
             
             // Verificar que las horas son válidas
             if (isNaN(hours) || hours < 0) {
-              console.warn(`Cálculo de horas inválido para ${day}: ${hours}`)
               return
             }
             
@@ -269,7 +253,6 @@ export default function EditAssignmentPage() {
     
     // Verificar que el total es válido
     if (isNaN(totalHours)) {
-      console.warn('Total de horas es NaN, devolviendo 0')
       return 0
     }
     
@@ -296,60 +279,6 @@ export default function EditAssignmentPage() {
       
       return newFormData
     })
-  }
-
-  const toggleDayEnabled = (day: keyof WeeklySchedule) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: {
-          ...prev.schedule[day],
-          enabled: !prev.schedule[day].enabled
-        }
-      }
-    }))
-  }
-
-  const updateTimeSlot = (day: keyof WeeklySchedule, slotIndex: number, field: 'start' | 'end', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: {
-          ...prev.schedule[day],
-          timeSlots: prev.schedule[day].timeSlots.map((slot, index) =>
-            index === slotIndex ? { ...slot, [field]: value } : slot
-          )
-        }
-      }
-    }))
-  }
-
-  const addTimeSlot = (day: keyof WeeklySchedule) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: {
-          ...prev.schedule[day],
-          timeSlots: [...prev.schedule[day].timeSlots, { start: '08:00', end: '09:00' }]
-        }
-      }
-    }))
-  }
-
-  const removeTimeSlot = (day: keyof WeeklySchedule, slotIndex: number) => {
-    setFormData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        [day]: {
-          ...prev.schedule[day],
-          timeSlots: prev.schedule[day].timeSlots.filter((_, index) => index !== slotIndex)
-        }
-      }
-    }))
   }
 
   const validateForm = (): string[] => {
@@ -556,323 +485,128 @@ export default function EditAssignmentPage() {
               <p className="text-sm text-slate-600 mb-4">
                 Selecciona los tipos de asignación que deseas aplicar. Los cambios se reflejarán automáticamente en el horario semanal y el calendario:
               </p>
-              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Días Laborables */}
-                <div className={`
-                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
-                  ${formData.selectedTypes.laborables 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-slate-200 hover:border-slate-300'
-                  }
-                `} onClick={() => handleAssignmentTypeChange('laborables')}>
+                <div
+                  className={`
+                    border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                    ${formData.selectedTypes.laborables 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-slate-200 hover:border-slate-300'
+                    }
+                  `}
+                  onClick={() => handleAssignmentTypeChange('laborables')}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-slate-900">Días Laborables</h3>
-                    <div className={`
-                      w-6 h-6 rounded-full border-2 flex items-center justify-center
-                      ${formData.selectedTypes.laborables 
-                        ? 'border-blue-500 bg-blue-500' 
-                        : 'border-slate-300'
-                      }
-                    `}>
-                      {formData.selectedTypes.laborables && (
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600">Lunes a Viernes, excluyendo festivos</p>
-                </div>
-
-                {/* Días Festivos */}
-                <div className={`
-                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
-                  ${formData.selectedTypes.festivos 
-                    ? 'border-purple-500 bg-purple-50' 
-                    : 'border-slate-200 hover:border-slate-300'
-                  }
-                `} onClick={() => handleAssignmentTypeChange('festivos')}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-slate-900">Días Festivos</h3>
-                    <div className={`
-                      w-6 h-6 rounded-full border-2 flex items-center justify-center
-                      ${formData.selectedTypes.festivos 
-                        ? 'border-purple-500 bg-purple-500' 
-                        : 'border-slate-300'
-                      }
-                    `}>
-                      {formData.selectedTypes.festivos && (
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600">Sábados, domingos y festivos entre semana</p>
-                </div>
-
-                {/* Asignación Flexible */}
-                <div className={`
-                  border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
-                  ${formData.selectedTypes.flexible 
-                    ? 'border-green-500 bg-green-50' 
-                    : 'border-slate-200 hover:border-slate-300'
-                  }
-                `} onClick={() => handleAssignmentTypeChange('flexible')}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-slate-900">Asignación Flexible</h3>
-                    <div className={`
-                      w-6 h-6 rounded-full border-2 flex items-center justify-center
-                      ${formData.selectedTypes.flexible 
-                        ? 'border-green-500 bg-green-500' 
-                        : 'border-slate-300'
-                      }
-                    `}>
-                      {formData.selectedTypes.flexible && (
-                        <div className="w-2 h-2 bg-white rounded-full"></div>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600">Todos los días de la semana</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Weekly Hours and Dates */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Weekly Hours Card */}
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-blue-900">
-                <Clock className="w-5 h-5 mr-2" />
-                Horas Semanales
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-blue-900 mb-2">
-                  {isNaN(formData.weekly_hours) ? 0 : formData.weekly_hours}
-                </div>
-                <p className="text-sm text-blue-700">horas calculadas automáticamente</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Start Date */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-slate-900">
-                <Calendar className="w-5 h-5 mr-2" />
-                Fecha de Inicio *
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                type="date"
-                value={formData.start_date}
-                onChange={(e) => handleInputChange('start_date', e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg py-3"
-                required
-              />
-            </CardContent>
-          </Card>
-
-          {/* End Date */}
-          <Card className="border-0 shadow-lg">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center text-slate-900">
-                <Calendar className="w-5 h-5 mr-2" />
-                Fecha de Fin (Opcional)
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                type="date"
-                value={formData.end_date}
-                onChange={(e) => handleInputChange('end_date', e.target.value)}
-                className="border-slate-300 focus:border-blue-500 focus:ring-blue-500 text-lg py-3"
-              />
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Holiday Calendar Preview */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-            <CardTitle className="flex items-center">
-              <Calendar className="w-5 h-5 mr-2 text-slate-600" />
-              Vista Previa del Calendario
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <AssignmentCalendar
-              schedule={formData.schedule}
-              assignmentType={formData.assignment_type}
-              startDate={formData.start_date || new Date().toISOString().split('T')[0]}
-              year={formData.start_date ? new Date(formData.start_date).getFullYear() : new Date().getFullYear()}
-              month={formData.start_date ? new Date(formData.start_date).getMonth() + 1 : new Date().getMonth() + 1}
-              className="mt-4"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Weekly Schedule */}
-        <Card className="border-0 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
-            <CardTitle className="flex items-center">
-              <Clock className="w-5 h-5 mr-2 text-slate-600" />
-              Horario Semanal
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
-            <div className="space-y-4">
-              {Object.entries(dayNames).map(([dayKey, dayName]) => {
-                const day = dayKey as keyof WeeklySchedule
-                const daySchedule = formData.schedule[day]
-                
-                return (
-                  <div key={day} className="border border-slate-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id={`enable_${day}`}
-                          checked={daySchedule.enabled}
-                          onChange={() => toggleDayEnabled(day)}
-                          className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor={`enable_${day}`} className="text-sm font-medium text-slate-700">
-                          {dayName}
-                        </label>
-                      </div>
-                      {daySchedule.enabled && (
-                        <Button
-                          type="button"
-                          onClick={() => addTimeSlot(day)}
-                          className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                        >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Añadir Tramo
-                        </Button>
-                      )}
-                    </div>
-                    
-                    {daySchedule.enabled && (
-                      <div className="space-y-2">
-                        {daySchedule.timeSlots.map((slot, slotIndex) => (
-                          <div key={slotIndex} className="flex items-center space-x-2">
-                            <Input
-                              type="time"
-                              value={slot.start}
-                              onChange={(e) => updateTimeSlot(day, slotIndex, 'start', e.target.value)}
-                              className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            <span className="text-slate-500">-</span>
-                            <Input
-                              type="time"
-                              value={slot.end}
-                              onChange={(e) => updateTimeSlot(day, slotIndex, 'end', e.target.value)}
-                              className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                            />
-                            {daySchedule.timeSlots.length > 1 && (
-                              <Button
-                                type="button"
-                                onClick={() => removeTimeSlot(day, slotIndex)}
-                                className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200"
-                              >
-                                <X className="w-3 h-3" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                    {formData.selectedTypes.laborables && (
+                      <span className="px-2 py-1 bg-blue-500 text-white rounded-full text-xs font-medium">
+                        Seleccionado
+                      </span>
                     )}
                   </div>
-                )
-              })}
-              {(formData.selectedTypes.festivos || formData.selectedTypes.flexible) && (
-                <div className="border border-slate-200 rounded-lg p-4">
-                  <div className="mb-2 font-semibold text-blue-700">Festivos entre semana</div>
-                  <div className="text-xs text-blue-600 mb-2">Puedes definir un horario especial para los festivos que caen entre lunes y viernes. Este horario se aplicará automáticamente a todos los festivos entre semana.</div>
-                  <div className="flex items-center space-x-3 mb-3">
-                    <input
-                      type="checkbox"
-                      id="enable_holiday"
-                      checked={formData.schedule.holiday?.enabled || false}
-                      onChange={() => toggleDayEnabled('holiday')}
-                      className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-                    />
-                    <label htmlFor="enable_holiday" className="text-sm font-medium text-slate-700">
-                      Habilitar horario para festivos entre semana
-                    </label>
-                  </div>
-                  {formData.schedule.holiday?.enabled && (
-                    <div className="space-y-2">
-                      {formData.schedule.holiday.timeSlots.map((slot, slotIndex) => (
-                        <div key={slotIndex} className="flex items-center space-x-2">
-                          <Input
-                            type="time"
-                            value={slot.start}
-                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'start', e.target.value)}
-                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                          />
-                          <span className="text-slate-500">-</span>
-                          <Input
-                            type="time"
-                            value={slot.end}
-                            onChange={(e) => updateTimeSlot('holiday', slotIndex, 'end', e.target.value)}
-                            className="w-24 border-slate-300 focus:border-blue-500 focus:ring-blue-500"
-                          />
-                          {formData.schedule.holiday.timeSlots.length > 1 && (
-                            <Button
-                              type="button"
-                              onClick={() => removeTimeSlot('holiday', slotIndex)}
-                              className="text-xs px-2 py-1 bg-red-100 text-red-700 hover:bg-red-200"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                      <Button
-                        type="button"
-                        onClick={() => addTimeSlot('holiday')}
-                        className="text-xs px-2 py-1 bg-blue-100 text-blue-700 hover:bg-blue-200"
-                      >
-                        <Plus className="w-3 h-3 mr-1" />
-                        Añadir Tramo
-                      </Button>
-                    </div>
-                  )}
+                  <p className="text-xs text-slate-600">
+                    Horario de trabajo regular para la trabajadora.
+                  </p>
                 </div>
-              )}
+                {/* Festivos */}
+                <div
+                  className={`
+                    border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                    ${formData.selectedTypes.festivos 
+                      ? 'border-purple-500 bg-purple-50' 
+                      : 'border-slate-200 hover:border-slate-300'
+                    }
+                  `}
+                  onClick={() => handleAssignmentTypeChange('festivos')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900">Festivos</h3>
+                    {formData.selectedTypes.festivos && (
+                      <span className="px-2 py-1 bg-purple-500 text-white rounded-full text-xs font-medium">
+                        Seleccionado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Días en los que la trabajadora no trabaja.
+                  </p>
+                </div>
+                {/* Flexible */}
+                <div
+                  className={`
+                    border-2 rounded-lg p-4 cursor-pointer transition-all duration-200
+                    ${formData.selectedTypes.flexible 
+                      ? 'border-green-500 bg-green-50' 
+                      : 'border-slate-200 hover:border-slate-300'
+                    }
+                  `}
+                  onClick={() => handleAssignmentTypeChange('flexible')}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-slate-900">Flexible</h3>
+                    {formData.selectedTypes.flexible && (
+                      <span className="px-2 py-1 bg-green-500 text-white rounded-full text-xs font-medium">
+                        Seleccionado
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-600">
+                    Horario de trabajo que puede variar según las necesidades.
+                  </p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Assignment History */}
-        <AssignmentHistoryCard assignmentId={assignmentId} />
+      {/* Weekly Schedule */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+            Horario Semanal
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Aquí puedes renderizar el horario semanal, por ejemplo, usando un componente o el propio formulario de días y tramos */}
+        </CardContent>
+      </Card>
 
-        {/* Submit Button */}
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-          >
-            {saving ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Guardar Cambios
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
-  )
-} 
+      {/* Calendar Preview */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+            Vista Previa del Calendario
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          {/* Aquí puedes renderizar el componente de calendario, por ejemplo: */}
+          {/* <AssignmentCalendar ...props /> */}
+        </CardContent>
+      </Card>
+
+      {/* Assignment History */}
+      <Card className="border-0 shadow-lg">
+        <CardHeader className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
+          <CardTitle className="flex items-center">
+            <Calendar className="w-5 h-5 mr-2 text-slate-600" />
+            Historial de Cambios
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <AssignmentHistoryCard assignmentId={assignmentId} />
+        </CardContent>
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex justify-end">
+        <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white" disabled={saving}>
+          {saving ? 'Guardando...' : 'Guardar Cambios'}
+        </Button>
+      </div>
+    </form>
+  </div>
+  );
+}

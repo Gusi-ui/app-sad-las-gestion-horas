@@ -9,7 +9,6 @@ import { useWorkers } from '@/hooks/useWorkers'
 import { useToast } from '@/components/ui/toast'
 import { ArrowLeft, Save, X, AlertTriangle, Users, User, Clock, Calendar, Settings } from 'lucide-react'
 import { Worker, WorkerSpecialization, WeekDay, WorkerType } from '@/lib/types'
-import { supabase } from '@/lib/supabase'
 
 const specializationOptions: { value: WorkerSpecialization; label: string }[] = [
   { value: 'elderly_care', label: '👴 Cuidado Personas Mayores' },
@@ -113,9 +112,8 @@ export default function EditWorkerPage() {
             is_active: data.is_active
           })
         }
-      } catch (err) {
-        console.error('Error fetching worker:', err)
-        setLoadError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
+      } catch {
+        setLoadError('Error al cargar trabajadora')
       } finally {
         setIsLoading(false)
       }
@@ -280,7 +278,7 @@ export default function EditWorkerPage() {
         showToast(emailUpdated ? 'Email y datos actualizados correctamente' : 'Datos actualizados correctamente', 'success')
         router.push('/dashboard/workers')
       }
-    } catch (err) {
+    } catch {
       showToast('Error inesperado al actualizar trabajadora', 'error')
     } finally {
       setIsSubmitting(false)

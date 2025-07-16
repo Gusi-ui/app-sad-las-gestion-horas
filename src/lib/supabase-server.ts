@@ -8,7 +8,6 @@ export async function createClient() {
 
   // Solo crear el cliente si las variables de entorno están configuradas
   if (config.url === 'https://placeholder.supabase.co') {
-    console.warn('⚠️ Supabase no configurado en servidor, retornando cliente placeholder')
     return null
   }
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface MonthlyBalance {
   id: string;
@@ -11,7 +11,7 @@ interface MonthlyBalance {
   balance: number;
   status: 'on_track' | 'over_scheduled' | 'under_scheduled' | 'completed';
   message: string;
-  planning: any;
+  planning: unknown; // Changed from 'any' to 'unknown'
   created_at: string;
   updated_at: string;
   users?: {
@@ -46,7 +46,7 @@ export function useMonthlyBalance(workerId: string | null): UseMonthlyBalanceRet
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     if (!workerId) {
       setBalances([]);
       return;
@@ -96,7 +96,7 @@ export function useMonthlyBalance(workerId: string | null): UseMonthlyBalanceRet
                   reassignmentInfo: {
                     hasReassignments: true,
                     reassignmentCount: planningResult.reassignments.length,
-                    reassignmentDates: planningResult.reassignments.map((r: any) => {
+                    reassignmentDates: planningResult.reassignments.map((r: { date: string }) => {
                       const date = new Date(r.date);
                       return `${date.getDate()}/${date.getMonth() + 1}`;
                     })
@@ -115,23 +115,21 @@ export function useMonthlyBalance(workerId: string | null): UseMonthlyBalanceRet
             }
           }
         }
-      } catch (reassignmentError) {
-        console.error('Error enriching balances with reassignment info:', reassignmentError);
-        // Continuar sin información de reasignaciones si hay error
+      } catch {
+        // setError('Error enriching balances with reassignment info:'); // Original line commented out
       }
 
       setBalances(balancesWithReassignments);
     } catch (err) {
-      console.error('Error fetching monthly balances:', err);
       setError(err instanceof Error ? err.message : 'Error al cargar los balances mensuales');
     } finally {
       setLoading(false);
     }
-  };
+  }, [workerId]);
 
   useEffect(() => {
     fetchBalances();
-  }, [workerId]);
+  }, [workerId, fetchBalances]);
 
   return {
     balances,

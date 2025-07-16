@@ -62,13 +62,13 @@ export async function calculateAndStoreMonthlyBalances(year: number, month: numb
         else if (weekend && a.assignment_type === "weekends") applies = true;
         else if (!isHoliday && !weekend && (a.assignment_type === "regular" || a.assignment_type === "laborables")) applies = true;
         if (!applies) continue;
-        const schedule = a.schedule as any;
-        if (schedule && schedule[weekDay] && schedule[weekDay].enabled) {
-          const timeSlots = schedule[weekDay].timeSlots || [];
-          for (const slot of timeSlots) {
-            realHours += timeDiffInHours(slot.start, slot.end);
-          }
-        }
+        const schedule = a.schedule as Record<string, { enabled: boolean; timeSlots: { start: string; end: string }[] }>;
+if (schedule && schedule[weekDay] && schedule[weekDay].enabled) {
+  const timeSlots = schedule[weekDay].timeSlots || [];
+  for (const slot of timeSlots) {
+    realHours += timeDiffInHours(slot.start, slot.end);
+  }
+}
       }
     }
     const assignedHours = user.monthly_hours;

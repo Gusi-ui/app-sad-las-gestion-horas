@@ -16,16 +16,15 @@ export async function getHolidaysFromDatabase(year: number, month?: number): Pro
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
     
-    const data = await response.json();
+    const data: { holidays: Holiday[] } = await response.json();
     const holidays = data.holidays || [];
     
-    return holidays.map((holiday: any) => ({
+    return holidays.map((holiday: Holiday) => ({
       date: holiday.date, // La API ya devuelve la fecha en formato YYYY-MM-DD
       name: holiday.name,
       type: holiday.type as 'national' | 'regional' | 'local'
     }));
-  } catch (error) {
-    console.error('Error obteniendo festivos de la API:', error);
+  } catch {
     return getHolidaysForYear(year); // Fallback a festivos hardcodeados
   }
 }
@@ -35,14 +34,12 @@ export async function isHolidayFromDatabase(date: Date): Promise<boolean> {
   try {
     const year = date.getFullYear()
     const month = date.getMonth() + 1
-    const day = date.getDate()
     
     const holidays = await getHolidaysFromDatabase(year, month)
     const dateStr = formatDateToISO(date)
     
     return holidays.some(holiday => holiday.date === dateStr)
-  } catch (error) {
-    console.error('Error en isHolidayFromDatabase:', error)
+  } catch {
     return isHoliday(date) // Fallback a función hardcodeada
   }
 }
@@ -51,8 +48,7 @@ export async function isHolidayFromDatabase(date: Date): Promise<boolean> {
 export async function getHolidaysForMonthFromDatabase(year: number, month: number): Promise<Holiday[]> {
   try {
     return await getHolidaysFromDatabase(year, month)
-  } catch (error) {
-    console.error('Error en getHolidaysForMonthFromDatabase:', error)
+  } catch {
     return getHolidaysForMonth(year, month) // Fallback a función hardcodeada
   }
 }

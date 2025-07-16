@@ -24,11 +24,11 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         if (result.data) {
           setAssignment(result.data)
         } else {
-          console.error('No se encontró la asignación')
+          // console.error('No se encontró la asignación')
           router.push('/dashboard/assignments')
         }
       } catch (error) {
-        console.error('Error al cargar la asignación:', error)
+        // console.error('Error al cargar la asignación:', error)
         router.push('/dashboard/assignments')
       } finally {
         setLoading(false)
@@ -66,7 +66,7 @@ export default function EditAssignmentPage({ params }: { params: Promise<{ id: s
         showToast('Error al actualizar la asignación', 'error')
       }
     } catch (error) {
-      console.error('Error al guardar:', error)
+      // console.error('Error al guardar:', error)
       showToast('Error al guardar los cambios', 'error')
     }
   }

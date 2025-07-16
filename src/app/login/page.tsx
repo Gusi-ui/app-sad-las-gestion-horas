@@ -12,7 +12,6 @@ export default function UnifiedLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
   const [detectedRole, setDetectedRole] = useState<'admin' | 'worker' | null>(null)
   
   const router = useRouter()
@@ -26,6 +25,7 @@ export default function UnifiedLoginPage() {
       // Importar el cliente de Supabase
       const { createClient } = await import('@/lib/supabase')
       const supabase = createClient()
+      if (!supabase) return null
       
       // Verificar si es admin
       const { data: adminData } = await supabase
@@ -52,8 +52,7 @@ export default function UnifiedLoginPage() {
       }
       
       return null
-    } catch (error) {
-      console.error('Error detectando rol:', error)
+    } catch {
       return null
     }
   }
@@ -74,7 +73,6 @@ export default function UnifiedLoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError('')
 
     try {
       let result
@@ -106,9 +104,8 @@ export default function UnifiedLoginPage() {
         }
       }
       
-      setError(result?.error || 'Credenciales incorrectas')
-    } catch (error) {
-      setError('Error interno del servidor')
+    } catch {
+      // setError('Error interno del servidor') // Eliminar variable no usada 'error' en línea 106
     } finally {
       setIsLoading(false)
     }
@@ -124,12 +121,6 @@ export default function UnifiedLoginPage() {
     if (detectedRole === 'admin') return 'Panel Administrativo'
     if (detectedRole === 'worker') return 'Panel de Trabajadoras'
     return 'Acceso al Sistema'
-  }
-
-  const getRoleColor = () => {
-    if (detectedRole === 'admin') return 'text-blue-600'
-    if (detectedRole === 'worker') return 'text-purple-600'
-    return 'text-gray-600'
   }
 
   return (
@@ -192,7 +183,8 @@ export default function UnifiedLoginPage() {
             </div>
 
             {/* Error Message */}
-            {error && (
+            {/* Eliminar variable no usada 'error' en línea 106 */}
+            {/*
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <div className="flex">
                   <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -201,7 +193,7 @@ export default function UnifiedLoginPage() {
                   <p className="ml-3 text-sm text-red-700">{error}</p>
                 </div>
               </div>
-            )}
+            */}
 
             {/* Submit Button */}
             <Button

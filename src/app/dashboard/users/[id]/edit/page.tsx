@@ -31,40 +31,34 @@ export default function EditUserPage() {
   // Verificar autenticación - removido showToast de dependencias
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user: authUser }, error } = await supabase.auth.getUser()
-      // if (error || !authUser) {
-        // router.push('/login')
-        return
-      }
-
-      // }
-
+      if (!supabase) return
+      await supabase.auth.getUser()
+      // Eliminado manejo de error y variable no usada
+    }
     checkAuth()
   }, [router]) // Removido showToast de las dependencias
 
   const fetchUser = useCallback(async () => {
-    if (!userId) {
+    if (!userId || !supabase) {
       setLoading(false)
       return
     }
 
     try {
-      // const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
 
-      // if (error) {
-        console.error('Error fetching user:', error)
+      if (error) {
         showToast('Error al cargar los datos del usuario', 'error')
         router.push('/dashboard/users')
         return
       }
 
       setUser(data)
-    } catch (error) {
-      console.error('Error fetching user:', error)
+    } catch {
       showToast('Error al cargar los datos del usuario', 'error')
       router.push('/dashboard/users')
     } finally {
@@ -79,8 +73,9 @@ export default function EditUserPage() {
   }, [userId, fetchUser])
 
   const handleSubmit = useCallback(async (formData: UserFormData) => {
+    if (!supabase) return
     try {
-      // // // const updateData = {
+      const updateData = {
         name: formData.name.trim(),
         surname: formData.surname.trim(),
         phone: formData.phone.replace(/\s/g, ''),
@@ -88,27 +83,24 @@ export default function EditUserPage() {
         notes: formData.notes.trim() || null,
         is_active: formData.is_active,
         monthly_hours: Number(formData.monthly_hours)
-      }
+      };
 
-      // const { error } = await supabase
+      const { error } = await supabase
         .from('users')
         .update(updateData)
-        .eq('id', userId)
+        .eq('id', userId);
 
       if (error) {
-        console.error('❌ Error updating user:', error)
         showToast(`Error al actualizar usuario: ${error.message}`, 'error')
         return
       }
 
-      // showToast('Usuario actualizado correctamente', 'success')
+      // showToast('Usuario actualizado correctamente', 'success');
       setTimeout(() => {
-        router.push('/dashboard/users')
-      }, 1500)
-    } catch (error) {
-      console.error('❌ Unexpected error updating user:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido al guardar los cambios'
-      showToast(`Error al guardar: ${errorMessage}`, 'error')
+        router.push('/dashboard/users');
+      }, 1500);
+    } catch {
+      showToast('Error al guardar: Error desconocido al guardar los cambios', 'error')
     }
   }, [userId, router, showToast])
 

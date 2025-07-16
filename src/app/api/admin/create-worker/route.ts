@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
       password,
       email_confirm: true
     })
-    // // if (userError || !userData?.user) {
+    if (userError || !userData?.user) {
       console.error('Error creando usuario en Auth:', userError);
       return NextResponse.json({ error: userError?.message || 'Error creando usuario en Auth' }, { status: 500 })
     }
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       worker_type,
       created_at: new Date().toISOString()
     })
-    // // if (profileError) {
+    if (profileError) {
       // Si falla el perfil, elimina el usuario creado en Auth para evitar inconsistencias
       await supabase.auth.admin.deleteUser(userId)
       console.error('Error creando perfil:', profileError);
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     })
-    // // if (workersError) {
+    if (workersError) {
       // Si falla, elimina el usuario y el perfil para evitar inconsistencias
       await supabase.from('worker_profiles').delete().eq('id', userId)
       await supabase.auth.admin.deleteUser(userId)

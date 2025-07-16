@@ -83,9 +83,8 @@ export default function WorkerDetailsPage() {
             availability_days: Array.isArray(data.availability_days) ? data.availability_days : []
           })
         }
-      } catch (err) {
-        console.error('Error fetching worker:', err)
-        setError(err instanceof Error ? err.message : 'Error al cargar trabajadora')
+      } catch {
+        setError('Error al cargar trabajadora')
       } finally {
         setIsLoading(false)
       }
@@ -94,7 +93,7 @@ export default function WorkerDetailsPage() {
   }, [workerId, getWorkerById])
 
   const handleDelete = async () => {
-    if (!workerId) return
+    if (!workerId || !supabase) return
 
     setIsDeleting(true)
     try {
@@ -157,7 +156,7 @@ export default function WorkerDetailsPage() {
 
   const stats = getWorkerStats()
 
-  // return (
+  return (
     <div className="min-h-screen bg-slate-50 pb-24">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">

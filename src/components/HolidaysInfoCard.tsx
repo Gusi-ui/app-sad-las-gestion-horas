@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Calendar, Clock, MapPin, Star } from "lucide-react";
 
 interface Holiday {
@@ -37,8 +36,12 @@ export function HolidaysInfoCard({ month, year }: HolidaysInfoCardProps) {
         }
         
         setHolidays(data.holidays || []);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError("Error desconocido al cargar festivos");
+        }
       } finally {
         setLoading(false);
       }

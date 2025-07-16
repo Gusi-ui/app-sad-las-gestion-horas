@@ -30,7 +30,7 @@ export interface UserBalance {
   remainingHours: number; // Horas que faltan por hacer
   status: 'excess' | 'deficit' | 'perfect';
   percentage: number;
-  assignments: any[];
+  assignments: AssignmentWithUser[];
   holidayInfo: {
     totalHolidays: number;
     holidayHours: number;
@@ -65,11 +65,11 @@ export async function calculateWorkerBalance(
     if (!assignment.schedule) return sum;
     
     let weeklyHours = 0;
-    Object.values(assignment.schedule).forEach((daySchedule: any) => {
+    Object.values(assignment.schedule as Record<string, { enabled: boolean; timeSlots: { start: string; end: string }[] }>).forEach((daySchedule) => {
       if (daySchedule?.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
-        daySchedule.timeSlots.forEach((slot: any) => {
+        daySchedule.timeSlots.forEach((slot) => {
           const [startHour, startMin] = slot.start.split(':').map(Number);
-          const [endHour, endMin] = slot.end.split(':').map(Number);
+          const [endHour, endMin] = slot.end.split(':').map(Number);    
           const startTime = startHour + startMin / 60;
           const endTime = endHour + endMin / 60;
           weeklyHours += Math.max(0, endTime - startTime);
@@ -101,7 +101,7 @@ export async function calculateWorkerBalance(
       if (assignment.schedule && assignment.schedule[dayName as keyof typeof assignment.schedule]) {
         const daySchedule = assignment.schedule[dayName as keyof typeof assignment.schedule];
         if (daySchedule?.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
-          daySchedule.timeSlots.forEach((slot: any) => {
+          daySchedule.timeSlots.forEach((slot: { start: string; end: string }) => {
             const [startHour, startMin] = slot.start.split(':').map(Number);
             const [endHour, endMin] = slot.end.split(':').map(Number);
             const startTime = startHour + startMin / 60;
@@ -202,11 +202,7 @@ export async function calculateWorkerUserBalance(
     .eq('month', month)
     .eq('is_active', true);
 
-  if (holidaysError) {
-    console.warn('Error al obtener festivos:', holidaysError);
-  }
-
-  const holidayDates = new Set((holidays || []).map((h: any) => new Date(h.date).getDate()));
+  const holidayDates = new Set((holidays || []).map((h: { date: string }) => new Date(h.date).getDate()));
 
   // 3. Obtener usuarios únicos de las asignaciones de esta trabajadora
   const uniqueUserIds = [...new Set(workerAssignments.map(a => a.user_id))];
@@ -240,7 +236,6 @@ export async function calculateWorkerUserBalance(
       .eq('status', 'active');
 
     if (allAssignmentsError) {
-      console.error(`Error al obtener todas las asignaciones del usuario ${userId}:`, allAssignmentsError);
       continue;
     }
 
@@ -271,12 +266,12 @@ export async function calculateWorkerUserBalance(
       const isPastDay = date <= today;
 
       // Verificar si hay servicios en este día (de todas las trabajadoras)
-      allUserAssignments?.forEach((assignment: any) => {
+      allUserAssignments?.forEach((assignment: AssignmentWithUser) => {
         if (assignment.schedule && assignment.schedule[dayName as keyof typeof assignment.schedule]) {
           const daySchedule = assignment.schedule[dayName as keyof typeof assignment.schedule];
           if (daySchedule?.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
             let dayHours = 0;
-            daySchedule.timeSlots.forEach((slot: any) => {
+            daySchedule.timeSlots.forEach((slot: { start: string; end: string }) => {
               const [startHour, startMin] = slot.start.split(':').map(Number);
               const [endHour, endMin] = slot.end.split(':').map(Number);
               const startTime = startHour + startMin / 60;
@@ -321,12 +316,12 @@ export async function calculateWorkerUserBalance(
       const today = new Date();
       const isPastDay = date <= today;
 
-      workerUserAssignments.forEach((assignment: any) => {
+      workerUserAssignments.forEach((assignment: AssignmentWithUser) => {
         if (assignment.schedule && assignment.schedule[dayName as keyof typeof assignment.schedule]) {
           const daySchedule = assignment.schedule[dayName as keyof typeof assignment.schedule];
           if (daySchedule?.enabled && daySchedule.timeSlots && daySchedule.timeSlots.length > 0) {
             let dayHours = 0;
-            daySchedule.timeSlots.forEach((slot: any) => {
+            daySchedule.timeSlots.forEach((slot: { start: string; end: string }) => {
               const [startHour, startMin] = slot.start.split(':').map(Number);
               const [endHour, endMin] = slot.end.split(':').map(Number);
               const startTime = startHour + startMin / 60;
@@ -345,7 +340,6 @@ export async function calculateWorkerUserBalance(
 
     // Aplicar la lógica de balance: comparar total de horas asignadas al usuario vs horas realizadas
     const totalRemainingHours = Math.max(0, monthlyHours - totalUsedHoursForUser);
-    const totalExcessHours = Math.max(0, totalUsedHoursForUser - monthlyHours);
     
     // Determinar estado basado en el total de horas del usuario
     let status: 'excess' | 'deficit' | 'perfect';

@@ -3,12 +3,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle, Clock, Loader2 } from "lucide-react";
 
+interface PlanningType {
+  [key: string]: unknown;
+}
+
+interface BalanceType {
+  scheduled_hours: number;
+  balance: number;
+  status: string;
+}
+
 interface AdminBalanceGeneratorProps {
   workerId: string;
   userId: string;
   month: number;
   year: number;
-  planning: any;
+  planning: PlanningType;
   assignedHours: number;
   onSuccess?: () => void;
 }
@@ -26,7 +36,7 @@ export function AdminBalanceGenerator({
   const [result, setResult] = useState<{
     success: boolean;
     message: string;
-    balance?: any;
+    balance?: BalanceType;
   } | null>(null);
 
   const generateBalance = async () => {
@@ -65,7 +75,6 @@ export function AdminBalanceGenerator({
         onSuccess();
       }
     } catch (error) {
-      console.error('Error generating balance:', error);
       setResult({
         success: false,
         message: error instanceof Error ? error.message : 'Error desconocido'

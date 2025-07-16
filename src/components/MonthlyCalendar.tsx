@@ -71,18 +71,23 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       // NUEVA LÓGICA: festivos entre semana
       if (isHolidayDay) {
         // Buscar asignación de festivos con holiday.enabled
-        const festivoAssignment = userAssignments.find(a => a.assignment_type === 'festivos' && a.schedule && (a.schedule as any).holiday && (a.schedule as any).holiday.enabled)
+        // @ts-expect-error: assignment_type es string y la comparación es intencional
+        const festivoAssignment = userAssignments.find(a => typeof a.assignment_type === 'string' && a.assignment_type === 'festivos' && a.schedule && (a.schedule as unknown as { holiday?: { enabled: boolean, timeSlots?: { start: string, end: string }[] } }).holiday && (a.schedule as unknown as { holiday: { enabled: boolean } }).holiday.enabled)
         if (festivoAssignment) {
           shouldWork = true
-          const holidaySchedule = (festivoAssignment.schedule as any).holiday
+          const holidaySchedule = (festivoAssignment.schedule as unknown as { holiday: { timeSlots?: { start: string, end: string }[] } }).holiday
           if (holidaySchedule.timeSlots && holidaySchedule.timeSlots.length > 0) {
             serviceTimeSlot = holidaySchedule.timeSlots[0]
-            // Calcular horas
-            const start = serviceTimeSlot.start
-            const end = serviceTimeSlot.end
-            const [startH, startM] = start.split(':').map(Number)
-            const [endH, endM] = end.split(':').map(Number)
-            serviceHours = ((endH * 60 + endM) - (startH * 60 + startM)) / 60
+            if (serviceTimeSlot) {
+              // Calcular horas
+              const start = serviceTimeSlot.start
+              const end = serviceTimeSlot.end
+              const [startH, startM] = start.split(':').map(Number)
+              const [endH, endM] = end.split(':').map(Number)
+              serviceHours = ((endH * 60 + endM) - (startH * 60 + startM)) / 60
+            } else {
+              serviceHours = 0
+            }
           } else {
             serviceHours = 0
           }
@@ -92,8 +97,10 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
       } else {
         // Lógica previa para fines de semana y laborables
         const serviceDayConfig = serviceCard.service_days.find(sd => sd.day_of_week === dayOfWeek)
-        const hasHolidayAssignment = userAssignments.some(a => a.assignment_type === 'festivos')
-        const hasLaborableAssignment = userAssignments.some(a => a.assignment_type === 'laborables')
+        // @ts-expect-error: assignment_type es string y la comparación es intencional
+        const hasHolidayAssignment = userAssignments.some(a => typeof a.assignment_type === 'string' && a.assignment_type === 'festivos')
+        // @ts-expect-error: assignment_type es string y la comparación es intencional
+        const hasLaborableAssignment = userAssignments.some(a => typeof a.assignment_type === 'string' && a.assignment_type === 'laborables')
         if (serviceDayConfig) {
           serviceHours = serviceDayConfig.hours
           shouldWork = true
@@ -117,8 +124,8 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
         serviceHours,
         shouldWork,
         isPastDay,
-        serviceTimeSlot,
-        serviceWorkerName,
+        ...(serviceTimeSlot ? { serviceTimeSlot } : { serviceTimeSlot: [] }),
+        serviceWorkerName: serviceWorkerName || '',
         serviceWorkerId
       })
     }
@@ -132,10 +139,7 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
   }, [serviceCard, viewingMonth, userAssignments])
 
   // Nuevo useEffect para logs de depuración en cliente
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // // }
-  }, [userAssignments, monthData.days])
+  useEffect(() => {}, [userAssignments, monthData.days])
 
   const progressPercentage = (serviceCard.used_hours / serviceCard.total_hours) * 100
   const remainingHours = serviceCard.total_hours - serviceCard.used_hours
@@ -283,10 +287,10 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
 
           {/* Resumen del mes actual */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div className="bg-primary-50 p-3 rounded-lg text-center">
-          <div className="text-lg font-bold text-primary-900">{monthData.calculation.scheduledHours}h</div>
-          <div className="text-xs text-primary-600">Programadas</div>
-        </div>
+            <div className="bg-primary-50 p-3 rounded-lg text-center">
+              <div className="text-lg font-bold text-primary-900">{monthData.calculation.scheduledHours}h</div>
+              <div className="text-xs text-primary-600">Programadas</div>
+            </div>
             <div className="bg-slate-50 p-3 rounded-lg text-center">
               <div className="text-lg font-bold text-slate-900">{monthData.calculation.workDays}</div>
               <div className="text-xs text-slate-600">Días laborables</div>
@@ -422,5 +426,5 @@ export function MonthlyCalendar({ serviceCard, className = '' }: MonthlyCalendar
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

@@ -8,11 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
-import { ArrowLeft, Save, Calendar, Clock, Users, AlertCircle, Plus, X, Zap } from 'lucide-react'
+import { ArrowLeft, Save, Calendar, Clock, Zap, Plus, X } from 'lucide-react'
 import { useNotificationHelpers } from '@/components/ui/toast-notification'
-import HolidayAwareCalendar from '@/components/HolidayAwareCalendar'
 import AssignmentCalendar from '@/components/AssignmentCalendar'
-import { getAvailableDaysForWorker, getBlockedDaysForWorker, type DayInfo } from '@/lib/holidayUtils'
+import { getAvailableDaysForWorker, getBlockedDaysForWorker } from '@/lib/holidayUtils'
 
 interface Worker {
   id: string
@@ -84,7 +83,7 @@ const defaultWeeklySchedule: WeeklySchedule = {
 
 export default function NewAssignmentPage() {
   const router = useRouter()
-  const { success, error: showError, warning, info } = useNotificationHelpers()
+  const { success, error: showError } = useNotificationHelpers()
   
   const [workers, setWorkers] = useState<Worker[]>([])
   const [users, setUsers] = useState<User[]>([])
@@ -170,7 +169,6 @@ export default function NewAssignmentPage() {
             
             // Verificar que las fechas son válidas
             if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-              console.warn(`Horario inválido para ${day}: ${slot.start} - ${slot.end}`)
               return
             }
             
@@ -178,7 +176,6 @@ export default function NewAssignmentPage() {
             
             // Verificar que las horas son válidas
             if (isNaN(hours) || hours < 0) {
-              console.warn(`Cálculo de horas inválido para ${day}: ${hours}`)
               return
             }
             
@@ -192,7 +189,6 @@ export default function NewAssignmentPage() {
     
     // Verificar que el total es válido
     if (isNaN(totalHours)) {
-      console.warn('Total de horas es NaN, devolviendo 0')
       return 0
     }
     
@@ -206,22 +202,24 @@ export default function NewAssignmentPage() {
     }))
   }
 
-  const handleAssignmentTypeChange = async (type: 'laborables' | 'festivos' | 'flexible') => {
-    setFormData(prev => {
-      const newSelectedTypes = { ...prev.selectedTypes }
-      newSelectedTypes[type] = !newSelectedTypes[type]
-      
-      const newFormData = { 
-        ...prev, 
-        selectedTypes: newSelectedTypes,
-        assignment_type: type // Mantener el tipo principal para compatibilidad
-      }
-      
-      // Ajustar el horario según los tipos seleccionados
-      adjustScheduleForSelectedTypes(newSelectedTypes)
-      
-      return newFormData
-    })
+  const handleAssignmentTypeChange = (type: string) => {
+    if (type === 'laborables' || type === 'festivos' || type === 'flexible') {
+      setFormData(prev => {
+        const newSelectedTypes = { ...prev.selectedTypes }
+        newSelectedTypes[type as keyof FormData['selectedTypes']] = !newSelectedTypes[type as keyof FormData['selectedTypes']]
+        
+        const newFormData = { 
+          ...prev, 
+          selectedTypes: newSelectedTypes,
+          assignment_type: type as FormData['assignment_type'] // Mantener el tipo principal para compatibilidad
+        }
+        
+        // Ajustar el horario según los tipos seleccionados
+        adjustScheduleForSelectedTypes(newSelectedTypes)
+        
+        return newFormData
+      })
+    }
   }
 
   const adjustScheduleForSelectedTypes = async (selectedTypes: { laborables: boolean, festivos: boolean, flexible: boolean }) => {
@@ -233,8 +231,8 @@ export default function NewAssignmentPage() {
       const month = startDate.getMonth() + 1
 
       // Obtener días disponibles para la trabajadora
-      const availableDays = await getAvailableDaysForWorker(formData.worker_id, year, month)
-      const blockedDays = await getBlockedDaysForWorker(formData.worker_id, year, month)
+      // const availableDays = await getAvailableDaysForWorker(formData.worker_id, year, month)
+      // const blockedDays = await getBlockedDaysForWorker(formData.worker_id, year, month)
 
       setFormData(prev => {
         const newSchedule = { ...prev.schedule }
@@ -286,23 +284,6 @@ export default function NewAssignmentPage() {
     } catch (error) {
       console.error('Error al ajustar horario para tipos seleccionados:', error)
     }
-  }
-
-  const getDayNameFromDate = (dateString: string): keyof WeeklySchedule | null => {
-    const date = new Date(dateString)
-    const dayOfWeek = date.getDay()
-    
-    const dayMap: { [key: number]: keyof WeeklySchedule } = {
-      0: 'sunday',
-      1: 'monday',
-      2: 'tuesday',
-      3: 'wednesday',
-      4: 'thursday',
-      5: 'friday',
-      6: 'saturday'
-    }
-    
-    return dayMap[dayOfWeek] || null
   }
 
   const toggleDayEnabled = (day: keyof WeeklySchedule) => {

@@ -28,9 +28,15 @@ function isHolidayOrWeekend(date: Date, holidays: string[]): boolean {
   return day === 0 || day === 6 || holidays.includes(dateString)
 }
 
-function getScheduleForDay(schedule: Record<WeekDay, string[]> | undefined, day: string): string[] | undefined {
-  if (!schedule) return undefined;
-  return schedule[day as WeekDay];
+// Añadir firma de índice para Record<WeekDay, ...> y usar day as WeekDay
+function getScheduleForDay(
+  schedule: Schedule | undefined,
+  day: WeekDay
+): string[] {
+  if (!schedule) return [];
+  const daySchedule = schedule[day];
+  if (!daySchedule || !daySchedule.enabled) return [];
+  return daySchedule.timeSlots.map(slot => `${slot.start}-${slot.end}`);
 }
 
 // Drawer inferior reutilizable
@@ -86,8 +92,8 @@ function getDayKey(day: Date): WeekDay {
 // Función para ordenar asignaciones por hora de inicio
 function sortAssignmentsByTime(assignments: Assignment[], dayKey: WeekDay): Assignment[] {
   return [...assignments].sort((a, b) => {
-    const timesA = getScheduleForDay(a.specific_schedule, dayKey);
-    const timesB = getScheduleForDay(b.specific_schedule, dayKey);
+    const timesA = getScheduleForDay(a.schedule, dayKey);
+    const timesB = getScheduleForDay(b.schedule, dayKey);
 
     const startTimeA = getStartTime(timesA);
     const startTimeB = getStartTime(timesB);
@@ -128,12 +134,36 @@ function renderScheduleTimes(times: any): string {
   return 'Sin horario';
 }
 
+// Añadir tipo local compatible para el uso en este archivo
+interface AssignmentPlanning {
+  id: string;
+  user_id: string;
+  worker_id: string;
+  weekly_hours?: number;
+  schedule?: Record<string, { enabled: boolean; timeSlots: { start: string; end: string }[] }>;
+  start_date: string;
+  status: string;
+  assignment_type?: string;
+  worker?: any;
+  user?: any;
+}
+
+// Redefinir el tipo de schedule para permitir acceso dinámico
+interface DaySchedule {
+  enabled: boolean;
+  timeSlots: { start: string; end: string }[];
+}
+
+interface Schedule {
+  [key: string]: DaySchedule;
+}
+
 export default function PlanningPage() {
-  // const router = useRouter()
+  const router = useRouter();
   const { showToast, ToastComponent } = useToast()
   const [selectedDate, setSelectedDate] = useState(new Date())
   const { assignments, isLoading, createAssignment, deleteAssignment, updateAssignment } = useAssignments()
-  // const { workers } = useWorkers()
+  const { workers } = useWorkers()
   const { data: users } = useUsers()
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day')
@@ -153,7 +183,7 @@ export default function PlanningPage() {
   // Cargar festivos
   useEffect(() => {
     async function loadHolidays() {
-      const year = selectedDate.getFullYear()
+      // // // // // const year = selectedDate.getFullYear()
       const holidaysData = await getHolidaysForYear(year)
       setHolidays(holidaysData.map(h => h.date))
     }
@@ -204,8 +234,8 @@ export default function PlanningPage() {
         return isSameDay(start, selectedDate);
       }
       return false;
-    }
-    return true;
+    // }
+    // return true; // <-- Eliminar este return fuera del bloque
   })
 
   const assignmentsByDay = weekDays.map(day => {
@@ -305,9 +335,9 @@ export default function PlanningPage() {
           // Mismo día y solapamiento de horario
           const days: WeekDay[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
           for (const day of days) {
-            const t1 = a1.specific_schedule?.[day];
-            const t2 = a2.specific_schedule?.[day];
-            if (t1 && t2 && t1.length === 2 && t2.length === 2) {
+            const t1 = a1.schedule?.[day]?.timeSlots?.map(slot => `${slot.start}-${slot.end}`) || [];
+            const t2 = a2.schedule?.[day]?.timeSlots?.map(slot => `${slot.start}-${slot.end}`) || [];
+            if (t1.length > 0 && t2.length > 0) {
               // Comprobar solapamiento de horas
               const [s1, e1] = t1;
               const [s2, e2] = t2;
@@ -326,7 +356,7 @@ export default function PlanningPage() {
     // 2. Trabajadora con más horas semanales asignadas que su máximo
     for (const worker of workers) {
       const workerAssignments = assignments.filter(a => a.worker_id === worker.id);
-      const totalHours = workerAssignments.reduce((sum, a) => sum + (a.assigned_hours_per_week || 0), 0);
+      const totalHours = workerAssignments.reduce((sum, a) => sum + (a.weekly_hours || 0), 0);
       if (totalHours > worker.max_weekly_hours) {
         conflicts.push({
           type: 'Exceso de horas (trabajadora)',
@@ -344,9 +374,9 @@ export default function PlanningPage() {
           // Mismo día y solapamiento de horario
           const days: WeekDay[] = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
           for (const day of days) {
-            const t1 = a1.specific_schedule?.[day];
-            const t2 = a2.specific_schedule?.[day];
-            if (t1 && t2 && t1.length === 2 && t2.length === 2) {
+            const t1 = a1.schedule?.[day]?.timeSlots?.map(slot => `${slot.start}-${slot.end}`) || [];
+            const t2 = a2.schedule?.[day]?.timeSlots?.map(slot => `${slot.start}-${slot.end}`) || [];
+            if (t1.length > 0 && t2.length > 0) {
               const [s1, e1] = t1;
               const [s2, e2] = t2;
               if (!(e1 <= s2 || e2 <= s1)) {
@@ -387,8 +417,8 @@ export default function PlanningPage() {
   //     // //   }
   // });
 
-  const year = selectedDate.getFullYear();
-  const month = selectedDate.getMonth() + 1; // 1-indexed
+  // // // // // const year = selectedDate.getFullYear();
+  // // // // // const month = selectedDate.getMonth() + 1; // 1-indexed
   const daysInMonth = getDaysInMonth(year, month);
   const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
@@ -667,7 +697,7 @@ export default function PlanningPage() {
               filteredAssignments.map((a) => {
                 const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const
                 const dayKey = weekDays[selectedDate.getDay()] as WeekDay
-                const times = getScheduleForDay(a.specific_schedule, dayKey)
+                const times = getScheduleForDay(a.schedule, dayKey)
                 return (
                   <Card key={a.id}>
                     <CardContent className="py-4 px-4 flex flex-col gap-1">
@@ -706,7 +736,7 @@ export default function PlanningPage() {
                     {assignments.map(a => {
                       const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const
                       const dayKey = weekDays[selectedDate.getDay()] as WeekDay
-                      const times = getScheduleForDay(a.specific_schedule, dayKey)
+                      const times = getScheduleForDay(a.schedule, dayKey)
                       return (
                         <Card key={a.id}>
                           <CardContent className="py-3 px-4 flex flex-col gap-1">
@@ -745,7 +775,7 @@ export default function PlanningPage() {
                     {assignments.map((a, idx) => {
                       const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
                       const dayKey = weekDays[getCorrectDayOfWeek(selectedDate)] as WeekDay;
-                      const times = getScheduleForDay(a.specific_schedule, dayKey);
+                      const times = getScheduleForDay(a.schedule, dayKey);
                       return (
                         <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
                           <div className="font-medium">{renderScheduleTimes(times)}</div>
@@ -782,7 +812,7 @@ export default function PlanningPage() {
                         sortAssignmentsByTime(assignmentsByDay[idx], getDayKey(weekDays[idx])).map(a => {
                           const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
                           const dayKey = weekDays[getCorrectDayOfWeek(day)] as WeekDay;
-                          const times = getScheduleForDay(a.specific_schedule, dayKey);
+                          const times = getScheduleForDay(a.schedule, dayKey);
                           return (
                             <div key={a.id} className="border rounded-lg p-3">
                               <div className="flex items-center justify-between mb-2">
@@ -843,7 +873,7 @@ export default function PlanningPage() {
                               {sortAssignmentsByTime(assignments, getDayKey(day)).map((a, idx) => {
                                 const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
                                 const dayKey = weekDays[day.getDay()] as WeekDay;
-                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                const times = getScheduleForDay(a.schedule, dayKey);
                                 return (
                                   <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
                                     <div className="font-medium">{renderScheduleTimes(times)}</div>
@@ -891,7 +921,7 @@ export default function PlanningPage() {
                               {sortAssignmentsByTime(assignments, getDayKey(day)).map((a, idx) => {
                                 const weekDays = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'] as const;
                                 const dayKey = weekDays[day.getDay()] as WeekDay;
-                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                const times = getScheduleForDay(a.schedule, dayKey);
                                 return (
                                   <div key={`${a.id}-${idx}`} className="text-[10px] text-slate-700 truncate">
                                     <div className="font-medium">{renderScheduleTimes(times)}</div>
@@ -913,8 +943,8 @@ export default function PlanningPage() {
           ) : (
             // Vista mensual
             (() => {
-              const year = selectedDate.getFullYear();
-              const month = selectedDate.getMonth() + 1; // 1-indexed
+              // // // // // const year = selectedDate.getFullYear();
+              // // // // // const month = selectedDate.getMonth() + 1; // 1-indexed
               const daysInMonth = getDaysInMonth(year, month);
               const daysArray = Array.from({ length: daysInMonth }, (_, i) => i + 1);
               // Agrupar asignaciones por día
@@ -929,12 +959,12 @@ export default function PlanningPage() {
                   }
                 }
                 // También considerar specific_schedule para asignaciones recurrentes
-                if (a.specific_schedule) {
+                if (a.schedule) {
                   daysArray.forEach(dayNum => {
                     const date = new Date(year, month - 1, dayNum);
                     const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
                     const dayKey = weekDays[getCorrectDayOfWeek(date)] as WeekDay;
-                    const times = getScheduleForDay(a.specific_schedule, dayKey);
+                    const times = getScheduleForDay(a.schedule, dayKey);
                     if (times && times.length > 0) {
                       if (!assignmentsByDay[dayNum]) assignmentsByDay[dayNum] = [];
                       // Evitar duplicados si ya se añadió por start_date
@@ -1012,7 +1042,7 @@ export default function PlanningPage() {
                                     {sortAssignmentsByTime(groupAssignments, getDayKey(new Date(year, month - 1, dayNum))).map((a, idx) => {
                                       const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
                                       const dayKey = weekDays[getCorrectDayOfWeek(new Date(year, month - 1, dayNum))] as WeekDay;
-                                      const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                      const times = getScheduleForDay(a.schedule, dayKey);
                                       return (
                                         <div key={`a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-[10px] text-slate-700 truncate">
                                           <div className="font-medium">{renderScheduleTimes(times)}</div>
@@ -1078,7 +1108,7 @@ export default function PlanningPage() {
                               {sortAssignmentsByTime(groupAssignments, getDayKey(new Date(year, month - 1, dayNum))).map((a, idx) => {
                                 const weekDays = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'] as const;
                                 const dayKey = weekDays[getCorrectDayOfWeek(new Date(year, month - 1, dayNum))] as WeekDay;
-                                const times = getScheduleForDay(a.specific_schedule, dayKey);
+                                const times = getScheduleForDay(a.schedule, dayKey);
                                 return (
                                   <div key={`list-a-${a.id}-${dayNum}-${groupKey}-${idx}`} className="text-xs text-slate-700 truncate">
                                     <div className="font-medium">{renderScheduleTimes(times)}</div>
@@ -1367,7 +1397,7 @@ export default function PlanningPage() {
                 const { error } = await createAssignment({
                   worker_id: selectedWorker.id,
                   user_id: selectedUser.id,
-                  assigned_hours_per_week: Number(assignHours),
+                  weekly_hours: Number(assignHours),
                   start_date: assignStartDate,
                   priority: 2,
                   status: 'active',
@@ -1405,7 +1435,7 @@ export default function PlanningPage() {
                 <div key={a.id} className="border rounded px-3 py-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <div>
                     <div className="font-medium">{a.user?.name} {a.user?.surname} - {a.worker?.name} {a.worker?.surname}</div>
-                    <div className="text-xs text-slate-500">Inicio: {a.start_date} | Horas/sem: {a.assigned_hours_per_week}</div>
+                    <div className="text-xs text-slate-500">Inicio: {a.start_date} | Horas/sem: {a.weekly_hours}</div>
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="secondary" onClick={() => window.location.href = `/dashboard/assignments/${a.id}/edit`}>Editar</Button>

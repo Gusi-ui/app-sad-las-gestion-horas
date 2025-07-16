@@ -101,7 +101,8 @@ export interface Assignment {
   notes?: string
   created_at: string
   updated_at: string
-  assignment_type?: 'laborables' | 'festivos' | 'flexible'
+  assignment_type?: string
+  weekly_hours: number // Agregado para coincidir con el uso en componentes
   // Populated fields
   worker?: Worker
   user?: User

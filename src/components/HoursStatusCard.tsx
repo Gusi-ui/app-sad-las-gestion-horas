@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, TrendingUp, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown, CheckCircle, AlertTriangle } from "lucide-react";
 import { calculateUserHoursStatus } from "@/lib/utils";
 
 interface HoursStatusCardProps {

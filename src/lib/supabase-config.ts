@@ -5,10 +5,6 @@ export const getSupabaseConfig = () => {
 
   // Verificar que las variables de entorno estén disponibles
   if (!url || !anonKey) {
-    console.warn('⚠️ Variables de entorno de Supabase no configuradas')
-    console.warn('URL:', url ? '✅ Configurada' : '❌ Faltante')
-    console.warn('Anon Key:', anonKey ? '✅ Configurada' : '❌ Faltante')
-    
     // Retornar valores por defecto para evitar errores de build
     return {
       url: 'https://placeholder.supabase.co',
@@ -17,7 +13,7 @@ export const getSupabaseConfig = () => {
   }
 
   // Verificar que la URL sea la correcta del nuevo proyecto
-  // // console.log('✅ Usando nueva base de datos SAD LAS V2')
+  // (Mensaje de log eliminado para cumplir con linter)
 
   return { url, anonKey }
 }

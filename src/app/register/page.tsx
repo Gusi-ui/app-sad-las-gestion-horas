@@ -25,7 +25,7 @@ export default function RegisterPage() {
     }
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -41,7 +41,7 @@ export default function RegisterPage() {
         // Redirigir al dashboard después del registro exitoso
         router.push('/dashboard')
       }
-    } catch (err) {
+    } catch {
       setError('Error al crear la cuenta')
     } finally {
       setIsLoading(false)

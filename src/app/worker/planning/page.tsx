@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { Calendar, User } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { Assignment, User as UserType, WeekDay } from "@/lib/types";
+import { Assignment, User as UserType } from "@/lib/types";
 
 const DAYS_OF_WEEK = [
   { value: "monday", label: "Lunes" },
@@ -29,13 +29,13 @@ function timeToMinutes(time: string): number {
 }
 
 // Función para obtener la hora de inicio de un horario
-function getStartTime(slots: any[] | undefined): string | null {
+function getStartTime(slots: unknown[] | undefined): string | null {
   if (!slots || slots.length === 0) return null;
   
   if (slots.length === 2 && typeof slots[0] === 'string' && typeof slots[1] === 'string') {
     return slots[0];
   } else if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0]) {
-    return slots[0].start;
+    return (slots[0] as { start: string }).start;
   }
   
   return null;
@@ -44,8 +44,8 @@ function getStartTime(slots: any[] | undefined): string | null {
 // Función para ordenar asignaciones por hora de inicio
 function sortAssignmentsByTime(assignments: AssignmentWithUser[], dayKey: string): AssignmentWithUser[] {
   return [...assignments].sort((a, b) => {
-    const slotsA = (a.specific_schedule as any)?.[dayKey];
-    const slotsB = (b.specific_schedule as any)?.[dayKey];
+    const slotsA = (a.specific_schedule as unknown)?.[dayKey];
+    const slotsB = (b.specific_schedule as unknown)?.[dayKey];
     
     const startTimeA = getStartTime(slotsA);
     const startTimeB = getStartTime(slotsB);
@@ -104,12 +104,12 @@ export default function WorkerPlanningPage() {
   }, []);
 
   // Función para formatear los horarios de una asignación
-  const formatSchedule = (slots: any[] | undefined) => {
+  const formatSchedule = (slots: unknown[] | undefined) => {
     if (!slots || slots.length === 0) return null;
     // Caso: array de objetos {start, end}
     if (typeof slots[0] === 'object' && slots[0] !== null && 'start' in slots[0] && 'end' in slots[0]) {
       return slots
-        .map((slot: any) => `${slot.start} - ${slot.end}`)
+        .map((slot: unknown) => `${(slot as { start: string; end: string }).start} - ${(slot as { start: string; end: string }).end}`)
         .join(' | ');
     }
     // Caso: array de strings pares (['08:00', '09:30', '13:00', '15:00'])
@@ -165,7 +165,7 @@ export default function WorkerPlanningPage() {
             {DAYS_OF_WEEK.map(day => {
               // Filtrar asignaciones con horario para este día
               const dayAssignments = sortAssignmentsByTime(assignments, day.value).filter(a => {
-                const slots = (a.specific_schedule as any)?.[day.value];
+                const slots = (a.specific_schedule as unknown)?.[day.value];
                 return slots && slots.length > 0;
               });
               if (dayAssignments.length === 0) return null;
@@ -174,7 +174,7 @@ export default function WorkerPlanningPage() {
                   <div className="font-semibold text-slate-800 mb-1">{day.label}</div>
                   <ul className="space-y-2">
                     {dayAssignments.map(a => {
-                      const slots = (a.specific_schedule as any)?.[day.value];
+                      const slots = (a.specific_schedule as unknown)?.[day.value];
                       const formatted = formatSchedule(slots);
                       return (
                         <li key={a.id}
